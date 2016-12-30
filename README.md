@@ -26,6 +26,7 @@ In particular, to make something well-documented.
 * Config & scripting Interfaces
   * https://github.com/golang/protobuf for internal data structures & config.
   * https://github.com/Shopify/go-lua for (Lua) scripting
+  * Or maybe other things at https://github.com/avelino/awesome-go#configuration
 * IRC
   * https://github.com/fluffle/goirc for IRC connections.
 * UI
