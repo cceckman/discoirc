@@ -43,7 +43,7 @@ func main() {
 		log.Fatal("No file specified")
 	}
 
-	f, err := os.OpenFile(*writeTo, os.O_WRONLY | os.O_APPEND, 0) //os.ModeNamedPipe)
+	f, err := os.OpenFile(*writeTo, os.O_WRONLY | os.O_APPEND, os.ModeNamedPipe)
 	if err != nil {
 		log.Fatal(err)
 	}
