@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	flog "github.com/cceckman/discoirc/prototype/termui/log"
 	"log"
 
 	"github.com/jroimartin/gocui"
@@ -26,6 +27,14 @@ func main() {
 		os.Exit(1)
 	}
 	// Above is boilerplate.
+	logflags := log.Flags()
+	if err := flog.Init(); err != nil {
+		// Reset before writing any more messages.
+		log.SetFlags(logflags)
+		log.SetOutput(os.Stderr)
+		log.Panicln(err)
+	}
+	flog.LogArgs()
 
 	// Start GUI.
 	g, err := gocui.NewGui(gocui.OutputNormal)
