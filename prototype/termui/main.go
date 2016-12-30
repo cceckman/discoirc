@@ -26,15 +26,14 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	// Above is boilerplate.
-	logflags := log.Flags()
 	if err := flog.Init(); err != nil {
 		// Reset before writing any more messages.
-		log.SetFlags(logflags)
+		log.SetFlags(log.LstdFlags)
 		log.SetOutput(os.Stderr)
 		log.Fatal(err)
 	}
 	flog.LogArgs()
+	// Above is boilerplate.
 
 	// Start GUI.
 	g, err := gocui.NewGui(gocui.OutputNormal)
