@@ -1,6 +1,6 @@
-// Package plog adds some additional (flag-controlled) logging behavior, and log levels.
+// Package log adds some additional (flag-controlled) logging behavior, and log levels.
 
-package plog
+package log
 
 import (
 	"flag"
