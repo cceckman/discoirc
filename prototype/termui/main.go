@@ -32,7 +32,7 @@ func main() {
 		// Reset before writing any more messages.
 		log.SetFlags(logflags)
 		log.SetOutput(os.Stderr)
-		log.Panicln(err)
+		log.Fatal(err)
 	}
 	flog.LogArgs()
 
