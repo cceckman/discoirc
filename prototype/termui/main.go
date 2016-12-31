@@ -43,7 +43,7 @@ func main() {
 	}
 	defer g.Close()
 
-	if err := SetupUI(g); err != nil {
+	if err := SetupModelView(g); err != nil {
 		log.Panicln(err)
 	}
 

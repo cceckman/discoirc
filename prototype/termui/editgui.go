@@ -7,7 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
+	_ "time"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
 	"github.com/jroimartin/gocui"
@@ -19,8 +19,8 @@ const (
 	noticesView  = "notices"
 )
 
-// SetupUI sets up managers for a gocui.Gui, but does not start the main loop.
-func SetupUI(g *gocui.Gui) error {
+// SetupModelView sets up managers for a gocui.Gui, but does not start the main loop.
+func SetupModelView(g *gocui.Gui) error {
 	// Create a context that closing the UI terminates.
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = ctx
@@ -31,7 +31,7 @@ func SetupUI(g *gocui.Gui) error {
 	go mv.Start(ctx)
 	g.SetManager(mv)
 
-	// Pass through ctrl+c to quit.
+	// Global handler for ctrl+c.
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		func(_ *gocui.Gui, _ *gocui.View) error {
 			cancel()
@@ -63,6 +63,7 @@ type ModelView struct {
 
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
+var _ gocui.Editor = &ModelView{}
 
 // Start begins operations that run outside the main thread. It should be run in a background thread (i.e. go m.Start())
 func (m *ModelView) Start(ctx context.Context) {
@@ -70,7 +71,8 @@ func (m *ModelView) Start(ctx context.Context) {
 	m.input = bufchan.New(ctx)
 	m.messages = bufchan.New(ctx)
 
-	// Just testing...
+	// Generate some output for testing.
+	/*
 	go func() {
 		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
@@ -84,6 +86,7 @@ func (m *ModelView) Start(ctx context.Context) {
 			}
 		}
 	}()
+	*/
 
 	go m.WatchInput(ctx)
 	go m.WriteMessages(ctx)
@@ -163,9 +166,54 @@ func (m *ModelView) WriteNotices(ctx context.Context) {
 	}
 }
 
+// Edit implements gocui.Editor for ModelView.
+// When a line is entered from the input, the buffer is cleared, and the input is sent to m.input.
+func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
+	switch {
+	case ch != 0 && mod == 0:
+		v.EditWrite(ch)
+	case key == gocui.KeySpace:
+		v.EditWrite(' ')
+	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
+		v.EditDelete(true)
+	case key == gocui.KeyDelete:
+		v.EditDelete(false)
+	case key == gocui.KeyInsert:
+		v.Overwrite = !v.Overwrite
+	case key == gocui.KeyEnter:
+		// Commit this line to the input channel.
+		s := v.Buffer()
+		m.input.In() <- s
+		v.Clear()
+		/* // Scrolling disabled, at the moment...
+	case key == gocui.KeyArrowDown:
+		v.MoveCursor(0, 1, false)
+	case key == gocui.KeyArrowUp:
+		v.MoveCursor(0, -1, false)
+		*/
+	case key == gocui.KeyArrowLeft:
+		v.MoveCursor(-1, 0, false)
+	case key == gocui.KeyArrowRight:
+		v.MoveCursor(1, 0, false)
+	}
+}
+
 // Layout implements gocui.Manager for ModelView.
 func (m *ModelView) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
+
+	// Input view.
+	if v, err := g.SetView(inputView, maxX-3, maxY-3, maxX-1, maxY-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Editable = true
+		v.Frame = false
+		v.Wrap = true
+		v.Editor = m
+	}
+
+	// Messages view: auto-scrolling, from m.Messages.
 	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
