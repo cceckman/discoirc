@@ -51,23 +51,27 @@ func (d *DemuxModel) Run(ctx context.Context, mv *ModelView) {
 	}
 }
 
-// PrintingModel just writes output to Message.
-func PrintingModel(ctx context.Context, mv *ModelView) {
+// CountingModel writes numbers to Message, and makes a Notice every 10.
+func CountingModel(ctx context.Context, mv *ModelView) {
 	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
 	var noticeDone <-chan struct{} = nil
-	isDone := true
-	for i := 0; true; i++{
+
+	for i := 1; true; i++{
 		select {
 		case <-ctx.Done():
 			return
 		case <-noticeDone:
-			isDone = true
+			// Have to nillify so that this case doesn't get re-run;
+			// the channel is still closed on the next iteration.
+			// This means noticeDone != nil is "is the notice up".
+			mv.Message(fmt.Sprintf("notice completed at %d", i))
+			noticeDone = nil
 		case <-ticker.C:
-			mv.Message(fmt.Sprintf("%d; notice up? %t", i, isDone))
+			mv.Message(fmt.Sprintf("%d; notice up? %t", i, noticeDone != nil))
 			if i % 10 == 0 {
 				noticeDone = mv.Notice(fmt.Sprintf("Happy %dth anniversary!", i))
-				isDone = false
 			}
 		}
 	}

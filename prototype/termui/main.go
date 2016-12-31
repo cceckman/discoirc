@@ -49,6 +49,7 @@ func main() {
 		log.Panicln(err)
 	} else {
 		mv.Attach(&mvvm.DemuxModel{})
+		mv.Attach(mvvm.ModelFunc(mvvm.CountingModel))
 	}
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
