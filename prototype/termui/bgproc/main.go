@@ -129,6 +129,15 @@ func main() {
 
 						_, err := fmt.Fprintf(conn, "%07d\n", prime)
 						if err != nil {
+							switch e := err.(type) {
+							case net.Error:
+								if e.Temporary(){
+									continue
+								} else {
+									log.Printf("permanent write error for channel %d is not temporary", n)
+								}
+							}
+							// "default" case
 							log.Printf("write error on channel %d: %v\n", n, err)
 							return
 						}
