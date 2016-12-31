@@ -16,7 +16,7 @@ func testAtRates(r, w time.Duration) func(*testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		c := bufchan.New(ctx)
 
-		timeFmt := time.RFC3339
+		timeFmt := time.RFC3339Nano
 
 		var wg sync.WaitGroup
 		wg.Add(2)
@@ -58,6 +58,13 @@ func testAtRates(r, w time.Duration) func(*testing.T) {
 					continue
 				}
 				since := tm.Sub(lastTime)
+				if since < w {
+					t.Logf("read timestamps were faster than expected: got %s want %s",
+						since,
+						w,
+					)
+				}
+
 				if since < zero {
 					t.Errorf("went backwards in time: %s to %s (%s)",
 						lastTime.Format(time.RFC3339Nano),
