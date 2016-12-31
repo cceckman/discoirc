@@ -77,8 +77,42 @@ func (mv *ModelView) Attach(m Model) {
 
 // Notice sends a notice to the user.
 // It is non-blocking; it will return before the notice is actually displayed.
-func (mv *ModelView) Notice(notice string) {
-	mv.ui.Execute(displayNotice(notice))
+// However, the channel it returns will be closed after the display is executed in the main thread.
+func (mv *ModelView) Notice(notice string) <-chan struct{} {
+	done := make(chan struct{})
+
+	mv.ui.Execute(
+		func(g *gocui.Gui) error {
+			defer close(done)
+
+			maxX, maxY := g.Size()
+			l := len(notice) / 2
+			if v, err := g.SetView(
+				noticeView,
+				maxX/2-l-1, maxY/2,
+				maxX/2+l+1, maxY/2+2,
+			); err != nil {
+				if err != gocui.ErrUnknownView {
+					log.Println(err)
+					return err
+				}
+				// TODO: This isn't quite the right handling of "a new notice"...
+				// This overwrites whatever is there, which means repeated notices can get squashed by
+				// each other.
+				v.Clear()
+				v.SetCursor(0, 0)
+				g.SetViewOnTop(noticeView)
+				fmt.Fprintln(v, notice)
+
+				if _, err := g.SetCurrentView(noticeView); err != nil {
+					log.Println(err)
+					return err
+				}
+			}
+			return nil
+		},
+	)
+	return done
 }
 
 // UserInput returns a channel on which the user's input can be read.
@@ -89,11 +123,17 @@ func (mv *ModelView) UserInput() <-chan string {
 
 // Message writes a message to the user's log.
 // It is non-blocking; it will return before the message is actually displayed.
-func (mv *ModelView) Message(message string) {
+// However, the channel it returns will be closed after the display is executed in the main thread.
+func (mv *ModelView) Message(message string) <-chan struct{}{
+	done := make(chan struct{})
+
 	if len(message) == 0 {
-		return
+		close(done)
+		return done
 	}
+
 	mv.ui.Execute(func(g *gocui.Gui) error {
+		defer close(done)
 		if v, err := g.View(messagesView); err != nil {
 			log.Println(err)
 			return err
@@ -102,6 +142,7 @@ func (mv *ModelView) Message(message string) {
 		}
 		return nil
 	})
+	return done
 }
 
 // Type enforcement.
@@ -212,35 +253,4 @@ func closeView(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 	return nil
-}
-
-// displayNotice displays a message in a 'notice' box.
-func displayNotice(notice string) func(*gocui.Gui) error {
-	return func(g *gocui.Gui) error {
-		maxX, maxY := g.Size()
-		l := len(notice) / 2
-		if v, err := g.SetView(
-			noticeView,
-			maxX/2-l-1, maxY/2,
-			maxX/2+l+1, maxY/2+2,
-		); err != nil {
-			if err != gocui.ErrUnknownView {
-				log.Println(err)
-				return err
-			}
-			// TODO: This isn't quite the right handling of "a new notice"...
-			// This overwrites whatever is there, which means repeated notices can get squashed by
-			// each other.
-			v.Clear()
-			v.SetCursor(0, 0)
-			g.SetViewOnTop(noticeView)
-			fmt.Fprintln(v, notice)
-
-			if _, err := g.SetCurrentView(noticeView); err != nil {
-				log.Println(err)
-				return err
-			}
-		}
-		return nil
-	}
 }
