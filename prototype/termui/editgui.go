@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 	"unicode"
@@ -18,7 +19,7 @@ import (
 const (
 	messagesView = "messages"
 	inputView    = "input"
-	noticesView  = "notices"
+	noticeView   = "notices"
 )
 
 // SetupModelView sets up managers for a gocui.Gui, but does not start the main loop.
@@ -40,6 +41,14 @@ func SetupModelView(g *gocui.Gui) error {
 			return gocui.ErrQuit
 		},
 	); err != nil {
+		log.Panicln(err)
+		return err
+	}
+
+	// Bind 'enter' to close, on the notice view.
+	err := g.SetKeybinding(noticeView, gocui.KeyEnter, gocui.ModNone, closeView)
+	if err != nil {
+		log.Panicln(err)
 		return err
 	}
 
@@ -129,25 +138,27 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 				continue
 			}
 			m.ui.Execute(func(g *gocui.Gui) error {
-				if v, err := g.View(messagesView); err == nil {
-					fmt.Fprintf(v, "\"%s\"\n", message)
-				} else {
+				if v, err := g.View(messagesView); err != nil {
+					log.Panicln(err)
 					return err
+				} else {
+					fmt.Fprintf(v, "\"%s\"\n", message)
 				}
 				return nil
 			})
 		}
 	}
-	return
 }
 
 // closeView is a callback that closes the View it is called on.
+// It is idempotent; it can be run on already-removed Views.
 func closeView(g *gocui.Gui, v *gocui.View) error {
-	// TODO: As per below, should allow focus to wander.
-	if _, err := g.SetCurrentView(inputView); err != nil {
-		return err
-	}
-	if err := g.DeleteView(noticesView); err != nil {
+	// Clean up the view, OK if it already doesn't exist.
+	if err := g.DeleteView(v.Name()); err != nil  {
+		if err == gocui.ErrUnknownView {
+			return nil
+		}
+		log.Panicln(err)
 		return err
 	}
 	return nil
@@ -159,11 +170,12 @@ func displayNotice(notice string) func(*gocui.Gui) error {
 		maxX, maxY := g.Size()
 		l := len(notice) / 2
 		if v, err := g.SetView(
-			noticesView,
+			noticeView,
 			maxX/2-l-1, maxY/2,
 			maxX/2+l+1, maxY/2+2,
 		); err != nil {
 			if err != gocui.ErrUnknownView {
+				log.Panicln(err)
 				return err
 			}
 			// TODO: This isn't quite the right handling of "a new notice"...
@@ -171,18 +183,15 @@ func displayNotice(notice string) func(*gocui.Gui) error {
 			// each other.
 			v.Clear()
 			v.SetCursor(0, 0)
-			g.SetViewOnTop(noticesView)
+			g.SetViewOnTop(noticeView)
 			fmt.Fprintln(v, notice)
 
-			// Bind 'enter' to close.
-			err := g.SetKeybinding(noticesView, gocui.KeyEnter, gocui.ModNone, closeView)
-			if err != nil {
+			if _, err := g.SetCurrentView(noticeView); err != nil {
+				log.Panicln(err)
 				return err
 			}
-			g.SetCurrentView(noticesView)
 		}
 		return nil
-
 	}
 }
 
@@ -244,6 +253,7 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 	// Input view. Sink to the bottom of the screen.
 	if v, err := g.SetView(inputView, 0, maxY-inputHeight, maxX, maxY); err != nil {
 		if err != gocui.ErrUnknownView {
+			log.Panicln(err)
 			return err
 		}
 		v.Editable = true
@@ -251,14 +261,24 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 		v.Wrap = true
 		v.Editor = m
 	}
-	// Input gets focus, to receive keyboard input.
-	// TODO: allow focus to swap between input and messages.
-	g.SetCurrentView(inputView)
+
+	// If the notice view exists, it gets focus...
+	focus := noticeView
+	if _, err := g.View(noticeView); err == gocui.ErrUnknownView {
+		// ...otherwise, put focus on the input view, to get keyboard input.
+		// TODO: allow focus to swap between input and messages.
+		focus = inputView
+	}
+	if _, err := g.SetCurrentView(focus); err != nil {
+		log.Panicln(err)
+		return err
+	}
 
 	// Messages view: auto-scrolling, from m.messages.
 	// Set its bottom edge to just above the input view.
 	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-inputHeight); err != nil {
 		if err != gocui.ErrUnknownView {
+			log.Panicln(err)
 			return err
 		}
 		v.Autoscroll = true
