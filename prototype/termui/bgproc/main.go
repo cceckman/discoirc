@@ -68,53 +68,48 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		log.Printf("Removing %s\n", addr)
-		err := os.Remove(addr)
-		if err != nil {
-			log.Printf("couldn't remove %s: %v\n", addr, err)
+	defer l.Close()
+
+	ctx := signalContext()
+	p := primes.NewMemoizingPrimer()
+
+	// Listen for new connections in a background thread;
+	// close the listener in main().
+	go func() {
+		for cid := 0; true; cid++ {
+
+			log.Println("Awaiting connection...")
+			newCon, err := l.AcceptUnix()
+			if err != nil {
+				log.Println(err)
+			}
+			log.Printf("Got a new connection (%d)\n", cid)
+
+			// Start a background writer.
+			go func(ctx context.Context, n int, conn net.Conn) {
+				// TODO: needs to reliably handle closed other end.
+				defer conn.Close()
+
+				ticker := time.NewTicker(time.Second)
+				defer ticker.Stop()
+
+				c := make(chan int)
+				p.PrimesUpTo(1000000, c)
+
+				for prime := range c {
+					select {
+					case <-ctx.Done():
+						return
+					case <-ticker.C:
+						// pass, see below.
+					}
+					fmt.Printf("Tick on %d: %d\n", n, prime)
+					fmt.Fprintf(conn, "%07d\n", prime)
+				}
+			}(ctx, cid, newCon)
 		}
 	}()
 
-	ctx := signalContext()
-
-	p := primes.NewMemoizingPrimer()
-	for cid := 0; true; cid++ {
-		select {
-		case <-ctx.Done():
-			break
-		default:
-			// pass
-		}
-
-		log.Println("Awaiting connection...")
-		newCon, err := l.AcceptUnix()
-		if err != nil {
-			log.Println(err)
-		}
-		log.Printf("Got a new connection (%d)\n", cid)
-
-		// Start a background writer.
-		go func(ctx context.Context, n int, conn net.Conn) {
-			// TODO: needs to reliably handle closed other end.
-			defer conn.Close()
-
-			ticker := time.NewTicker(time.Second)
-			defer ticker.Stop()
-
-			c := make(chan int)
-			p.PrimesUpTo(1000000, c)
-
-			for prime := range c {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					// pass, see below.
-				}
-				fmt.Printf("Tick on %d: %d\n", n, prime)
-				fmt.Fprintf(conn, "%07d\n", prime)
-			}
-		}(ctx, cid, newCon)
-	}
+	// Wait for the context to be done before exiting.
+	<-ctx.Done()
 }
