@@ -12,12 +12,11 @@ import (
 	"github.com/cceckman/primes"
 
 	"time"
+	"net"
 )
 
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
-
-	writeTo = flag.String("target", "", "file (pipe) to write lines to")
 )
 
 func main() {
@@ -39,28 +38,41 @@ func main() {
 	flog.LogArgs()
 	// Above is boilerplate.
 
-	if *writeTo == "" {
-		log.Fatal("No file specified")
-	}
 
-	f, err := os.OpenFile(*writeTo, os.O_WRONLY | os.O_APPEND, os.ModeNamedPipe)
+	// Create a Unix domain socket.
+	network := "unix"
+	addr := "/tmp/discod"
+	l, err := net.ListenUnix(network, &net.UnixAddr{addr, network})
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
-
-	log.Println("Opened for writing; starting counter")
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+	defer os.Remove(addr)
 
 	p := primes.NewMemoizingPrimer()
-	for {
-		c := make(chan int)
-		p.PrimesUpTo(1000000, c)
-		for prime := range c {
-			<-ticker.C
-			fmt.Printf("Tick: %d\n", prime)
-			fmt.Fprintf(f, "%07d\n", prime)
+	for cid := 0; true; cid++{
+		log.Println("Awaiting connection...")
+		newCon, err := l.AcceptUnix()
+		if err != nil {
+			log.Println(err)
 		}
+		log.Printf("Got a new connection (%d)\n", cid)
+
+		// Start a background writer.
+		go func(n int, conn net.Conn) {
+			// TODO: needs to reliably handle closed other end.
+			defer conn.Close()
+
+			ticker := time.NewTicker(time.Second)
+			defer ticker.Stop()
+
+			c := make(chan int)
+			p.PrimesUpTo(1000000, c)
+
+			for prime := range c {
+				<-ticker.C
+				fmt.Printf("Tick on %d: %d\n", n, prime)
+				fmt.Fprintf(conn, "%07d\n", prime)
+			}
+		}(cid, newCon)
 	}
 }
