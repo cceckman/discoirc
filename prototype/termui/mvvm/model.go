@@ -66,10 +66,10 @@ func CountingModel(ctx context.Context, mv *ModelView) {
 			// Have to nillify so that this case doesn't get re-run;
 			// the channel is still closed on the next iteration.
 			// This means noticeDone != nil is "is the notice up".
-			mv.Message(fmt.Sprintf("notice completed at %d", i))
+			mv.Message(fmt.Sprintf("%d; notice completed display", i))
 			noticeDone = nil
 		case <-ticker.C:
-			mv.Message(fmt.Sprintf("%d; notice up? %t", i, noticeDone != nil))
+			mv.Message(fmt.Sprintf("%d; notice pending display? %t", i, noticeDone != nil))
 			if i % 10 == 0 {
 				noticeDone = mv.Notice(fmt.Sprintf("Happy %dth anniversary!", i))
 			}
