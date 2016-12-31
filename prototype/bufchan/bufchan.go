@@ -52,7 +52,7 @@ func (x *Bufchan) mirror(ctx context.Context) {
 				return
 			case s := <-x.in:
 				x.buf = append(x.buf, s)
-			case out <- x.buf[0]:
+			case x.out <- x.buf[0]:
 				x.buf = x.buf[1:]
 			}
 		}
@@ -63,7 +63,8 @@ func New(ctx context.Context) *Bufchan {
 	r := &Bufchan{
 		in:  make(chan string),
 		out: make(chan string),
-		buf: make([]string),
+		buf: make([]string, 0),
 	}
 	go r.mirror(ctx)
+	return r
 }
