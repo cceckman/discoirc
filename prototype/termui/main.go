@@ -45,7 +45,7 @@ func main() {
 	}
 	defer g.Close()
 
-	if err := modelview.AttachTo(g); err != nil {
+	if _, err := mvvm.New(g); err != nil {
 		log.Panicln(err)
 	}
 

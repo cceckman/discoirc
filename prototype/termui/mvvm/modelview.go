@@ -27,25 +27,24 @@ const (
 type ModelView struct {
 	ui *gocui.Gui
 
-	notices  *bufchan.Bufchan
-	input    *bufchan.Bufchan
-	messages *bufchan.Bufchan
+	Notices  *bufchan.Bufchan
+	Input    *bufchan.Bufchan
+	Messages *bufchan.Bufchan
 }
 
-// AttachTo sets up a ModelView for the provided Gui.
-func AttachTo(g *gocui.Gui) error {
+// AttachToView sets up a ModelView for the provided Gui.
+func (mv *ModelView) attach() error {
 	// Create a context that closing the UI terminates.
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = ctx
 
 	// Start window layout-er.
 	// Note: manager must be provided before setting keybindings (e.g. below.)
-	mv := New(g)
-	go mv.Start(ctx)
-	g.SetManager(mv)
+	go mv.start(ctx)
+	mv.ui.SetManager(mv)
 
 	// Global handler for ctrl+c.
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
+	if err := mv.ui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		func(_ *gocui.Gui, _ *gocui.View) error {
 			cancel()
 			return gocui.ErrQuit
@@ -56,7 +55,7 @@ func AttachTo(g *gocui.Gui) error {
 	}
 
 	// Bind 'enter' to close, on the notice view.
-	err := g.SetKeybinding(noticeView, gocui.KeyEnter, gocui.ModNone, closeView)
+	err := mv.ui.SetKeybinding(noticeView, gocui.KeyEnter, gocui.ModNone, closeView)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -65,29 +64,30 @@ func AttachTo(g *gocui.Gui) error {
 	return nil
 }
 
-// New returns a new ModelView
-func New(g *gocui.Gui) *ModelView {
-	return &ModelView{
+// New returns a new ModelView, attached to the given GUI.
+func New(g *gocui.Gui) (*ModelView, error) {
+	r := &ModelView{
 		ui: g,
 	}
+	return r, r.attach()
 }
 
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
 var _ gocui.Editor = &ModelView{}
 
-// Start begins operations that run outside the main thread. It should be run in a background thread (i.e. go m.Start())
-func (m *ModelView) Start(ctx context.Context) {
-	m.notices = bufchan.New(ctx)
-	m.input = bufchan.New(ctx)
-	m.messages = bufchan.New(ctx)
+// start begins operations that run outside the main thread. It should be run in a background thread (i.e. go m.Start())
+func (m *ModelView) start(ctx context.Context) {
+	m.Notices = bufchan.New(ctx)
+	m.Input = bufchan.New(ctx)
+	m.Messages = bufchan.New(ctx)
 
 	// Generate some output for testing.
 	// go m.genOuts(ctx)
 
 	go m.WatchInput(ctx)
-	go m.WriteMessages(ctx)
-	go m.WriteNotices(ctx)
+	go m.writeMessages(ctx)
+	go m.writeNotices(ctx)
 }
 
 // genOuts writes numbers to the input channel.
@@ -99,7 +99,7 @@ func (m *ModelView) genOuts(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case m.input.In() <- fmt.Sprintf(" %d\n", i):
+		case m.Input.In() <- fmt.Sprintf(" %d\n", i):
 			// Delay until the tick.
 			<-tick.C
 		}
@@ -107,12 +107,13 @@ func (m *ModelView) genOuts(ctx context.Context) {
 }
 
 // WatchInput watches the input channel, and demuxes into 'messages' and 'notices'.
+// TODO: This belongs in the Model, not in the ModelView.
 func (m *ModelView) WatchInput(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case input := <-m.input.Out():
+		case input := <-m.Input.Out():
 			// TODO: I'm being unfriendly; RTL should absolutely be supported by this app.
 			tr := strings.TrimRightFunc(input, unicode.IsSpace)
 			if len(tr) == 0 {
@@ -120,21 +121,21 @@ func (m *ModelView) WatchInput(ctx context.Context) {
 			}
 
 			if tr[0] == '!' {
-				m.notices.In() <- tr[1:]
+				m.Notices.In() <- tr[1:]
 			} else {
-				m.messages.In() <- tr
+				m.Messages.In() <- tr
 			}
 		}
 	}
 }
 
-// WriteMessages listens on the relevant channel, and writes messages to the UI.
-func (m *ModelView) WriteMessages(ctx context.Context) {
+// writeMessages listens on the relevant channel, and writes messages to the UI.
+func (m *ModelView) writeMessages(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case message := <-m.messages.Out():
+		case message := <-m.Messages.Out():
 			if len(message) == 0 {
 				continue
 			}
@@ -151,13 +152,13 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 	}
 }
 
-// WriteNotices listens on the relevant channel, and writes pop-up notifications to the UI.
-func (m *ModelView) WriteNotices(ctx context.Context) {
+// writeNotices listens on the relevant channel, and writes pop-up notifications to the UI.
+func (m *ModelView) writeNotices(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case notice := <-m.notices.Out():
+		case notice := <-m.Notices.Out():
 			if len(notice) == 0 {
 				continue
 			}
@@ -168,7 +169,7 @@ func (m *ModelView) WriteNotices(ctx context.Context) {
 }
 
 // Edit implements gocui.Editor for ModelView.
-// When a line is entered from the input, the buffer is cleared, and the input is sent to m.input.
+// When a line is entered from the input, the buffer is cleared, and the input is sent to m.Input.
 func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	switch {
 	case ch != 0 && mod == 0:
@@ -184,7 +185,7 @@ func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifi
 	case key == gocui.KeyEnter:
 		// Commit this line to the input channel.
 		s := v.Buffer()
-		m.input.In() <- s
+		m.Input.In() <- s
 		v.Clear()
 		v.SetCursor(0, 0)
 		/* // Scrolling disabled, at the moment...
@@ -230,7 +231,7 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	// Messages view: auto-scrolling, from m.messages.
+	// Messages view: auto-scrolling, from m.Messages.
 	// Set its bottom edge to just above the input view.
 	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-inputHeight); err != nil {
 		if err != gocui.ErrUnknownView {
