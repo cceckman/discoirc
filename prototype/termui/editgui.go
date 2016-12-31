@@ -19,7 +19,7 @@ func SetupUI(g *gocui.Gui) error {
 	// Start window layout-er.
 	// Note: manager must be provided before setting keybindings (e.g. below.)
 	mv := &ModelView{ui: g}
-	go mv.Start()
+	go mv.Start(ctx)
 	g.SetManager(mv)
 
 	// Pass through ctrl+c to quit.
@@ -32,20 +32,19 @@ func SetupUI(g *gocui.Gui) error {
 		return err
 	}
 
-
 	return nil
 }
 
 // ModelView is a view manager.
-type ModelView struct{
+type ModelView struct {
 	ui *gocui.Gui
 }
 
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
 
-// Start begins operations that update the ModelView. It should be run in a background thread (i.e. go m.Start())
-func (m *ModelView) Start() { }
+// Start begins operations that run outside the main thread. It should be run in a background thread (i.e. go m.Start())
+func (m *ModelView) Start(_ context.Context) {}
 
 // Layout implements gocui.Manager for ModelView.
 func (m *ModelView) Layout(g *gocui.Gui) error {

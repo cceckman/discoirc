@@ -1,7 +1,7 @@
 // 2016-12-31 cceckman <charles@cceckman.com>
 package main
 
-import(
+import (
 	"flag"
 	"fmt"
 	"os"
@@ -12,7 +12,7 @@ import(
 	"github.com/jroimartin/gocui"
 )
 
-var(
+var (
 	help = flag.Bool("help", false, "Display a usage message.")
 )
 
