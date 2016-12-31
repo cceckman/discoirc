@@ -10,6 +10,8 @@ import (
 	"log"
 
 	"github.com/jroimartin/gocui"
+
+	"github.com/cceckman/discoirc/prototype/termui/mvvm"
 )
 
 var (
@@ -43,7 +45,7 @@ func main() {
 	}
 	defer g.Close()
 
-	if err := SetupModelView(g); err != nil {
+	if err := modelview.AttachTo(g); err != nil {
 		log.Panicln(err)
 	}
 

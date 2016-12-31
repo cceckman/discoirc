@@ -1,8 +1,8 @@
 //
-// editgui.go
-// provides GUI objects, etc. for this prototype
+// modelview.go
+// provides the ModelView class.
 
-package main
+package mvvm
 
 import (
 	"context"
@@ -22,8 +22,18 @@ const (
 	noticeView   = "notices"
 )
 
-// SetupModelView sets up managers for a gocui.Gui, but does not start the main loop.
-func SetupModelView(g *gocui.Gui) error {
+// ModelView is a view manager.
+// It should be Start-ed before being attached as a Manager.
+type ModelView struct {
+	ui *gocui.Gui
+
+	notices  *bufchan.Bufchan
+	input    *bufchan.Bufchan
+	messages *bufchan.Bufchan
+}
+
+// AttachTo sets up a ModelView for the provided Gui.
+func AttachTo(g *gocui.Gui) error {
 	// Create a context that closing the UI terminates.
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = ctx
@@ -62,16 +72,6 @@ func New(g *gocui.Gui) *ModelView {
 	}
 }
 
-// ModelView is a view manager.
-// It should be Start-ed before being attached as a Manager.
-type ModelView struct {
-	ui *gocui.Gui
-
-	notices  *bufchan.Bufchan
-	input    *bufchan.Bufchan
-	messages *bufchan.Bufchan
-}
-
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
 var _ gocui.Editor = &ModelView{}
@@ -91,6 +91,7 @@ func (m *ModelView) Start(ctx context.Context) {
 }
 
 // genOuts writes numbers to the input channel.
+// It's meant for testing.
 func (m *ModelView) genOuts(ctx context.Context) {
 	tick := time.NewTicker(time.Second * 2)
 	defer tick.Stop()
@@ -147,51 +148,6 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 				return nil
 			})
 		}
-	}
-}
-
-// closeView is a callback that closes the View it is called on.
-// It is idempotent; it can be run on already-removed Views.
-func closeView(g *gocui.Gui, v *gocui.View) error {
-	// Clean up the view, OK if it already doesn't exist.
-	if err := g.DeleteView(v.Name()); err != nil  {
-		if err == gocui.ErrUnknownView {
-			return nil
-		}
-		log.Println(err)
-		return err
-	}
-	return nil
-}
-
-// displayNotice displays a message in a 'notice' box.
-func displayNotice(notice string) func(*gocui.Gui) error {
-	return func(g *gocui.Gui) error {
-		maxX, maxY := g.Size()
-		l := len(notice) / 2
-		if v, err := g.SetView(
-			noticeView,
-			maxX/2-l-1, maxY/2,
-			maxX/2+l+1, maxY/2+2,
-		); err != nil {
-			if err != gocui.ErrUnknownView {
-				log.Println(err)
-				return err
-			}
-			// TODO: This isn't quite the right handling of "a new notice"...
-			// This overwrites whatever is there, which means repeated notices can get squashed by
-			// each other.
-			v.Clear()
-			v.SetCursor(0, 0)
-			g.SetViewOnTop(noticeView)
-			fmt.Fprintln(v, notice)
-
-			if _, err := g.SetCurrentView(noticeView); err != nil {
-				log.Println(err)
-				return err
-			}
-		}
-		return nil
 	}
 }
 
@@ -285,4 +241,49 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 		v.Title = "Messages"
 	}
 	return nil
+}
+
+// closeView is a callback that closes the View it is called on.
+// It is idempotent; it can be run on already-removed Views.
+func closeView(g *gocui.Gui, v *gocui.View) error {
+	// Clean up the view, OK if it already doesn't exist.
+	if err := g.DeleteView(v.Name()); err != nil {
+		if err == gocui.ErrUnknownView {
+			return nil
+		}
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+// displayNotice displays a message in a 'notice' box.
+func displayNotice(notice string) func(*gocui.Gui) error {
+	return func(g *gocui.Gui) error {
+		maxX, maxY := g.Size()
+		l := len(notice) / 2
+		if v, err := g.SetView(
+			noticeView,
+			maxX/2-l-1, maxY/2,
+			maxX/2+l+1, maxY/2+2,
+		); err != nil {
+			if err != gocui.ErrUnknownView {
+				log.Println(err)
+				return err
+			}
+			// TODO: This isn't quite the right handling of "a new notice"...
+			// This overwrites whatever is there, which means repeated notices can get squashed by
+			// each other.
+			v.Clear()
+			v.SetCursor(0, 0)
+			g.SetViewOnTop(noticeView)
+			fmt.Fprintln(v, notice)
+
+			if _, err := g.SetCurrentView(noticeView); err != nil {
+				log.Println(err)
+				return err
+			}
+		}
+		return nil
+	}
 }
