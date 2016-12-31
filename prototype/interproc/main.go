@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	flog "github.com/cceckman/discoirc/prototype/termui/log"
+	flog "github.com/cceckman/discoirc/prototype/log"
 	"log"
 
 	"github.com/jroimartin/gocui"
