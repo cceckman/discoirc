@@ -60,3 +60,7 @@ m
   * https://github.com/gizak/termui isn't particuarly useful, but it looks cool.
 * Build
   * https://glide.sh/ maybe? I do like having dependencies at known versions.
+
+## Difficult things to do
+* Unicode support, overall.
+* RTL support in particular.

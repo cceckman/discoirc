@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 	_ "time"
+	"unicode"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
 	"github.com/jroimartin/gocui"
@@ -91,7 +92,7 @@ func (m *ModelView) Start(ctx context.Context) {
 
 	go m.WatchInput(ctx)
 	go m.WriteMessages(ctx)
-	//	go m.WriteNotices(ctx)
+	// go m.WriteNotices(ctx)
 }
 
 // WatchInput watches the input channel, and demuxes into 'messages' and 'notices'.
@@ -101,13 +102,16 @@ func (m *ModelView) WatchInput(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case input := <-m.input.Out():
-			if len(input) == 0 {
+			// TODO: I'm being unfriendly; RTL should absolutely be supported by this app.
+			tr := strings.TrimRightFunc(input, unicode.IsSpace)
+			if len(tr) == 0 {
 				continue
 			}
-			if input[0] == '!' {
-				m.notices.In() <- strings.TrimSpace(input[1:])
+
+			if tr[0] == '!' {
+				m.notices.In() <- tr[1:]
 			} else {
-				m.messages.In() <- strings.TrimSpace(input)
+				m.messages.In() <- tr
 			}
 		}
 	}
