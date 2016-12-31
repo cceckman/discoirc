@@ -8,9 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
-	"unicode"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
 	"github.com/jroimartin/gocui"
@@ -22,21 +20,26 @@ const (
 	noticeView   = "notices"
 )
 
-// ModelView is a view manager.
-// It should be Start-ed before being attached as a Manager.
+// ModelView provides Go interfaces to the UI behavior.
 type ModelView struct {
-	ui *gocui.Gui
 
-	Notices  *bufchan.Bufchan
-	Input    *bufchan.Bufchan
+	// Notices is a string channel. When sent a message, it displays it to the user in a pop-up.
+	Notices *bufchan.Bufchan
+	// Input is a string channel, on which the user's input is received.
+	Input *bufchan.Bufchan
+	// Messages is a string channel. When send a message, it displays it in the user's mesage pane.
 	Messages *bufchan.Bufchan
+
+	// ui is the UI object this ModelView is attached to.
+	ui *gocui.Gui
+	// models is a channel for receiving Attach requests.
+	models chan Model
 }
 
-// AttachToView sets up a ModelView for the provided Gui.
-func (mv *ModelView) attach() error {
+// attachToGui sets up a ModelView for the provided Gui.
+func (mv *ModelView) attachToGui() error {
 	// Create a context that closing the UI terminates.
 	ctx, cancel := context.WithCancel(context.Background())
-	_ = ctx
 
 	// Start window layout-er.
 	// Note: manager must be provided before setting keybindings (e.g. below.)
@@ -68,26 +71,40 @@ func (mv *ModelView) attach() error {
 func New(g *gocui.Gui) (*ModelView, error) {
 	r := &ModelView{
 		ui: g,
+		models: make(chan Model),
 	}
-	return r, r.attach()
+	return r, r.attachToGui()
+}
+
+// Attach starts running this Model against this ModelView.
+func (mv *ModelView) Attach(m Model) {
+	mv.models <- m
 }
 
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
 var _ gocui.Editor = &ModelView{}
 
-// start begins operations that run outside the main thread. It should be run in a background thread (i.e. go m.Start())
-func (m *ModelView) start(ctx context.Context) {
-	m.Notices = bufchan.New(ctx)
-	m.Input = bufchan.New(ctx)
-	m.Messages = bufchan.New(ctx)
+// start begins background operations: taking inputs, and attaching Models.
+func (mv *ModelView) start(ctx context.Context) {
+	mv.Notices = bufchan.New(ctx)
+	mv.Input = bufchan.New(ctx)
+	mv.Messages = bufchan.New(ctx)
 
 	// Generate some output for testing.
 	// go m.genOuts(ctx)
+	go mv.writeMessages(ctx)
+	go mv.writeNotices(ctx)
 
-	go m.WatchInput(ctx)
-	go m.writeMessages(ctx)
-	go m.writeNotices(ctx)
+	// Hang around, listening for Models to be attached.
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case m := <-mv.models:
+			go m.Run(ctx, mv)
+		}
+	}
 }
 
 // genOuts writes numbers to the input channel.
@@ -102,29 +119,6 @@ func (m *ModelView) genOuts(ctx context.Context) {
 		case m.Input.In() <- fmt.Sprintf(" %d\n", i):
 			// Delay until the tick.
 			<-tick.C
-		}
-	}
-}
-
-// WatchInput watches the input channel, and demuxes into 'messages' and 'notices'.
-// TODO: This belongs in the Model, not in the ModelView.
-func (m *ModelView) WatchInput(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case input := <-m.Input.Out():
-			// TODO: I'm being unfriendly; RTL should absolutely be supported by this app.
-			tr := strings.TrimRightFunc(input, unicode.IsSpace)
-			if len(tr) == 0 {
-				continue
-			}
-
-			if tr[0] == '!' {
-				m.Notices.In() <- tr[1:]
-			} else {
-				m.Messages.In() <- tr
-			}
 		}
 	}
 }
@@ -144,7 +138,7 @@ func (m *ModelView) writeMessages(ctx context.Context) {
 					log.Println(err)
 					return err
 				} else {
-					fmt.Fprintf(v, "\"%s\"\n", message)
+					fmt.Fprintf(v, "%s\n", message)
 				}
 				return nil
 			})

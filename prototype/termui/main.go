@@ -45,8 +45,10 @@ func main() {
 	}
 	defer g.Close()
 
-	if _, err := mvvm.New(g); err != nil {
+	if mv, err := mvvm.New(g); err != nil {
 		log.Panicln(err)
+	} else {
+		mv.Attach(&mvvm.DemuxModel{})
 	}
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
