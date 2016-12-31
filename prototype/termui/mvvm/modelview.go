@@ -87,28 +87,28 @@ func (mv *ModelView) Notice(notice string) <-chan struct{} {
 
 			maxX, maxY := g.Size()
 			l := len(notice) / 2
-			if v, err := g.SetView(
-				noticeView,
-				maxX/2-l-1, maxY/2,
-				maxX/2+l+1, maxY/2+2,
-			); err != nil {
-				if err != gocui.ErrUnknownView {
-					log.Println(err)
-					return err
-				}
-				// TODO: This isn't quite the right handling of "a new notice"...
-				// This overwrites whatever is there, which means repeated notices can get squashed by
-				// each other.
-				v.Clear()
-				v.SetCursor(0, 0)
-				g.SetViewOnTop(noticeView)
-				fmt.Fprintln(v, notice)
-
-				if _, err := g.SetCurrentView(noticeView); err != nil {
-					log.Println(err)
-					return err
-				}
+			v, err := g.SetView(noticeView, maxX/2-l-1, maxY/2, maxX/2+l+1, maxY/2+2,)
+			if err != nil && err != gocui.ErrUnknownView {
+				// A genuine error.
+				log.Println(err)
+				return err
 			}
+
+			// TODO: This isn't quite the right handling of "a new notice"...
+			// This overwrites whatever is there, which means repeated notices can get squashed by
+			// each other.
+			// Can use ErrUnkonwnView to distinguish "new window" from "you just reset the existing one",
+			// but that's more complicated than I want to deal with in this case. Just overwrite.
+			v.Clear()
+			v.SetCursor(0, 0)
+			g.SetViewOnTop(noticeView)
+			fmt.Fprintln(v, notice)
+
+			if _, err = g.SetCurrentView(noticeView); err != nil {
+				log.Println(err)
+				return err
+			}
+
 			return nil
 		},
 	)
