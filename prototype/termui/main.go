@@ -4,8 +4,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"	
 	"net"
+	"os"
+	"time"
 
 	flog "github.com/cceckman/discoirc/prototype/termui/log"
 	"log"
@@ -52,75 +53,96 @@ func main() {
 
 	// Initialize and start the reader of the other program.
 	r := &RemoteReader{
-		pane: "hello",
-		gui: g,
+		view: "hello",
+		gui:  g,
 	}
-	r.Start()
+	_ = r
+	go r.Start()
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
 }
 
-// RemoteReader populates the given pane with values read from inputChannel.
+// RemoteReader populates the given view with values read from inputChannel.
 type RemoteReader struct {
-	pane string
-	inputChannel chan int
-
-	gui *gocui.Gui
+	view string
+	gui  *gocui.Gui
 }
 
-func (m RemoteReader) Start() {
-	m.listen()
-	go m.update()
-}
+func (m RemoteReader) listen() <-chan int {
+	out := make(chan int)
 
-func (m RemoteReader) listen() {
-	network := "unix"
-	addr := "/tmp/discod"
-	d, err := net.DialUnix(network, nil, &net.UnixAddr{addr, network})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m.inputChannel = make(chan int)
-	go func(){
-		defer d.Close()
-		defer close(m.inputChannel)
+	// Attempt reconnections, write results.
+	go func() {
+		timeout := 1
 		for {
-			i := 0
-			_, err := fmt.Fscanf(d, "%07d\n", &i)
+			network := "unix"
+			addr := "/tmp/discod"
+			d, err := net.DialUnix(network, nil, &net.UnixAddr{
+				Name: addr,
+				Net:  network,
+			})
 			if err != nil {
-				return
+				log.Print(err)
+
+				// exponential backoff in timeout
+				timeout *= 2
+				if timeout > 10 {
+					timeout = 10
+				}
+
+				// Sleep before retrying.
+				time.Sleep(time.Second * time.Duration(timeout))
+				continue
 			}
-			m.inputChannel <- i
+			// Success.
+			timeout = 1
+
+			for {
+				i := 0
+				_, err := fmt.Fscanf(d, "%07d\n", &i)
+				if err != nil {
+					// Try to reconnect.
+					d.Close()
+					break // the inner loop.
+				} else {
+					out <- i
+				}
+			}
 		}
 	}()
+
+	return out
 }
 
-// update continuously reads from inputChannel and writes events to the GUI
-func (m RemoteReader) update() {
-	for n := range m.inputChannel {
-		n := n
+// update continuously reads from the Listen channel and writes events to the GUI
+func (m RemoteReader) Start() {
+	c := m.listen()
+
+	for i := range c {
+		n := i
 		// Update to GUI must happen asynchronously; so, dispatch an event.
-		update := func(g *gocui.Gui) error {
-			if v, err := g.View(m.pane); err != nil {
+		m.gui.Execute(func(g *gocui.Gui) error {
+			if v, err := g.View(m.view); err != nil {
 				if err != gocui.ErrUnknownView {
+					log.Println(err)
 					return err
 				}
 			} else {
+				v.Clear()
 				// OK to update view.
 				fmt.Fprintf(v, "%07d\n", n)
 			}
 			return nil
-		}
-		m.gui.Execute(update)
+		})
 	}
 }
 
 var (
 	_ gocui.ManagerFunc = LayoutPanes
 )
+
 // LayoutPanes is a ManagerFunc that sizes the "hello" view.
 func LayoutPanes(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
