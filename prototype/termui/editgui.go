@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	_ "time"
+	"time"
 	"unicode"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
@@ -74,25 +74,26 @@ func (m *ModelView) Start(ctx context.Context) {
 	m.messages = bufchan.New(ctx)
 
 	// Generate some output for testing.
-	/*
-		go func() {
-			tick := time.NewTicker(time.Second)
-			defer tick.Stop()
-			for i := 0; true; i++ {
-				select {
-				case <-ctx.Done():
-					return
-				case m.input.In() <- fmt.Sprintf(" %d\n", i):
-					// Delay until the tick.
-					<-tick.C
-				}
-			}
-		}()
-	*/
+	// go m.genOuts(ctx)
 
 	go m.WatchInput(ctx)
 	go m.WriteMessages(ctx)
-	// go m.WriteNotices(ctx)
+	go m.WriteNotices(ctx)
+}
+
+// genOuts writes numbers to the input channel.
+func (m *ModelView) genOuts(ctx context.Context) {
+	tick := time.NewTicker(time.Second * 2)
+	defer tick.Stop()
+	for i := 0; true; i++ {
+		select {
+		case <-ctx.Done():
+			return
+		case m.input.In() <- fmt.Sprintf(" %d\n", i):
+			// Delay until the tick.
+			<-tick.C
+		}
+	}
 }
 
 // WatchInput watches the input channel, and demuxes into 'messages' and 'notices'.
@@ -140,6 +141,51 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 	return
 }
 
+// closeView is a callback that closes the View it is called on.
+func closeView(g *gocui.Gui, v *gocui.View) error {
+	// TODO: As per below, should allow focus to wander.
+	if _, err := g.SetCurrentView(inputView); err != nil {
+		return err
+	}
+	if err := g.DeleteView(noticesView); err != nil {
+		return err
+	}
+	return nil
+}
+
+// displayNotice displays a message in a 'notice' box.
+func displayNotice(notice string) func(*gocui.Gui) error {
+	return func(g *gocui.Gui) error {
+		maxX, maxY := g.Size()
+		l := len(notice) / 2
+		if v, err := g.SetView(
+			noticesView,
+			maxX/2-l-1, maxY/2,
+			maxX/2+l+1, maxY/2+2,
+		); err != nil {
+			if err != gocui.ErrUnknownView {
+				return err
+			}
+			// TODO: This isn't quite the right handling of "a new notice"...
+			// This overwrites whatever is there, which means repeated notices can get squashed by
+			// each other.
+			v.Clear()
+			v.SetCursor(0, 0)
+			g.SetViewOnTop(noticesView)
+			fmt.Fprintln(v, notice)
+
+			// Bind 'enter' to close.
+			err := g.SetKeybinding(noticesView, gocui.KeyEnter, gocui.ModNone, closeView)
+			if err != nil {
+				return err
+			}
+			g.SetCurrentView(noticesView)
+		}
+		return nil
+
+	}
+}
+
 // WriteNotices listens on the relevant channel, and writes pop-up notifications to the UI.
 func (m *ModelView) WriteNotices(ctx context.Context) {
 	for {
@@ -150,23 +196,8 @@ func (m *ModelView) WriteNotices(ctx context.Context) {
 			if len(notice) == 0 {
 				continue
 			}
-			m.ui.Execute(func(g *gocui.Gui) error {
-				maxX, maxY := g.Size()
-				l := len(notice) / 2
-				if v, err := g.SetView(
-					noticesView,
-					maxX/2-l-1, maxY/2,
-					maxX/2+l+1, maxY/2+2,
-				); err != nil {
-					if err != gocui.ErrUnknownView {
-						return err
-					}
-					v.Clear()
-					g.SetViewOnTop(noticesView)
-					fmt.Fprintln(v, notice)
-				}
-				return nil
-			})
+			m.ui.Execute(displayNotice(notice))
+
 		}
 	}
 }
