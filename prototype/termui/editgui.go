@@ -41,14 +41,14 @@ func SetupModelView(g *gocui.Gui) error {
 			return gocui.ErrQuit
 		},
 	); err != nil {
-		log.Panicln(err)
+		log.Println(err)
 		return err
 	}
 
 	// Bind 'enter' to close, on the notice view.
 	err := g.SetKeybinding(noticeView, gocui.KeyEnter, gocui.ModNone, closeView)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 		return err
 	}
 
@@ -139,7 +139,7 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 			}
 			m.ui.Execute(func(g *gocui.Gui) error {
 				if v, err := g.View(messagesView); err != nil {
-					log.Panicln(err)
+					log.Println(err)
 					return err
 				} else {
 					fmt.Fprintf(v, "\"%s\"\n", message)
@@ -158,7 +158,7 @@ func closeView(g *gocui.Gui, v *gocui.View) error {
 		if err == gocui.ErrUnknownView {
 			return nil
 		}
-		log.Panicln(err)
+		log.Println(err)
 		return err
 	}
 	return nil
@@ -175,7 +175,7 @@ func displayNotice(notice string) func(*gocui.Gui) error {
 			maxX/2+l+1, maxY/2+2,
 		); err != nil {
 			if err != gocui.ErrUnknownView {
-				log.Panicln(err)
+				log.Println(err)
 				return err
 			}
 			// TODO: This isn't quite the right handling of "a new notice"...
@@ -187,7 +187,7 @@ func displayNotice(notice string) func(*gocui.Gui) error {
 			fmt.Fprintln(v, notice)
 
 			if _, err := g.SetCurrentView(noticeView); err != nil {
-				log.Panicln(err)
+				log.Println(err)
 				return err
 			}
 		}
@@ -253,7 +253,7 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 	// Input view. Sink to the bottom of the screen.
 	if v, err := g.SetView(inputView, 0, maxY-inputHeight, maxX, maxY); err != nil {
 		if err != gocui.ErrUnknownView {
-			log.Panicln(err)
+			log.Println(err)
 			return err
 		}
 		v.Editable = true
@@ -270,7 +270,7 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 		focus = inputView
 	}
 	if _, err := g.SetCurrentView(focus); err != nil {
-		log.Panicln(err)
+		log.Println(err)
 		return err
 	}
 
@@ -278,7 +278,7 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 	// Set its bottom edge to just above the input view.
 	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-inputHeight); err != nil {
 		if err != gocui.ErrUnknownView {
-			log.Panicln(err)
+			log.Println(err)
 			return err
 		}
 		v.Autoscroll = true
