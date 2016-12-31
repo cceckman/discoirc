@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	_ "time"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
@@ -73,19 +74,19 @@ func (m *ModelView) Start(ctx context.Context) {
 
 	// Generate some output for testing.
 	/*
-	go func() {
-		tick := time.NewTicker(time.Second)
-		defer tick.Stop()
-		for i := 0; true; i++ {
-			select {
-			case <-ctx.Done():
-				return
-			case m.input.In() <- fmt.Sprintf(" %d\n", i):
-				// Delay until the tick.
-				<-tick.C
+		go func() {
+			tick := time.NewTicker(time.Second)
+			defer tick.Stop()
+			for i := 0; true; i++ {
+				select {
+				case <-ctx.Done():
+					return
+				case m.input.In() <- fmt.Sprintf(" %d\n", i):
+					// Delay until the tick.
+					<-tick.C
+				}
 			}
-		}
-	}()
+		}()
 	*/
 
 	go m.WatchInput(ctx)
@@ -104,9 +105,9 @@ func (m *ModelView) WatchInput(ctx context.Context) {
 				continue
 			}
 			if input[0] == '!' {
-				m.notices.In() <- input[1:]
+				m.notices.In() <- strings.TrimSpace(input[1:])
 			} else {
-				m.messages.In() <- input
+				m.messages.In() <- strings.TrimSpace(input)
 			}
 		}
 	}
@@ -124,7 +125,7 @@ func (m *ModelView) WriteMessages(ctx context.Context) {
 			}
 			m.ui.Execute(func(g *gocui.Gui) error {
 				if v, err := g.View(messagesView); err == nil {
-					fmt.Fprint(v, message)
+					fmt.Fprintf(v, "\"%s\"\n", message)
 				} else {
 					return err
 				}
@@ -185,11 +186,12 @@ func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifi
 		s := v.Buffer()
 		m.input.In() <- s
 		v.Clear()
+		v.SetCursor(0, 0)
 		/* // Scrolling disabled, at the moment...
-	case key == gocui.KeyArrowDown:
-		v.MoveCursor(0, 1, false)
-	case key == gocui.KeyArrowUp:
-		v.MoveCursor(0, -1, false)
+		case key == gocui.KeyArrowDown:
+			v.MoveCursor(0, 1, false)
+		case key == gocui.KeyArrowUp:
+			v.MoveCursor(0, -1, false)
 		*/
 	case key == gocui.KeyArrowLeft:
 		v.MoveCursor(-1, 0, false)
@@ -202,8 +204,10 @@ func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifi
 func (m *ModelView) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	// Input view.
-	if v, err := g.SetView(inputView, maxX-3, maxY-3, maxX-1, maxY-1); err != nil {
+	inputHeight := 2
+
+	// Input view. Sink to the bottom of the screen.
+	if v, err := g.SetView(inputView, 0, maxY-inputHeight, maxX, maxY); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -212,9 +216,13 @@ func (m *ModelView) Layout(g *gocui.Gui) error {
 		v.Wrap = true
 		v.Editor = m
 	}
+	// Input gets focus, to receive keyboard input.
+	// TODO: allow focus to swap between input and messages.
+	g.SetCurrentView(inputView)
 
-	// Messages view: auto-scrolling, from m.Messages.
-	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-1); err != nil {
+	// Messages view: auto-scrolling, from m.messages.
+	// Set its bottom edge to just above the input view.
+	if v, err := g.SetView(messagesView, 0, 0, maxX-1, maxY-inputHeight); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
