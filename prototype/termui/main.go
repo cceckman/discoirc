@@ -75,7 +75,6 @@ func (m RemoteReader) listen() <-chan int {
 
 	// Attempt reconnections, write results.
 	go func() {
-		timeout := 1
 		for {
 			network := "unix"
 			addr := "/tmp/discod"
@@ -86,18 +85,10 @@ func (m RemoteReader) listen() <-chan int {
 			if err != nil {
 				log.Print(err)
 
-				// exponential backoff in timeout
-				timeout *= 2
-				if timeout > 10 {
-					timeout = 10
-				}
-
 				// Sleep before retrying.
-				time.Sleep(time.Second * time.Duration(timeout))
+				time.Sleep(time.Second)
 				continue
 			}
-			// Success.
-			timeout = 1
 
 			for {
 				i := 0

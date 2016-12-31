@@ -87,9 +87,32 @@ func main() {
 
 			// Start a background writer.
 			go func(ctx context.Context, n int, conn net.Conn) {
-				// TODO: needs to reliably handle closed other end.
 				defer conn.Close()
 
+				// Explicitly respond to channel getting closed.
+				// May be a no-op, if the write fails first.
+				newCtx, cancel := context.WithCancel(ctx)
+				go func() {
+					defer cancel()
+
+					b := []byte{}
+					err := conn.SetReadDeadline(time.Time{}) // set no deadline
+					if err != nil {
+						log.Println(err)
+					}
+
+					log.Printf("watching connection %d for close\n", n)
+					// Block until "read" gets "EOF".
+					for {
+						if _, err := conn.Read(b); err != nil {
+							log.Printf("connection %d is closed: %v.\n", n, err)
+							// Stream closed.
+							return
+						}
+					}
+				}()
+
+				// Rate-limit writes, one per second, just for fun.
 				ticker := time.NewTicker(time.Second)
 				defer ticker.Stop()
 
@@ -98,13 +121,18 @@ func main() {
 
 				for prime := range c {
 					select {
-					case <-ctx.Done():
+					case <-newCtx.Done():
 						return
 					case <-ticker.C:
-						// pass, see below.
+						fmt.Printf("Tick on %d: %d\n", n, prime)
+						conn.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
+
+						_, err := fmt.Fprintf(conn, "%07d\n", prime)
+						if err != nil {
+							log.Printf("write error on channel %d: %v\n", n, err)
+							return
+						}
 					}
-					fmt.Printf("Tick on %d: %d\n", n, prime)
-					fmt.Fprintf(conn, "%07d\n", prime)
 				}
 			}(ctx, cid, newCon)
 		}
