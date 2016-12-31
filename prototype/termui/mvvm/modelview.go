@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
 	"github.com/jroimartin/gocui"
@@ -22,13 +21,8 @@ const (
 
 // ModelView provides Go interfaces to the UI behavior.
 type ModelView struct {
-
-	// Notices is a string channel. When sent a message, it displays it to the user in a pop-up.
-	Notices *bufchan.Bufchan
-	// Input is a string channel, on which the user's input is received.
-	Input *bufchan.Bufchan
-	// Messages is a string channel. When send a message, it displays it in the user's mesage pane.
-	Messages *bufchan.Bufchan
+	// These channels handle the interface between the UI and Model.
+	input *bufchan.Bufchan
 
 	// ui is the UI object this ModelView is attached to.
 	ui *gocui.Gui
@@ -81,20 +75,42 @@ func (mv *ModelView) Attach(m Model) {
 	mv.models <- m
 }
 
+// Notice sends a notice to the user.
+// It is non-blocking; it will return before the notice is actually displayed.
+func (mv *ModelView) Notice(notice string) {
+	mv.ui.Execute(displayNotice(notice))
+}
+
+// UserInput returns a channel on which the user's input can be read.
+// It is not mirrored- first consumer gets it!
+func (mv *ModelView) UserInput() <-chan string {
+	return mv.input.Out()
+}
+
+// Message writes a message to the user's log.
+// It is non-blocking; it will return before the message is actually displayed.
+func (mv *ModelView) Message(message string) {
+	if len(message) == 0 {
+		return
+	}
+	mv.ui.Execute(func(g *gocui.Gui) error {
+		if v, err := g.View(messagesView); err != nil {
+			log.Println(err)
+			return err
+		} else {
+			fmt.Fprintf(v, "%s\n", message)
+		}
+		return nil
+	})
+}
+
 // Type enforcement.
 var _ gocui.Manager = &ModelView{}
 var _ gocui.Editor = &ModelView{}
 
 // start begins background operations: taking inputs, and attaching Models.
 func (mv *ModelView) start(ctx context.Context) {
-	mv.Notices = bufchan.New(ctx)
-	mv.Input = bufchan.New(ctx)
-	mv.Messages = bufchan.New(ctx)
-
-	// Generate some output for testing.
-	// go m.genOuts(ctx)
-	go mv.writeMessages(ctx)
-	go mv.writeNotices(ctx)
+	mv.input = bufchan.New(ctx)
 
 	// Hang around, listening for Models to be attached.
 	for {
@@ -107,60 +123,6 @@ func (mv *ModelView) start(ctx context.Context) {
 	}
 }
 
-// genOuts writes numbers to the input channel.
-// It's meant for testing.
-func (m *ModelView) genOuts(ctx context.Context) {
-	tick := time.NewTicker(time.Second * 2)
-	defer tick.Stop()
-	for i := 0; true; i++ {
-		select {
-		case <-ctx.Done():
-			return
-		case m.Input.In() <- fmt.Sprintf(" %d\n", i):
-			// Delay until the tick.
-			<-tick.C
-		}
-	}
-}
-
-// writeMessages listens on the relevant channel, and writes messages to the UI.
-func (m *ModelView) writeMessages(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case message := <-m.Messages.Out():
-			if len(message) == 0 {
-				continue
-			}
-			m.ui.Execute(func(g *gocui.Gui) error {
-				if v, err := g.View(messagesView); err != nil {
-					log.Println(err)
-					return err
-				} else {
-					fmt.Fprintf(v, "%s\n", message)
-				}
-				return nil
-			})
-		}
-	}
-}
-
-// writeNotices listens on the relevant channel, and writes pop-up notifications to the UI.
-func (m *ModelView) writeNotices(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case notice := <-m.Notices.Out():
-			if len(notice) == 0 {
-				continue
-			}
-			m.ui.Execute(displayNotice(notice))
-
-		}
-	}
-}
 
 // Edit implements gocui.Editor for ModelView.
 // When a line is entered from the input, the buffer is cleared, and the input is sent to m.Input.
@@ -179,7 +141,7 @@ func (m *ModelView) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifi
 	case key == gocui.KeyEnter:
 		// Commit this line to the input channel.
 		s := v.Buffer()
-		m.Input.In() <- s
+		m.input.In() <- s
 		v.Clear()
 		v.SetCursor(0, 0)
 		/* // Scrolling disabled, at the moment...

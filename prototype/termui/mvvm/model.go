@@ -28,7 +28,7 @@ func (d *DemuxModel) Run(ctx context.Context, mv *ModelView) {
 		select {
 		case <-ctx.Done():
 			return
-		case input := <-mv.Input.Out():
+		case input := <-mv.UserInput():
 			// TODO: I'm being unfriendly; RTL should absolutely be supported by this app.
 			tr := strings.TrimRightFunc(input, unicode.IsSpace)
 			if len(tr) == 0 {
@@ -36,9 +36,9 @@ func (d *DemuxModel) Run(ctx context.Context, mv *ModelView) {
 			}
 
 			if tr[0] == '!' {
-				mv.Notices.In() <- tr[1:]
+				mv.Notice(tr[1:])
 			} else {
-				mv.Messages.In() <- fmt.Sprintf("\"%s\"", tr)
+				mv.Message(fmt.Sprintf("\"%s\"", tr))
 			}
 		}
 	}
