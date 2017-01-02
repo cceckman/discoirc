@@ -192,15 +192,9 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 			for i := 0; i < count; i++ {
 				tm := <-ticker.C
 				s := tm.Format(timeFmt)
-				// Assert that the channel blocks for at most this amount of time.
-				// Should be pretty small.
-				timeout := time.After(time.Microsecond * 100)
-				select {
-				case c <- s:
-					continue
-				case <-timeout:
-					t.Errorf("iteration %d timed out", i)
-				}
+				// We aren't asserting anything about the timings here,
+				// though we should if they're highly variable.
+				c <- s
 			}
 			// Close the channel at the end.
 			close(c)
@@ -260,7 +254,7 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 }
 
 // Test broadcaster
-func _TestBroadcaster(t *testing.T) {
+func TestBroadcaster(t *testing.T) {
 	for _, rates := range []struct {
 		w  time.Duration
 		rs []time.Duration

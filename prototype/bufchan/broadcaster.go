@@ -46,7 +46,7 @@ func (lb *listBroadcaster) broadcast() {
 					lb.receivers[i] = lb.receivers[newLen]
 					lb.receivers[newLen] = nil // Allow GC of the *Bufchan (once other threads complete too.)
 					lb.receivers = lb.receivers[:newLen]
-					break
+					break // from the loop over receivers.
 				}
 			}
 		case add := <-lb.addReceivers:
@@ -67,6 +67,7 @@ func (lb *listBroadcaster) broadcast() {
 		close(r.In())
 		lb.receivers[i] = nil // allow GC, when other threads complete.
 	}
+	lb.receivers = []*Bufchan{}
 
 	// Hang around indefinitely to handle the add / remove channels.
 	// TODO: I don't like this. This tail-end leaks the entire listBroadcaster, keeping it around
