@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/cceckman/discoirc/prototype/bufchan"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -99,4 +100,72 @@ func TestRwRates(t *testing.T) {
 		name := fmt.Sprintf("r=%s/w=%s", rates.r, rates.w)
 		t.Run(name, testAtRates(rates.r, rates.w))
 	}
+}
+
+// Test that closing input closes output, after N items.
+func testClose(n int) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, _ := context.WithCancel(context.Background())
+		c := bufchan.New(ctx)
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		// Start writer...
+		go func() {
+			for i := 0; i < n; i++ {
+				s := strconv.Itoa(i)
+				// Assert that the channel blocks for at most this amount of time.
+				// Should be pretty small.
+				timeout := time.After(time.Microsecond * 10)
+				select {
+				case c.In() <- s:
+					t.Logf("wrote %d", i)
+					continue
+				case <-timeout:
+					t.Errorf("writer iteration %d timed out", i)
+				}
+			}
+			close(c.In())
+			wg.Done()
+		}()
+		// ...and reader.
+		go func() {
+			i := 0
+			done := false
+			for !done {
+				select {
+				case s, ok := <-c.Out():
+					x, _ := strconv.Atoi(s)
+					t.Logf("got %d", x)
+
+					if ok {
+						if x != i {
+							t.Errorf("reader got: %d want: %d", x, i)
+						}
+						i++
+					} else {
+						// Channel closed, as expected.
+						done = true
+					}
+				}
+			}
+			if i != n {
+				t.Errorf("reader got: %d want: %d", i, n)
+			}
+			wg.Done()
+		}()
+		wg.Wait()
+	}
+}
+
+// Test that closing input closes output.
+func TestClose(t *testing.T) {
+	for _, n := range []int{
+		0, 1, 10, 20,
+	} {
+		name := fmt.Sprintf("n=%d", n)
+		t.Run(name, testClose(n))
+	}
+
 }

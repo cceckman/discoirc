@@ -33,6 +33,7 @@ func (x *Bufchan) Out() <-chan string {
 
 // mirror reads input as available, and flushes the buffer as the output is available.
 // When cancelled (via Context), it closes the output but does not flush it.
+// When its input channel is closed, it closes the output channel once the buffer is drained.
 // It should be invoked as a goroutine (e.g. go foo.mirror(ctx))
 func (x *Bufchan) mirror(ctx context.Context) {
 	defer close(x.out)
@@ -42,16 +43,24 @@ func (x *Bufchan) mirror(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case s := <-x.in:
-				x.buf = append(x.buf, s)
+			case s, ok := <-x.in:
+				if ok {
+					x.buf = append(x.buf, s)
+				} else {
+					// Input channel closed; we're done here.
+					return
+				}
 			}
 		} else {
 			// Select on input, output, and cancelled.
 			select {
 			case <-ctx.Done():
 				return
-			case s := <-x.in:
-				x.buf = append(x.buf, s)
+			case s, ok := <-x.in:
+				if ok {
+					x.buf = append(x.buf, s)
+				}
+				// Don't close here; there's still buffer to be written.
 			case x.out <- x.buf[0]:
 				x.buf = x.buf[1:]
 			}
