@@ -179,12 +179,12 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel() // Cleanup.
-		c := make(chan string)
 
 		var wg sync.WaitGroup
 		wg.Add(1 + len(rs))
 
-		b := bufchan.NewBroadcaster(c)
+		b := bufchan.NewBroadcaster()
+		c := b.Send()
 
 		// Start writer...
 		go func() {
@@ -216,14 +216,22 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 
 				for i := 0; i < count; i++ {
 					<-ticker.C
+
 					// Can't make any assertions about how long reader blocks for;
 					// may be for a long time, if the writer is slower than the reader.
-					tm, err := time.Parse(timeFmt, <-list)
+					x := <-list
+					v, ok := x.(string)
+					if !ok {
+						t.Errorf("non-string value %v on channel at index %d", v, i)
+						continue
+					}
+					tm, err := time.Parse(timeFmt, v)
 					if err != nil {
 						t.Errorf("error in reader: %v", err)
 						continue
 					}
 					since := tm.Sub(lastTime)
+					// a Ticker "adjusts the intervals or drops ticks to make up for slow receivers".
 					if since < w {
 						t.Logf("read timestamps on iter %d were faster than expected: got %s want %s",
 							i, since, w,
@@ -261,6 +269,13 @@ func TestBroadcaster(t *testing.T) {
 		rs []time.Duration
 	}{
 		{time.Millisecond, []time.Duration{time.Millisecond}},
+		{time.Microsecond * 10, []time.Duration{time.Microsecond * 10, time.Microsecond * 10}},
+		{time.Microsecond * 10, []time.Duration{time.Microsecond * 5, time.Microsecond * 100}},
+		{time.Microsecond * 10, []time.Duration{
+			time.Microsecond * 1, time.Microsecond * 2, time.Microsecond * 5,
+			time.Microsecond * 10, time.Microsecond * 20, time.Microsecond * 50,
+			time.Microsecond * 100, time.Microsecond * 200, time.Microsecond * 500,
+		}},
 	} {
 		ss := make([]string, len(rates.rs))
 		for i, r := range rates.rs {
