@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/cceckman/discoirc/prototype/bufchan"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -166,6 +167,112 @@ func TestClose(t *testing.T) {
 	} {
 		name := fmt.Sprintf("n=%d", n)
 		t.Run(name, testClose(n))
+	}
+
+}
+
+// testReceivers tests a broadcaster with a writer at rate w, and receivers at rates rs.
+func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
+	return func(t *testing.T) {
+		timeFmt := time.RFC3339Nano
+		count := 100
+
+		ctx, _ := context.WithCancel(context.Background())
+		c := make(chan string)
+
+		var wg sync.WaitGroup
+		wg.Add(1 + len(rs))
+
+		b := bufchan.NewBroadcaster(c)
+
+		// Start writer...
+		go func() {
+			ticker := time.NewTicker(w)
+			defer ticker.Stop()
+			for i := 0; i < count; i++ {
+				tm := <-ticker.C
+				s := tm.Format(timeFmt)
+				// Assert that the channel blocks for at most this amount of time.
+				// Should be pretty small.
+				timeout := time.After(time.Microsecond * 10)
+				select {
+				case c <- s:
+					continue
+				case <-timeout:
+					t.Errorf("iteration %d timed out", i)
+				}
+			}
+			// Close the channel at the end.
+			close(c)
+			wg.Done()
+		}()
+
+		// Start readers
+		for n, r := range rs {
+			n, r := n, r
+			go func() {
+				list := b.Listen(ctx)
+
+				ticker := time.NewTicker(r)
+				defer ticker.Stop()
+
+				lastTime := time.Time{}
+				var zero time.Duration
+
+				for i := 0; i < count; i++ {
+					<-ticker.C
+					// Can't make any assertions about how long reader blocks for;
+					// may be for a long time, if the writer is slower than the reader.
+					tm, err := time.Parse(timeFmt, <-list)
+					if err != nil {
+						t.Errorf("error in reader: %v", err)
+						continue
+					}
+					since := tm.Sub(lastTime)
+					if since < w {
+						t.Logf("read timestamps on iter %d were faster than expected: got %s want %s",
+							i, since, w,
+						)
+					}
+
+					if since < zero {
+						t.Errorf("went backwards in time: %s to %s (%s)",
+							lastTime.Format(timeFmt),
+							tm.Format(timeFmt),
+							since,
+						)
+					}
+					lastTime = tm
+				}
+				// After a short sync delay, channel should be closed; have written, and read, count timestamps.
+				time.Sleep(w)
+				if _, ok := <-list; ok {
+					t.Errorf("expected input channel %d to be closed, was open", n)
+				}
+
+				wg.Done()
+			}()
+		}
+
+		// Wait for reader and writer to be done...
+		wg.Wait()
+	}
+}
+
+// Test broadcaster
+func TestBroadcaster(t *testing.T) {
+	for _, rates := range []struct {
+		w  time.Duration
+		rs []time.Duration
+	}{
+		{time.Millisecond, []time.Duration{time.Millisecond}},
+	} {
+		ss := make([]string, len(rates.rs))
+		for i, r := range rates.rs {
+			ss[i] = r.String()
+		}
+		name := fmt.Sprintf("w=%s/r=[%s]", rates.w, strings.Join(ss, ","))
+		t.Run(name, testReceivers(rates.w, rates.rs))
 	}
 
 }
