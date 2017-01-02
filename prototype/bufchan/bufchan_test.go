@@ -16,6 +16,7 @@ import (
 func testAtRates(r, w time.Duration) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // clean up
 		c := bufchan.New(ctx)
 
 		timeFmt := time.RFC3339Nano
@@ -79,10 +80,8 @@ func testAtRates(r, w time.Duration) func(*testing.T) {
 			wg.Done()
 		}()
 
-		// Wait for reader and writer to be done...
+		// Wait for reader and writer to be done.
 		wg.Wait()
-		// Then clean up.
-		cancel()
 	}
 }
 
@@ -106,7 +105,8 @@ func TestRwRates(t *testing.T) {
 // Test that closing input closes output, after N items.
 func testClose(n int) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, _ := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // cleanup
 		c := bufchan.New(ctx)
 
 		var wg sync.WaitGroup
@@ -177,7 +177,8 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 		timeFmt := time.RFC3339Nano
 		count := 100
 
-		ctx, _ := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // Cleanup.
 		c := make(chan string)
 
 		var wg sync.WaitGroup
