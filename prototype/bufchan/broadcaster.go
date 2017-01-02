@@ -114,7 +114,7 @@ func NewStringBroadcaster() StringBroadcaster {
 	}
 	// Mirror sending channel.
 	go func() {
-		send := r.Send()
+		send := r.b.Send()
 		defer close(send)
 		for str := range r.ssend {
 			send <- str
