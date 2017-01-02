@@ -52,9 +52,8 @@ func NewClient() C {
 func (c *client) Handle(network string) irc.HandlerFunc {
 	return func(conn *irc.Conn, line *irc.Line) {
 		c.RLock()
-		defer c.RUnlock()
-
 		_, ok := c.networks[network]
+		c.RUnlock()
 		if !ok {
 			// Disconnected before this handler was processed. Return silently.
 			return
@@ -106,24 +105,38 @@ func (c *client) attachHandlers(name string, cli *irc.Conn) error {
 	cli.HandleFunc(
 		irc.CONNECTED,
 		func(conn *irc.Conn, line *irc.Line) {
-			c.receive <- fmt.Sprintf("[%s] Starting connection", name)
-			c.Lock()
-			defer c.Unlock()
+			msg := fmt.Sprintf("[%s] Connected", name)
+			log.Println(msg)
 
+			c.Lock()
 			c.networks[name] = network{conn: conn}
-			c.receive <- fmt.Sprintf("[%s] Connected", name)
+			c.Unlock()
+			c.receive <- msg
 		},
 	)
 	cli.HandleFunc(
 		irc.DISCONNECTED,
 		func(conn *irc.Conn, line *irc.Line) {
-			c.Lock()
-			defer c.Unlock()
+			msg := fmt.Sprintf("[%s] Disconnected", name)
+			log.Println(msg)
 
+			c.Lock()
 			delete(c.networks, name)
-			c.receive <- fmt.Sprintf("[%s] Disconnected", name)
+			c.Unlock()
+			defer c.Unlock()
+			c.receive <- msg
 		},
 	)
+
+	handle := c.Handle(name)
+	for _, event := range []string{
+		irc.REGISTER, irc.CAP, irc.CTCP, irc.CTCPREPLY, irc.ERROR,
+		irc.MODE, irc.NOTICE, irc.OPER, irc.PASS, irc.PING, irc.PONG,
+		irc.PRIVMSG, irc.QUIT, irc.USER, irc.VERSION, irc.VHOST, irc.WHO,
+		irc.WHOIS,
+	} {
+		cli.Handle(event, handle)
+	}
 	return nil
 }
 
@@ -169,7 +182,6 @@ func (c *client) Disconnect() []error {
 	}
 
 	c.RLock()
-	defer c.RUnlock()
 	// Internal check; make sure they are actually disconnected.
 	for name, _ := range c.networks {
 		results = append(
@@ -177,6 +189,7 @@ func (c *client) Disconnect() []error {
 			fmt.Errorf("network %s still present in connected nets table after Close()", name),
 		)
 	}
+	c.RUnlock()
 
 	close(c.receive)
 

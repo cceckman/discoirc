@@ -55,7 +55,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println("Connection complete.")
+	log.Println("Connection complete. Connected networks: ")
+	for _, net := range c.ConnectedNetworks() {
+		log.Println("\t", net)
+	}
 
 	time.Sleep(time.Second * 10)
 	log.Println("Done waiting! Cancelling context.")
