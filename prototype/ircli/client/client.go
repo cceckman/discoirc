@@ -19,7 +19,7 @@ type C interface {
 	Disconnect() []error
 
 	// Listen returns a channel on which messages are relayed.
-	Listen(ctx context.Context) <-chan string
+	Listen(ctx context.Context) <-chan interface{}
 	// Set the current target to channel or nick 'target' on the given network.
 	// SetTarget(network, target error) error
 	// Send(msg string) error
@@ -29,8 +29,8 @@ type client struct {
 	networks map[string]network
 	sync.RWMutex
 
-	receive chan<- string
-	bufchan.StringBroadcaster
+	receive chan<- interface{}
+	bufchan.Broadcaster
 }
 
 type network struct {
@@ -38,9 +38,9 @@ type network struct {
 }
 
 func NewClient() C {
-	bc := bufchan.NewStringBroadcaster()
+	bc := bufchan.NewBroadcaster()
 	c := &client{
-		StringBroadcaster: bc,
+		Broadcaster: bc,
 		networks:          make(map[string]network),
 		receive:           bc.Send(),
 	}
@@ -69,23 +69,28 @@ func (c *client) Connect() []error {
 	errs := make(chan error)
 	var wg sync.WaitGroup
 
-	for network, cfg := range c.LoadConfigs() {
+	for name, cfg := range c.LoadConfigs() {
 		wg.Add(1)
-		log.Println("Launching connector for network", network)
+		log.Println("Launching connector for network", name)
 		go func(name string, cfg *irc.Config) {
 			// Mark connection as completed when we're done here.
 			defer wg.Done()
 
-			log.Println("Attempting to connect to", network)
-			cli := irc.Client(cfg)
-			c.attachHandlers(name, cli)
+			log.Println("Attempting to connect to", name)
+			conn := irc.Client(cfg)
 
-			if err := cli.Connect(); err != nil {
+			c.Lock()
+			c.networks[name] = network{conn: conn}
+			c.Unlock()
+
+			c.attachHandlers(name, conn)
+
+			if err := conn.Connect(); err != nil {
 				e := fmt.Errorf("error connecting to %s: %v", name, err)
 				log.Println(e)
 				errs <- e
 			}
-		}(network, cfg)
+		}(name, cfg)
 	}
 
 	go func() {
@@ -101,20 +106,22 @@ func (c *client) Connect() []error {
 	return results
 }
 
-func (c *client) attachHandlers(name string, cli *irc.Conn) error {
-	cli.HandleFunc(
+func (c *client) attachHandlers(name string, conn *irc.Conn) error {
+	conn.HandleFunc(
 		irc.CONNECTED,
 		func(conn *irc.Conn, line *irc.Line) {
 			msg := fmt.Sprintf("[%s] Connected", name)
 			log.Println(msg)
 
-			c.Lock()
-			c.networks[name] = network{conn: conn}
-			c.Unlock()
-			c.receive <- msg
+			// Shouldn't have to background this, since receive should be ~non-blocking.
+			// TODO put back in the event thread.
+			go func() {
+				c.receive <- msg
+				log.Printf("[%s] wrote to receive channel", name)
+			}()
 		},
 	)
-	cli.HandleFunc(
+	conn.HandleFunc(
 		irc.DISCONNECTED,
 		func(conn *irc.Conn, line *irc.Line) {
 			msg := fmt.Sprintf("[%s] Disconnected", name)
@@ -123,8 +130,13 @@ func (c *client) attachHandlers(name string, cli *irc.Conn) error {
 			c.Lock()
 			delete(c.networks, name)
 			c.Unlock()
-			defer c.Unlock()
-			c.receive <- msg
+
+			// Shouldn't have to background this, since receive should be ~non-blocking.
+			// TODO put back in the event thread.
+			go func() {
+				c.receive <- msg
+				log.Printf("[%s] wrote to receive channel", name)
+			}()
 		},
 	)
 
@@ -135,7 +147,9 @@ func (c *client) attachHandlers(name string, cli *irc.Conn) error {
 		irc.PRIVMSG, irc.QUIT, irc.USER, irc.VERSION, irc.VHOST, irc.WHO,
 		irc.WHOIS,
 	} {
-		cli.Handle(event, handle)
+		// conn.Handle(event, handle)
+		_ = event
+		_ = handle
 	}
 	return nil
 }
