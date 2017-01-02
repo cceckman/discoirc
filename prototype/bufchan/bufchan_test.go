@@ -16,6 +16,7 @@ import (
 func testAtRates(r, w time.Duration) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // clean up
 		c := bufchan.New(ctx)
 
 		timeFmt := time.RFC3339Nano
@@ -79,10 +80,8 @@ func testAtRates(r, w time.Duration) func(*testing.T) {
 			wg.Done()
 		}()
 
-		// Wait for reader and writer to be done...
+		// Wait for reader and writer to be done.
 		wg.Wait()
-		// Then clean up.
-		cancel()
 	}
 }
 
@@ -106,7 +105,8 @@ func TestRwRates(t *testing.T) {
 // Test that closing input closes output, after N items.
 func testClose(n int) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, _ := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // cleanup
 		c := bufchan.New(ctx)
 
 		var wg sync.WaitGroup
@@ -118,7 +118,7 @@ func testClose(n int) func(*testing.T) {
 				s := strconv.Itoa(i)
 				// Assert that the channel blocks for at most this amount of time.
 				// Should be pretty small.
-				timeout := time.After(time.Microsecond * 10)
+				timeout := time.After(time.Microsecond * 100)
 				select {
 				case c.In() <- s:
 					t.Logf("wrote %d", i)
@@ -177,13 +177,14 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 		timeFmt := time.RFC3339Nano
 		count := 100
 
-		ctx, _ := context.WithCancel(context.Background())
-		c := make(chan string)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel() // Cleanup.
 
 		var wg sync.WaitGroup
 		wg.Add(1 + len(rs))
 
-		b := bufchan.NewBroadcaster(c)
+		b := bufchan.NewBroadcaster()
+		c := b.Send()
 
 		// Start writer...
 		go func() {
@@ -192,15 +193,9 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 			for i := 0; i < count; i++ {
 				tm := <-ticker.C
 				s := tm.Format(timeFmt)
-				// Assert that the channel blocks for at most this amount of time.
-				// Should be pretty small.
-				timeout := time.After(time.Microsecond * 10)
-				select {
-				case c <- s:
-					continue
-				case <-timeout:
-					t.Errorf("iteration %d timed out", i)
-				}
+				// We aren't asserting anything about the timings here,
+				// though we should if they're highly variable.
+				c <- s
 			}
 			// Close the channel at the end.
 			close(c)
@@ -221,14 +216,22 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 
 				for i := 0; i < count; i++ {
 					<-ticker.C
+
 					// Can't make any assertions about how long reader blocks for;
 					// may be for a long time, if the writer is slower than the reader.
-					tm, err := time.Parse(timeFmt, <-list)
+					x := <-list
+					v, ok := x.(string)
+					if !ok {
+						t.Errorf("non-string value %v on channel at index %d", v, i)
+						continue
+					}
+					tm, err := time.Parse(timeFmt, v)
 					if err != nil {
 						t.Errorf("error in reader: %v", err)
 						continue
 					}
 					since := tm.Sub(lastTime)
+					// a Ticker "adjusts the intervals or drops ticks to make up for slow receivers".
 					if since < w {
 						t.Logf("read timestamps on iter %d were faster than expected: got %s want %s",
 							i, since, w,
@@ -266,6 +269,13 @@ func TestBroadcaster(t *testing.T) {
 		rs []time.Duration
 	}{
 		{time.Millisecond, []time.Duration{time.Millisecond}},
+		{time.Microsecond * 10, []time.Duration{time.Microsecond * 10, time.Microsecond * 10}},
+		{time.Microsecond * 10, []time.Duration{time.Microsecond * 5, time.Microsecond * 100}},
+		{time.Microsecond * 10, []time.Duration{
+			time.Microsecond * 1, time.Microsecond * 2, time.Microsecond * 5,
+			time.Microsecond * 10, time.Microsecond * 20, time.Microsecond * 50,
+			time.Microsecond * 100, time.Microsecond * 200, time.Microsecond * 500,
+		}},
 	} {
 		ss := make([]string, len(rates.rs))
 		for i, r := range rates.rs {

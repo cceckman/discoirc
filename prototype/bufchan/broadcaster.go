@@ -1,78 +1,142 @@
-// Provides for a set of buffered output channels on an input.
 package bufchan
 
 import (
 	"context"
-	"sync"
 )
 
-// A Broadcaster listens on a string channel, and writes to all of several listeners.
-// It is non-blocking; slower Listen()ers do not block faster ones.
+// A Broadcaster duplicates values Send()ed to it to all Listen()ers.
 type Broadcaster interface {
-	Listen(context.Context) <-chan string
+	Send() chan<- interface{}
+	Listen(context.Context) <-chan interface{}
 }
 
-// Creates a new Broadcaster on the given input channel.
-func NewBroadcaster(c <-chan string) Broadcaster {
-	r := &listBroadcaster{input: c}
-	go r.broadcast()
-	return r
+/*
+Based on @rogpeppe and @keroproxx520 at
+https://rogpeppe.wordpress.com/2009/12/01/concurrent-idioms-1-broadcasting-values-in-go-with-linked-channels/
+and its comments.
+*/
+
+//
+type receiver struct {
+	next chan broadcast
 }
 
-// listBroadcaster implements Broadcaster as a list of Bufchans.
-type listBroadcaster struct {
-	input <-chan string
-
-	receivers []*Bufchan
-	sync.RWMutex
+type broadcast struct {
+	next chan broadcast
+	v    interface{}
 }
 
-// broadcast listens on input, and writes to receivers.
-func (lb *listBroadcaster) broadcast() {
-	for {
-		x, ok := <-lb.input
-		lb.RLock()
-		// Don't defer; explicitly unlock after loop over receivers.
-		for _, receiver := range lb.receivers {
-			if ok {
-				receiver.In() <- x
-			} else {
-				close(receiver.In())
-			}
-		}
-		lb.RUnlock()
+type broadcaster struct {
+	next  chan broadcast
+	sendc chan<- interface{}
+}
 
-		if !ok {
-			// Input is closed, all receivers closed in above. All done!
-			break
-		}
+func NewBroadcaster() Broadcaster {
+	next := make(chan broadcast, 1)
+	sendc := make(chan interface{})
+	b := &broadcaster{
+		next:  next,
+		sendc: sendc,
 	}
+	go func() {
+		for v := range sendc {
+			c := make(chan broadcast, 1)
+			newb := broadcast{next: c, v: v}
+			b.next <- newb
+			b.next = c
+		}
+		// Input channel closed; propagate to clients with an empty broadcast.
+		b.next <- broadcast{}
+	}()
+
+	return b
 }
 
-func (lb *listBroadcaster) Listen(ctx context.Context) <-chan string {
-	lb.Lock()
-	defer lb.Unlock()
+func (b *broadcaster) Send() chan<- interface{} {
+	return b.sendc
+}
 
-	n := New(ctx)
-	lb.receivers = append(lb.receivers, n)
+func (b *broadcaster) Listen(ctx context.Context) <-chan interface{} {
+	out := make(chan interface{})
+	// TODO: is there not a race condition in reading this value?
+	r := receiver{b.next}
+
 	go func() {
-		// Remove from receivers once the context is cancelled.
-		<-ctx.Done()
+		defer close(out)
 
-		lb.Lock()
-		defer lb.Unlock()
-		for i, r := range lb.receivers {
-			if r == n {
-				// Nice pointer: https://github.com/golang/go/wiki/SliceTricks
-				// "delete without preserving order". That's fine.
-				newLen := len(lb.receivers) - 1
-				lb.receivers[i] = lb.receivers[newLen]
-				lb.receivers[newLen] = nil // Allow GC of the *Bufchan (once other threads complete too.)
-				lb.receivers = lb.receivers[:newLen]
-				break
+		for {
+			// Wait for either cancellation, or a new Broadcast to come down the pipe.
+			select {
+			case <-ctx.Done():
+				return
+			case b := <-r.next:
+				// New value came down the pipe.
+				// Take the value,
+				v := b.v
+				// give the broadcast back, for the next listener to take,
+				r.next <- b
+				// update our pointer to the 'next' channel.
+				r.next = b.next
+
+				if r.next == nil {
+					// There will be no 'next' value, i.e. input channel is closed.
+					return
+				}
+
+				select {
+				case <-ctx.Done():
+					return
+				case out <- v:
+					// sent the value to the listener.
+				}
 			}
 		}
 	}()
 
-	return n.Out()
+	return out
+}
+
+// StringBroadcaster is a Broadcaster with methods wrapped to use string channels.
+type StringBroadcaster interface {
+	Send() chan<- string
+	Listen(context.Context) <-chan string
+}
+
+type stringBroadcaster struct {
+	ssend chan string
+	b     Broadcaster
+}
+
+func NewStringBroadcaster() StringBroadcaster {
+	r := &stringBroadcaster{
+		ssend: make(chan string),
+		b:     NewBroadcaster(),
+	}
+	// Mirror sending channel.
+	go func() {
+		send := r.Send()
+		defer close(send)
+		for str := range r.ssend {
+			send <- str
+		}
+	}()
+
+	return r
+}
+
+func (s *stringBroadcaster) Send() chan<- string {
+	return s.ssend
+}
+
+func (s *stringBroadcaster) Listen(ctx context.Context) <-chan string {
+	out := make(chan string)
+	go func() {
+		defer close(out)
+		for v := range s.b.Listen(ctx) {
+			// Yes, panic if it's not a string. Only way to send is via the typed Send, above.
+			out <- v.(string)
+		}
+	}()
+
+	return out
 }
