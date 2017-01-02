@@ -48,9 +48,13 @@ func main() {
 	}()
 
 	log.Println("Starting connection.")
-	for err := range c.Connect() {
-		log.Printf("ERR: %v", err)
+	if errs := c.Connect(); len(errs) > 0 {
+		for _, err := range errs {
+			log.Printf("ERR: %v", err)
+		}
+		os.Exit(1)
 	}
+
 	log.Println("Connection complete.")
 
 	time.Sleep(time.Second * 10)

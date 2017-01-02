@@ -3,11 +3,10 @@ package client
 
 import (
 	"context"
-
 	"fmt"
-	"sync"
 	irc "github.com/fluffle/goirc/client"
-
+	"log"
+	"sync"
 
 	"github.com/cceckman/discoirc/prototype/bufchan"
 )
@@ -34,7 +33,6 @@ type client struct {
 	bufchan.StringBroadcaster
 }
 
-
 type network struct {
 	conn *irc.Conn
 }
@@ -43,13 +41,12 @@ func NewClient() C {
 	bc := bufchan.NewStringBroadcaster()
 	c := &client{
 		StringBroadcaster: bc,
-		networks: make(map[string]network),
-		receive: bc.Send(),
+		networks:          make(map[string]network),
+		receive:           bc.Send(),
 	}
 
 	return c
 }
-
 
 // Handle returns an irc.Handler for messages on the given network.
 func (c *client) Handle(network string) irc.HandlerFunc {
@@ -75,15 +72,19 @@ func (c *client) Connect() []error {
 
 	for network, cfg := range c.LoadConfigs() {
 		wg.Add(1)
+		log.Println("Launching connector for network", network)
 		go func(name string, cfg *irc.Config) {
 			// Mark connection as completed when we're done here.
 			defer wg.Done()
 
+			log.Println("Attempting to connect to", network)
 			cli := irc.Client(cfg)
 			c.attachHandlers(name, cli)
 
-			if err := c.Connect(); err != nil {
-				errs <- fmt.Errorf("error connecting to %s: %v", name, err)
+			if err := cli.Connect(); err != nil {
+				e := fmt.Errorf("error connecting to %s: %v", name, err)
+				log.Println(e)
+				errs <- e
 			}
 		}(network, cfg)
 	}
@@ -109,7 +110,7 @@ func (c *client) attachHandlers(name string, cli *irc.Conn) error {
 			c.Lock()
 			defer c.Unlock()
 
-			c.networks[name] = network{ conn: conn, }
+			c.networks[name] = network{conn: conn}
 			c.receive <- fmt.Sprintf("[%s] Connected", name)
 		},
 	)
