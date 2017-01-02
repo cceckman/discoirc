@@ -22,7 +22,7 @@ func (_ *client) LoadConfigs() map[string]*irc.Config {
 	cfg.SSLConfig = &tls.Config{
 		ServerName: server,
 	}
-	cfg.Server = server + ":" + "6667"
+	cfg.Server = server + ":" + "6697"
 	result["Foonetic"] = cfg
 
 	return result
