@@ -39,6 +39,7 @@ func main() {
 
 	// Start it up.
 	c := client.NewClient()
+	log.Println("Created client.")
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for msg := range c.Listen(ctx) {
@@ -46,11 +47,14 @@ func main() {
 		}
 	}()
 
+	log.Println("Starting connection.")
 	for err := range c.Connect() {
 		log.Printf("ERR: %v", err)
 	}
+	log.Println("Connection complete.")
 
 	time.Sleep(time.Second * 10)
+	log.Println("Done waiting! Cancelling context.")
 	cancel()
 
 	time.Sleep(time.Second * 10)

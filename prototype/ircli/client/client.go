@@ -30,8 +30,8 @@ type client struct {
 	networks map[string]network
 	sync.RWMutex
 
-	receive chan string
-	bufchan.Broadcaster
+	receive chan<- string
+	bufchan.StringBroadcaster
 }
 
 
@@ -40,11 +40,11 @@ type network struct {
 }
 
 func NewClient() C {
-	receive := make(chan string)
+	bc := bufchan.NewStringBroadcaster()
 	c := &client{
-		Broadcaster: bufchan.NewBroadcaster(receive),
+		StringBroadcaster: bc,
 		networks: make(map[string]network),
-		receive: receive,
+		receive: bc.Send(),
 	}
 
 	return c
@@ -81,7 +81,6 @@ func (c *client) Connect() []error {
 
 			cli := irc.Client(cfg)
 			c.attachHandlers(name, cli)
-			cli.EnableStateTracking()
 
 			if err := c.Connect(); err != nil {
 				errs <- fmt.Errorf("error connecting to %s: %v", name, err)
@@ -106,6 +105,7 @@ func (c *client) attachHandlers(name string, cli *irc.Conn) error {
 	cli.HandleFunc(
 		irc.CONNECTED,
 		func(conn *irc.Conn, line *irc.Line) {
+			c.receive <- fmt.Sprintf("[%s] Starting connection", name)
 			c.Lock()
 			defer c.Unlock()
 
