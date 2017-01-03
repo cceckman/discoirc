@@ -55,7 +55,11 @@ func testAtRates(r, w time.Duration) func(*testing.T) {
 				<-ticker.C
 				// Can't make any assertions about how long it blocks for;
 				// may be indefinitely, if the writer is slower than the reader.
-				tm, err := time.Parse(timeFmt, <-c.Out())
+				v, ok := <-c.Out()
+				if !ok {
+					t.Errorf("Output closed when not expected")
+				}
+				tm, err := time.Parse(timeFmt, v)
 				if err != nil {
 					t.Errorf("error in reader: %v", err)
 					continue

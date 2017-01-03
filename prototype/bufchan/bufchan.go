@@ -37,6 +37,7 @@ func (x *Bufchan) Out() <-chan string {
 // It should be invoked as a goroutine (e.g. go foo.mirror(ctx))
 func (x *Bufchan) mirror(ctx context.Context) {
 	defer close(x.out)
+
 	for {
 		if len(x.buf) == 0 {
 			// Select on only "input" and "cancelled".
@@ -59,8 +60,7 @@ func (x *Bufchan) mirror(ctx context.Context) {
 			case s, ok := <-x.in:
 				if ok {
 					x.buf = append(x.buf, s)
-				}
-				// Don't close here; there's still buffer to be written.
+				}// Don't close here; there's still buffer to be written.	
 			case x.out <- x.buf[0]:
 				x.buf = x.buf[1:]
 			}
