@@ -171,8 +171,16 @@ func TestClose(t *testing.T) {
 
 }
 
+// eitherBroadcaster contains either a Broadcaster or a StringBroadcaster.
+type eitherBroadcaster struct {
+	b bufchan.Broadcaster
+	sb bufchan.StringBroadcaster
+}
+
 // testReceivers tests a broadcaster with a writer at rate w, and receivers at rates rs.
-func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
+func testReceivers(
+	eb eitherBroadcaster, w time.Duration, rs []time.Duration,
+) func(*testing.T) {
 	return func(t *testing.T) {
 		timeFmt := time.RFC3339Nano
 		count := 100
@@ -183,22 +191,42 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(1 + len(rs))
 
-		b := bufchan.NewBroadcaster()
-		c := b.Send()
-
 		// Start writer...
 		go func() {
 			ticker := time.NewTicker(w)
 			defer ticker.Stop()
+
+			var strchan chan<-string
+			var ichan chan<-interface{}
+			if eb.sb != nil {
+				strchan = eb.sb.Send()
+			} else if eb.b != nil {
+				ichan = eb.b.Send()
+			} else {
+				t.Fatalf("no broadcaster provided!")
+			}
+
 			for i := 0; i < count; i++ {
 				tm := <-ticker.C
 				s := tm.Format(timeFmt)
+
 				// We aren't asserting anything about the timings here,
-				// though we should if they're highly variable.
-				c <- s
+				// though we expect them to be not very variable.
+				if strchan != nil {
+					strchan <- s
+				}
+				if ichan != nil {
+					ichan <- s
+				}
 			}
+
 			// Close the channel at the end.
-			close(c)
+			if strchan != nil {
+				close(strchan)
+			}
+			if ichan != nil {
+				close(ichan)
+			}
 			wg.Done()
 		}()
 
@@ -206,7 +234,15 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 		for n, r := range rs {
 			n, r := n, r
 			go func() {
-				list := b.Listen(ctx)
+				var strlist <-chan string
+				var ilist <-chan interface{}
+				if eb.sb != nil {
+					strlist = eb.sb.Listen(ctx)
+				} else if eb.b != nil {
+					ilist = eb.b.Listen(ctx)
+				} else {
+					t.Fatalf("no broadcaster provided!")
+				}
 
 				ticker := time.NewTicker(r)
 				defer ticker.Stop()
@@ -219,11 +255,18 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 
 					// Can't make any assertions about how long reader blocks for;
 					// may be for a long time, if the writer is slower than the reader.
-					x := <-list
-					v, ok := x.(string)
-					if !ok {
-						t.Errorf("non-string value %v on channel at index %d", v, i)
-						continue
+					var v string
+					if strlist != nil {
+						v = <-strlist
+					}
+					if ilist != nil {
+						x := <-ilist
+						var ok bool
+						v, ok = x.(string)
+						if !ok {
+							t.Errorf("non-string value %v on channel at index %d", v, i)
+							continue
+						}
 					}
 					tm, err := time.Parse(timeFmt, v)
 					if err != nil {
@@ -249,8 +292,15 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 				}
 				// After a short sync delay, channel should be closed; have written, and read, count timestamps.
 				time.Sleep(w)
-				if _, ok := <-list; ok {
-					t.Errorf("expected input channel %d to be closed, was open", n)
+				if strlist != nil {
+					if _, ok := <-strlist; ok {
+						t.Errorf("expected input channel %d to be closed, was open", n)
+					}
+				} else {
+					if _, ok := <-ilist; ok {
+						t.Errorf("expected input channel %d to be closed, was open", n)
+					}
+
 				}
 
 				wg.Done()
@@ -262,27 +312,45 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 	}
 }
 
-// Test broadcaster
+var ratesTable = []struct {
+	w  time.Duration
+	rs []time.Duration
+}{
+	{time.Millisecond, []time.Duration{time.Millisecond}},
+	{time.Microsecond * 10, []time.Duration{time.Microsecond * 10, time.Microsecond * 10}},
+	{time.Microsecond * 10, []time.Duration{time.Microsecond * 5, time.Microsecond * 100}},
+	{time.Microsecond * 10, []time.Duration{
+		time.Microsecond * 1, time.Microsecond * 2, time.Microsecond * 5,
+		time.Microsecond * 10, time.Microsecond * 20, time.Microsecond * 50,
+		time.Microsecond * 100, time.Microsecond * 200, time.Microsecond * 500,
+	}},
+}
+
 func TestBroadcaster(t *testing.T) {
-	for _, rates := range []struct {
-		w  time.Duration
-		rs []time.Duration
-	}{
-		{time.Millisecond, []time.Duration{time.Millisecond}},
-		{time.Microsecond * 10, []time.Duration{time.Microsecond * 10, time.Microsecond * 10}},
-		{time.Microsecond * 10, []time.Duration{time.Microsecond * 5, time.Microsecond * 100}},
-		{time.Microsecond * 10, []time.Duration{
-			time.Microsecond * 1, time.Microsecond * 2, time.Microsecond * 5,
-			time.Microsecond * 10, time.Microsecond * 20, time.Microsecond * 50,
-			time.Microsecond * 100, time.Microsecond * 200, time.Microsecond * 500,
-		}},
-	} {
+	for _, rates := range ratesTable {
 		ss := make([]string, len(rates.rs))
 		for i, r := range rates.rs {
 			ss[i] = r.String()
 		}
 		name := fmt.Sprintf("w=%s/r=[%s]", rates.w, strings.Join(ss, ","))
-		t.Run(name, testReceivers(rates.w, rates.rs))
+		t.Run(name, testReceivers(
+			eitherBroadcaster{b: bufchan.NewBroadcaster()},
+			rates.w, rates.rs,
+		))
+	}
+}
+
+func TestStringBroadcaster(t *testing.T) {
+	for _, rates := range ratesTable {
+		ss := make([]string, len(rates.rs))
+		for i, r := range rates.rs {
+			ss[i] = r.String()
+		}
+		name := fmt.Sprintf("w=%s/r=[%s]", rates.w, strings.Join(ss, ","))
+		t.Run(name, testReceivers(
+			eitherBroadcaster{sb: bufchan.NewStringBroadcaster()},
+			rates.w, rates.rs,
+		))
 	}
 
 }
