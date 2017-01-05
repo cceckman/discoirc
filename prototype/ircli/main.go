@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	flog "github.com/cceckman/discoirc/prototype/log"
@@ -55,17 +56,21 @@ func main() {
 	flog.LogArgs()
 	// Above is boilerplate.
 
+	var wg sync.WaitGroup
+
 	// Start it up.
 	c := client.NewClient()
 	log.Println("Created client.")
 
 	ctx := signalContext()
 
+	wg.Add(1)
 	go func() {
 		for msg := range c.Listen(ctx) {
 			log.Printf(">%v", msg)
 		}
 		log.Println("Listen channel done")
+		wg.Done()
 	}()
 
 	log.Println("Starting connection.")
@@ -73,7 +78,6 @@ func main() {
 		for _, err := range errs {
 			log.Printf("ERR: %v", err)
 		}
-		os.Exit(1)
 	}
 
 	log.Println("Connection complete. Connected networks: ")
@@ -81,16 +85,16 @@ func main() {
 		log.Println("\t", net)
 	}
 
+	wg.Add(1)
 	go func() {
 		<-ctx.Done()
 		if errs := c.Disconnect(); len(errs) > 0 {
 			for _, err := range errs {
 				log.Printf("ERR: %v", err)
 			}
-			os.Exit(1)
 		}
-
+		wg.Done()
 	}()
 
-	<-ctx.Done()
+	wg.Wait()
 }
