@@ -45,7 +45,8 @@ func NewBroadcaster() Broadcaster {
 			b.next <- newb
 			b.next = c
 		}
-		// Input channel closed; propagate to clients with an empty broadcast.
+		// Input channel closed. Send empty value to listeners.
+		// The channel won't be closed, though it may be GC'd.
 		b.next <- broadcast{}
 	}()
 
@@ -75,13 +76,15 @@ func (b *broadcaster) Listen(ctx context.Context) <-chan interface{} {
 				v := b.v
 				// give the broadcast back, for the next listener to take,
 				r.next <- b
-				// update our pointer to the 'next' channel.
+				// and update ourselves.
 				r.next = b.next
 
-				if r.next == nil {
-					// There will be no 'next' value, i.e. input channel is closed.
+				// if 'next' is nil, we're done.
+				if b.next == nil {
 					return
 				}
+
+				// Otherwise, send along to *our* listener.
 
 				select {
 				case <-ctx.Done():
@@ -89,52 +92,8 @@ func (b *broadcaster) Listen(ctx context.Context) <-chan interface{} {
 				case out <- v:
 					// sent the value to the listener.
 				}
+
 			}
-		}
-	}()
-
-	return out
-}
-
-// StringBroadcaster is a Broadcaster with methods wrapped to use string channels.
-type StringBroadcaster interface {
-	Send() chan<- string
-	Listen(context.Context) <-chan string
-}
-
-type stringBroadcaster struct {
-	ssend chan string
-	b     Broadcaster
-}
-
-func NewStringBroadcaster() StringBroadcaster {
-	r := &stringBroadcaster{
-		ssend: make(chan string),
-		b:     NewBroadcaster(),
-	}
-	// Mirror sending channel.
-	go func() {
-		send := r.b.Send()
-		defer close(send)
-		for str := range r.ssend {
-			send <- str
-		}
-	}()
-
-	return r
-}
-
-func (s *stringBroadcaster) Send() chan<- string {
-	return s.ssend
-}
-
-func (s *stringBroadcaster) Listen(ctx context.Context) <-chan string {
-	out := make(chan string)
-	go func() {
-		defer close(out)
-		for v := range s.b.Listen(ctx) {
-			// Yes, panic if it's not a string. Only way to send is via the typed Send, above.
-			out <- v.(string)
 		}
 	}()
 
