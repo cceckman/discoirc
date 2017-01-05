@@ -41,8 +41,8 @@ func NewClient() C {
 	bc := bufchan.NewBroadcaster()
 	c := &client{
 		Broadcaster: bc,
-		networks:          make(map[string]network),
-		receive:           bc.Send(),
+		networks:    make(map[string]network),
+		receive:     bc.Send(),
 	}
 
 	return c
@@ -113,12 +113,8 @@ func (c *client) attachHandlers(name string, conn *irc.Conn) error {
 			msg := fmt.Sprintf("[%s] Connected", name)
 			log.Println(msg)
 
-			// Shouldn't have to background this, since receive should be ~non-blocking.
-			// TODO put back in the event thread.
-			go func() {
-				c.receive <- msg
-				log.Printf("[%s] wrote to receive channel", name)
-			}()
+			c.receive <- msg
+			log.Printf("[%s] wrote to receive channel", name)
 		},
 	)
 	conn.HandleFunc(
@@ -131,12 +127,8 @@ func (c *client) attachHandlers(name string, conn *irc.Conn) error {
 			delete(c.networks, name)
 			c.Unlock()
 
-			// Shouldn't have to background this, since receive should be ~non-blocking.
-			// TODO put back in the event thread.
-			go func() {
-				c.receive <- msg
-				log.Printf("[%s] wrote to receive channel", name)
-			}()
+			c.receive <- msg
+			log.Printf("[%s] wrote to receive channel", name)
 		},
 	)
 
@@ -204,8 +196,6 @@ func (c *client) Disconnect() []error {
 		)
 	}
 	c.RUnlock()
-
-	close(c.receive)
 
 	return results
 
