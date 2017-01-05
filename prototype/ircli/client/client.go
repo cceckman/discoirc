@@ -139,7 +139,7 @@ func (c *client) attachHandlers(name string, conn *irc.Conn) error {
 		irc.PRIVMSG, irc.QUIT, irc.USER, irc.VERSION, irc.VHOST, irc.WHO,
 		irc.WHOIS,
 	} {
-		// conn.Handle(event, handle)
+		conn.Handle(event, handle)
 		_ = event
 		_ = handle
 	}
