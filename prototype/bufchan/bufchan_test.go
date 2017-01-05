@@ -180,7 +180,44 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 
 		var wg sync.WaitGroup
 
-		// Start writer...
+		// Start readers before writer, so they get all of the results.
+		for n, r := range rs {
+			n, r := n, r
+			wg.Add(1)
+			l := b.Listen(ctx)
+			go func(c <-chan interface{}) {
+				ticker := time.NewTicker(r)
+				defer ticker.Stop()
+
+				for i := 0; i < count; i++ {
+					<-ticker.C
+
+					// Can't make any assertions about how long reader blocks for;
+					// may be for a long time, if the writer is slower than the reader.
+					x, ok := <-c
+					if !ok {
+						t.Errorf("channel closed too early, iteration %d", i)
+					}
+					n, ok := x.(int)
+					if !ok {
+						t.Errorf("type assertion failed, count %d: %v", i, n)
+					}
+					if n != i {
+						t.Errorf("got: %d want: %d", i, n)
+					}
+				}
+				// After a short sync delay, channel should be closed; have written, and read, count timestamps.
+				time.Sleep(w)
+
+				if _, ok := <-c; ok {
+					t.Errorf("expected input channel %d to be closed, was open", n)
+				}
+
+				wg.Done()
+			}(l)
+		}
+
+		// Start the writer.
 		wg.Add(1)
 		go func() {
 			ticker := time.NewTicker(w)
@@ -202,42 +239,7 @@ func testReceivers(w time.Duration, rs []time.Duration) func(*testing.T) {
 		}()
 
 		// Start readers
-		for n, r := range rs {
-			n, r := n, r
-			wg.Add(1)
-			go func() {
-				ilist := b.Listen(ctx)
 
-				ticker := time.NewTicker(r)
-				defer ticker.Stop()
-
-				for i := 0; i < count; i++ {
-					<-ticker.C
-
-					// Can't make any assertions about how long reader blocks for;
-					// may be for a long time, if the writer is slower than the reader.
-					x, ok := <-ilist
-					if !ok {
-						t.Errorf("channel closed too early, iteration %d", i)
-					}
-					n, ok := x.(int)
-					if !ok {
-						t.Errorf("type assertion failed, count %d: %v", i, n)
-					}
-					if n != i {
-						t.Errorf("got: %d want: %d", i, n)
-					}
-				}
-				// After a short sync delay, channel should be closed; have written, and read, count timestamps.
-				time.Sleep(w)
-
-				if _, ok := <-ilist; ok {
-					t.Errorf("expected input channel %d to be closed, was open", n)
-				}
-
-				wg.Done()
-			}()
-		}
 
 		// Wait for reader and writer to be done...
 		wg.Wait()
