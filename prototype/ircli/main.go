@@ -6,7 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
 	flog "github.com/cceckman/discoirc/prototype/log"
 	"log"
@@ -17,6 +18,23 @@ import (
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
 )
+
+// signalContext returns a Context that ends with SIGINT or SIGTERM.
+func signalContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	signals := make(chan os.Signal, 1)
+
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-signals
+		log.Printf("Received signal %s, starting shutdown", sig.String())
+		cancel()
+	}()
+
+	return ctx
+}
 
 func main() {
 	flag.Usage = func() {
@@ -40,8 +58,9 @@ func main() {
 	// Start it up.
 	c := client.NewClient()
 	log.Println("Created client.")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+
+	ctx := signalContext()
+
 	go func() {
 		for msg := range c.Listen(ctx) {
 			log.Printf(">%v", msg)
@@ -62,16 +81,16 @@ func main() {
 		log.Println("\t", net)
 	}
 
-	n := 5
-	log.Printf("Waiting %d seconds", n)
-	time.Sleep(time.Second * time.Duration(n))
-	log.Println("Done waiting! Disconnecting.")
-	if errs := c.Disconnect(); len(errs) > 0 {
-		for _, err := range errs {
-			log.Printf("ERR: %v", err)
+	go func() {
+		<-ctx.Done()
+		if errs := c.Disconnect(); len(errs) > 0 {
+			for _, err := range errs {
+				log.Printf("ERR: %v", err)
+			}
+			os.Exit(1)
 		}
-		os.Exit(1)
-	}
 
-	time.Sleep(time.Second * 10)
+	}()
+
+	<-ctx.Done()
 }

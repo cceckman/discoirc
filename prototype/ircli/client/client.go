@@ -21,7 +21,7 @@ type C interface {
 	// Listen returns a channel on which messages are relayed.
 	Listen(ctx context.Context) <-chan interface{}
 	// Set the current target to channel or nick 'target' on the given network.
-	// SetTarget(network, target error) error
+	Send(network, target, message string) error
 	// Send(msg string) error
 }
 
@@ -59,8 +59,12 @@ func (c *client) Handle(network string) irc.HandlerFunc {
 			return
 		}
 
-		text := fmt.Sprintf("[%s] %s to %s : %s", network, line.Cmd, line.Target(), line.Text())
+		text := fmt.Sprintf("[%s] %s (target) %s : %s", network, line.Cmd, line.Target(), line.Text())
 		c.receive <- text
+
+		if line.Target() == "cceckman" {
+			c.Send(network, line.Target(), "Hi Charles!")
+		}
 	}
 }
 
@@ -157,6 +161,19 @@ func (c *client) ConnectedNetworks() []string {
 		i++
 	}
 	return result
+}
+
+func (c *client) Send(network, target, message string) error {
+	net, ok := c.networks[network]
+	if !ok {
+		return fmt.Errorf("not connected to %s", network)
+	}
+	net.conn.Join(target)
+	s := fmt.Sprintln(message)
+	net.conn.Privmsg(target, s)
+	c.receive <- s
+
+	return nil
 }
 
 func (c *client) Disconnect() []error {

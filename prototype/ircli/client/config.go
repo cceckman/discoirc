@@ -21,7 +21,6 @@ func (_ *client) LoadConfigs() map[string]*irc.Config {
 	cfg.SSL = true
 	cfg.SSLConfig = &tls.Config{
 		ServerName: server,
-		InsecureSkipVerify: true,
 	}
 	cfg.Server = server + ":" + "6697"
 	result["Foonetic"] = cfg
