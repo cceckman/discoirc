@@ -60,6 +60,8 @@ m
   * https://github.com/gizak/termui isn't particuarly useful, but it looks cool.
 * Build
   * https://glide.sh/ maybe? I do like having dependencies at known versions.
+* Model after
+  * https://github.com/cantino/huginn for plugins (maybe).
 
 ## Difficult things to do
 * Unicode support, overall.
