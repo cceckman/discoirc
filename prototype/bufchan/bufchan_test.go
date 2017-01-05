@@ -15,9 +15,7 @@ import (
 // testAtRates generates a test case for correct behavior when reading and writing at the respective rates.
 func testAtRates(r, w time.Duration) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel() // clean up
-		c := bufchan.New(ctx)
+		c := bufchan.New()
 
 		timeFmt := time.RFC3339Nano
 
@@ -109,9 +107,7 @@ func TestRwRates(t *testing.T) {
 // Test that closing input closes output, after N items.
 func testClose(n int) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel() // cleanup
-		c := bufchan.New(ctx)
+		c := bufchan.New()
 
 		var wg sync.WaitGroup
 		wg.Add(2)

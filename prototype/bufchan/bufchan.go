@@ -8,10 +8,6 @@
 // Package bufchan provides channels with unlimited buffering.
 package bufchan
 
-import (
-	"context"
-)
-
 // Bufchan is a channel of strings with an unlimited internal buffer.
 // In cases where a UI must interact with a background process (e.g. the network),
 // it is necessary that writes between the UI and the background are non-blocking.
@@ -32,48 +28,45 @@ func (x *Bufchan) Out() <-chan string {
 }
 
 // mirror reads input as available, and flushes the buffer as the output is available.
-// When cancelled (via Context), it closes the output but does not flush it.
 // When its input channel is closed, it closes the output channel once the buffer is drained.
-// It should be invoked as a goroutine (e.g. go foo.mirror(ctx))
-func (x *Bufchan) mirror(ctx context.Context) {
+// It should be invoked as a goroutine (e.g. go foo.mirror())
+func (x *Bufchan) mirror() {
 	defer close(x.out)
 
+	inputLoop:
 	for {
 		if len(x.buf) == 0 {
-			// Select on only "input" and "cancelled".
-			select {
-			case <-ctx.Done():
-				return
-			case s, ok := <-x.in:
-				if ok {
-					x.buf = append(x.buf, s)
-				} else {
-					// Input channel closed; we're done here.
-					return
-				}
+			s, ok := <-x.in
+			if !ok {
+				// Channel closed.
+				break inputLoop
 			}
+			x.buf = append(x.buf, s)
 		} else {
-			// Select on input, output, and cancelled.
 			select {
-			case <-ctx.Done():
-				return
 			case s, ok := <-x.in:
-				if ok {
-					x.buf = append(x.buf, s)
-				}// Don't close here; there's still buffer to be written.	
+				if !ok {
+					break inputLoop
+				}
+				x.buf = append(x.buf, s)
 			case x.out <- x.buf[0]:
 				x.buf = x.buf[1:]
 			}
 		}
 	}
+
+	// Flush output.
+	for _, p := range x.buf {
+		x.out <- p
+	}
 }
 
-func New(ctx context.Context) *Bufchan {
+func New() *Bufchan {
 	r := &Bufchan{
 		in:  make(chan string),
 		out: make(chan string),
 		buf: make([]string, 0),
 	}
-	go r.mirror(ctx)
+	go r.mirror()
 	return r
 }
