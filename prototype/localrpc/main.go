@@ -2,157 +2,56 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net"
 	"os"
-	"os/exec"
 	"strings"
-	"sync"
-	"syscall"
 	"time"
 
+	"github.com/cceckman/discoirc/prototype/localrpc/plugins"
 	service "github.com/cceckman/discoirc/prototype/localrpc/proto"
 	flog "github.com/cceckman/discoirc/prototype/log"
 	"github.com/cceckman/discoirc/prototype/sigcontext"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 var (
-	help    = flag.Bool("help", false, "Display a usage message.")
-	plugins = flag.String("plugins", "plugin/main", "Comma-separated list of plugins to run.")
-
-	pluginKillDelay = flag.Int("plugin-kill-timeout-ms", 3000, "Timeout (in milliseconds) to wait for plugins to gracefully stop (SIGTERM) before ungracefully stopping them (SIGKILL).")
+	help       = flag.Bool("help", false, "Display a usage message.")
+	pluginList = flag.String("plugins", "plugin/main", "Comma-separated list of plugins to run.")
 )
 
-func dialSock(addr string, timeout time.Duration) (net.Conn, error) {
-	return net.DialTimeout("unix", addr, timeout)
-}
-
-func ticker(ctx context.Context, sock string) {
-}
-
-func runPlugin(ctx context.Context, wg *sync.WaitGroup, sockpath *os.File, bin string) {
-	wg.Add(1)
-
-	// TODO: Should probably re-run on failure.
-	cmd := exec.CommandContext(ctx, bin, "-socket", sockpath.Name())
-	log.Printf("plugin %s: running command: [%s] [%s]", bin, cmd.Path, strings.Join(cmd.Args, " "))
-
-	// Capture output using background threads.
-	go func() {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Printf("plugin %s: error in getting stdout: %v", bin, err)
-		}
-		r := bufio.NewScanner(stdout)
-		for r.Scan() {
-			log.Printf("plugin %s: stdout: %s\n", bin, r.Text())
-		}
-		log.Printf("plugin %s: stdout done", bin)
-	}()
-	go func() {
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			log.Printf("plugin %s: error in getting stderr: %v", bin, err)
-		}
-		r := bufio.NewScanner(stderr)
-		for r.Scan() {
-			log.Printf("plugin %s: stderr: %s\n", bin, r.Text())
-		}
-		log.Printf("plugin %s: stderr done", bin)
-	}()
-
-	// Start program.
-	if err := cmd.Start(); err != nil {
-		log.Printf("plugin %s: error starting: %v", bin, err)
+func TickAgainst(ctx context.Context, p plugins.Plugin) {
+	conn, err := p.Connect()
+	if err != nil {
+		log.Printf("error in creating connection to %s: %v", p.Name(), err)
 		return
 	}
 
-	// TERM, then KILL, the process when the context exits.
-	go func() {
-		// Capture when the program exits safely.
-		s := make(chan bool, 1)
-		go func() {
-			if err := cmd.Wait(); err != nil {
-				log.Printf("plugin %s: error waiting: %v", bin, err)
-			}
-			s <- true
-		}()
+	cli := service.NewSimpleServiceClient(conn)
+	tick := time.NewTicker(time.Second * 2)
+	defer tick.Stop()
 
-		<-ctx.Done()
-		log.Printf("plugin %s: sending SIGINT", bin)
-		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
-			log.Printf("plugin %s: error sending SIGINT: %v", err)
-		}
-
-		delay := time.Duration(*pluginKillDelay) * time.Millisecond
-		wait := time.After(delay)
-
+	for i := 1; true; i++ {
 		select {
-		case <-wait:
-			log.Printf("plugin %s: process didn't safely exit after %v, killing", bin, delay)
-			if err := cmd.Process.Kill(); err != nil {
-				log.Printf("plugin %s: error killing: %v", err)
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			req := &service.MyRequest{
+				Event: &service.Event{
+					Seq:  int64(i),
+					Name: p.Name(),
+					Msg:  fmt.Sprintf("tick %d for %s", i, p.Name()),
+				},
 			}
-			return
-		case <-s:
-			// pass
-		}
-		log.Printf("plugin %s: exited? %t", cmd.ProcessState.Exited())
-		wg.Done()
-	}()
-
-	// Start a thread to write to it.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer func() {
-			// Close & clean socket when done.
-			sockpath.Close()
-			os.Remove(sockpath.Name())
-		}()
-		conn, err := grpc.DialContext(
-			ctx,
-			sockpath.Name(),
-			grpc.WithDialer(dialSock),
-			grpc.WithInsecure(),
-		)
-		if err != nil {
-			log.Printf("error in connecting to %s: %v", sockpath.Name(), err)
-			return
-		}
-		defer conn.Close()
-
-		cli := service.NewSimpleServiceClient(conn)
-		tick := time.NewTicker(time.Second * 2)
-		defer tick.Stop()
-
-		for i := 1; true; i++ {
-			select {
-			case <-ctx.Done():
-				return
-			case <-tick.C:
-				// Send a message, wait for a response.
-				req := &service.MyRequest{
-					Event: &service.Event{
-						Seq:  int64(i),
-						Name: "ping",
-						Msg:  fmt.Sprintf("ping #%d!", i),
-					},
-				}
-				if rsp, err := cli.Do(ctx, req); err != nil {
-					log.Printf("error in request #%d on %s: %v", i, sockpath.Name(), err)
-				} else {
-					log.Printf("received response: %v", rsp)
-				}
+			log.Printf("[%s] sending request: %v", p.Name(), req)
+			if res, err := cli.Do(ctx, req); err != nil {
+				log.Printf("[%s] error for request [%v] : %v", p.Name(), req, err)
+			} else {
+				log.Printf("[%s] got response: %v", p.Name(), res)
 			}
 		}
-	}()
+	}
 }
 
 func main() {
@@ -174,18 +73,18 @@ func main() {
 	flog.LogArgs()
 	// Above is boilerplate.
 
-	ctx := sigcontext.New()
+	ctx, cancel := context.WithCancel(sigcontext.New())
 
-	plist := strings.Split(*plugins, ",")
-	var wg sync.WaitGroup
-	for _, s := range plist {
-		sockfile, err := ioutil.TempFile("", "discoplugin-")
+	plist := strings.Split(*pluginList, ",")
+	for i, s := range plist {
+		p, err := plugins.Run(ctx, fmt.Sprintf("%d", i), s)
 		if err != nil {
-			log.Fatalf("could not make tempfile for socket: %v", err)
+			log.Printf("error starting plugin %d: %v", i, err)
+			cancel()
+			os.Exit(1)
 		}
-		runPlugin(ctx, &wg, sockfile, s)
+		go TickAgainst(ctx, p)
 	}
 
-	// Wait for all plugins to say they're done.
-	wg.Wait()
+	<-ctx.Done()
 }
