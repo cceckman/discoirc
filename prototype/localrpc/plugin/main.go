@@ -2,24 +2,24 @@
 package main
 
 import (
-	"strconv"
 	// Generated code uses the legacy package.
 	// "context"
-	"golang.org/x/net/context"
 	"flag"
 	"fmt"
+	"golang.org/x/net/context"
 	"log"
 	"net"
 	"os"
 
 	service "github.com/cceckman/discoirc/prototype/localrpc/proto"
+	"github.com/cceckman/discoirc/prototype/sigcontext"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
-	port = flag.Int("port", 8001, "Port to listen on")
+	sock = flag.String("socket", "", "UNIX domain socket to listen on")
 )
 
 func main() {
@@ -34,8 +34,12 @@ func main() {
 	}
 	// Above is boilerplate.
 
-	// TODO: Listen on a local socket instead.
-	lis, err := net.Listen("tcp", strconv.Itoa(*port))
+	ctx := sigcontext.New()
+
+	if *sock == "" {
+		log.Fatal("no socket specified")
+	}
+	lis, err := net.Listen("unix", *sock)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -47,6 +51,12 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	log.Println("Running...")
+
+	<-ctx.Done()
+	// Closes down listener as well.
+	s.GracefulStop()
 }
 
 type echoServer struct{}
