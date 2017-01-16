@@ -71,19 +71,21 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		defer	wg.Done()
+
 		for i := 0; true; i++ {
 			log.Println("waiting for subscription...")
 			resp, err := sub.Recv()
 			log.Print("received event ", i, " ", resp)
+
 			if err != nil {
 				log.Print("error in receive stream: ", err)
 				return
 			}
 		}
-		wg.Done()
+
 	}()
 
-	<-ctx.Done()
-	log.Println("Shutting down...")
 	wg.Wait()
+	log.Println("Shutting down...")
 }
