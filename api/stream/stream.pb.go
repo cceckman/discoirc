@@ -117,6 +117,7 @@ func (m *Match) GetMatchChannel() bool {
 
 // A Filter defines a set of streams to subscribe to.
 // It is an inclusive filter, e.g. matching any Match allows it to match.
+// As a result, an empty Filter matches nothing.
 type Filter struct {
 	Matches []*Match `protobuf:"bytes,1,rep,name=matches" json:"matches,omitempty"`
 }
@@ -162,6 +163,7 @@ func (m *Event) GetText() string {
 
 type SubscribeRequest struct {
 	// A Filter on the events to send.
+	// Required; servers should return an error if not present.
 	Filter *Filter `protobuf:"bytes,1,opt,name=filter" json:"filter,omitempty"`
 	// Requests that the last up-to-N messages that match the filter be sent,
 	// in addition to any new messages.

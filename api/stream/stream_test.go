@@ -8,6 +8,7 @@ import (
 
 // filters are filters that events may or may not match against.
 var filters = map[string]*stream.Filter{
+	"Nothing": &stream.Filter{},
 	"Network2": &stream.Filter{
 		Matches: []*stream.Match{
 			&stream.Match{
@@ -75,10 +76,11 @@ var events = []struct {
 			Text: "user1 joined #channel1",
 		},
 		map[string]bool{
-			"Network2":        false,
-			"Network1":        true,
+			"Network2":          false,
+			"Network1":          true,
 			"Network1#channel1": true,
-			"plugin":          false,
+			"plugin":            false,
+			"Nothing":           false,
 		},
 	},
 	// Case 2: a message on Network1#channel2.
@@ -92,10 +94,11 @@ var events = []struct {
 			Text: "user1 joined #channel2",
 		},
 		map[string]bool{
-			"Network2":        false,
-			"Network1":        true,
+			"Network2":          false,
+			"Network1":          true,
 			"Network1#channel1": false,
-			"plugin":          false,
+			"plugin":            false,
+			"Nothing":           false,
 		},
 	},
 	// Case 3: a message on Network2, no channel.
@@ -108,10 +111,11 @@ var events = []struct {
 			Text: "user1 messaged user2",
 		},
 		map[string]bool{
-			"Network2":        true,
-			"Network1":        false,
+			"Network2":          true,
+			"Network1":          false,
 			"Network1#channel1": false,
-			"plugin":          false,
+			"plugin":            false,
+			"Nothing":           false,
 		},
 	},
 	// Case 4: a message to a plugin.
@@ -123,10 +127,11 @@ var events = []struct {
 			Text: "user1 messaged user2",
 		},
 		map[string]bool{
-			"Network2":        false,
-			"Network1":        false,
+			"Network2":          false,
+			"Network1":          false,
 			"Network1#channel1": false,
-			"plugin":          true,
+			"plugin":            true,
+			"Nothing":           false,
 		},
 	},
 }

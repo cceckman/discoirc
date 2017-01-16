@@ -33,6 +33,7 @@ message Match {
 
 // A Filter defines a set of streams to subscribe to.
 // It is an inclusive filter, e.g. matching any Match allows it to match.
+// As a result, an empty Filter matches nothing.
 message Filter {
   repeated Match matches = 1;
 }
