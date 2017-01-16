@@ -54,12 +54,16 @@ func main() {
 	if err != nil {
 		log.Fatal("could not connect to EventProvider: ", err)
 	}
+	log.Println("connected to EventProvider")
 
 	client := stream.NewEventProviderClient(conn)
-	sub, err := client.Subscribe(ctx, &stream.SubscribeRequest{})
+	sub, err := client.Subscribe(ctx, &stream.SubscribeRequest{
+		Filter: &stream.Filter{},
+	})
 	if err != nil {
 		log.Fatal("error in subscribe request: ", err)
 	}
+	log.Println("established Subscribe channel")
 
 	events := make(chan *stream.Event)
 	go func() {
@@ -68,7 +72,8 @@ func main() {
 		for {
 			resp, err := sub.Recv()
 			if err != nil {
-				log.Print("error in receive stream: %v", err)
+				log.Print("error in receive stream: ", err)
+				return
 			}
 			events <- resp.Event
 		}

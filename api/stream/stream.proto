@@ -50,6 +50,7 @@ message Event {
 
 message SubscribeRequest {
   // A Filter on the events to send.
+  // Required; servers should return an error if not present.
   Filter filter = 1;
 
   // Requests that the last up-to-N messages that match the filter be sent,
