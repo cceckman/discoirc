@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+// discocli instances subscribe to one or more streams of information,
+// published by discod.
+
+package com.github.cceckman.discoirc.api.stream;
+option go_package = "stream";
+
+// Id identifies a particular stream.
+message Id {
+  // Messages from discoirc itself come under the 'discoirc' plugin.
+  string plugin = 1; 
+
+  string network = 2;
+  string channel = 3;
+
+  // Additional keys that plugins may use to filter messages.
+  // Along with most of the plugin system, not yet implemented.
+  // map<string,string> plugin_keys = 5;   
+}
+
+// Match defines a pattern with with to match an Id.
+// The id specifies values to match; the additional fields specify whether
+// or not the fields should be used to match.
+message Match {
+  Id id = 1;
+
+  bool match_plugin = 2;
+
+  bool match_network = 3;
+  bool match_channel = 4;
+}
+
+// A Filter defines a set of streams to subscribe to.
+// It is an inclusive filter, e.g. matching any Match allows it to match.
+message Filter {
+  repeated Match matches = 1; 
+}
+
+// Event expresses an event on a particular stream.
+message Event {
+  Id stream = 1;
+
+  string text = 2;
+}
