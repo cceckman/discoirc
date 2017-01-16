@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -58,28 +59,31 @@ func main() {
 
 	client := stream.NewEventProviderClient(conn)
 	sub, err := client.Subscribe(ctx, &stream.SubscribeRequest{
-		Filter: &stream.Filter{},
+		Filter: &stream.Filter{
+			Matches: []*stream.Match{&stream.Match{}},
+		},
 	})
 	if err != nil {
 		log.Fatal("error in subscribe request: ", err)
 	}
 	log.Println("established Subscribe channel")
 
-	events := make(chan *stream.Event)
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		defer close(events)
-
-		for {
+		for i := 0; true; i++ {
+			log.Println("waiting for subscription...")
 			resp, err := sub.Recv()
+			log.Print("received event ", i, " ", resp)
 			if err != nil {
 				log.Print("error in receive stream: ", err)
 				return
 			}
-			events <- resp.Event
 		}
+		wg.Done()
 	}()
 
-	for e := range events {
-		log.Print(e)
-	}
+	<-ctx.Done()
+	log.Println("Shutting down...")
+	wg.Wait()
 }
