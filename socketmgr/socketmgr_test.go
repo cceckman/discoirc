@@ -3,6 +3,7 @@ package socketmgr
 
 import (
 	"io/ioutil"
+	"net"
 	"os"
 	"path"
 	"strings"
@@ -40,4 +41,44 @@ func TestGet(t *testing.T) {
 	}
 
 	// Create a socket.
+	sockaddr := path.Join(tmpdir, "test.sock")
+	lis, err := net.Listen("unix", sockaddr)
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	defer lis.Close()
+
+	for _, cs := range []struct {
+		Mgr  T
+		Want []string
+	}{
+		{
+			Mgr: &sm{
+				target: sockaddr,
+				paths:  []string{},
+			},
+			Want: []string{sockaddr},
+		},
+		{
+			Mgr: &sm{
+				target: "",
+				paths: []string{
+					path.Join(tmpdir, "does-no-exist"),
+					tmpdir,
+				},
+			},
+			Want: []string{sockaddr},
+		},
+	} {
+		got := cs.Mgr.Get()
+		want := cs.Want
+		if len(got) != len(want) {
+			t.Errorf("got: %v want: %v", got, want)
+		}
+		for i := range got {
+			if want[i] != got[i] {
+				t.Errorf("got: %v want: %v", got, want)
+			}
+		}
+	}
 }
