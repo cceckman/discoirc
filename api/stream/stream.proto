@@ -9,14 +9,14 @@ option go_package = "stream";
 // Id identifies a particular stream.
 message Id {
   // Messages from discoirc itself come under the 'discoirc' plugin.
-  string plugin = 1; 
+  string plugin = 1;
 
   string network = 2;
   string channel = 3;
 
   // Additional keys that plugins may use to filter messages.
   // Along with most of the plugin system, not yet implemented.
-  // map<string,string> plugin_keys = 5;   
+  // map<string,string> plugin_keys = 5;
 }
 
 // Match defines a pattern with with to match an Id.
@@ -34,12 +34,35 @@ message Match {
 // A Filter defines a set of streams to subscribe to.
 // It is an inclusive filter, e.g. matching any Match allows it to match.
 message Filter {
-  repeated Match matches = 1; 
+  repeated Match matches = 1;
 }
 
 // Event expresses an event on a particular stream.
 message Event {
+  // stream identifies the stream this event occurred on.
   Id stream = 1;
 
+  // text is a simple text representation of this event.
   string text = 2;
+  
+  // next: 3
+}
+
+message SubscribeRequest {
+  // A Filter on the events to send.
+  Filter filter = 1;
+
+  // Requests that the last up-to-N messages that match the filter be sent,
+  // in addition to any new messages.
+  int32 backfill = 2;
+}
+
+message SubscribeResponse {
+  Event event = 1;
+}
+
+
+service EventProvider {
+  // Subscribe allows a client to register for events that match a filter.
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
 }
