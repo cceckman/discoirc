@@ -33,6 +33,11 @@ func TestGet(t *testing.T) {
 			target: "",
 			paths:  []string{tmpdir},
 		},
+		// No target; empty directory.
+		&sm{
+			target: "",
+			paths:  []string{"$ENVVARDNE"},
+		},
 	} {
 		got := s.Get()
 		if len(got) > 0 {
@@ -65,6 +70,7 @@ func TestGet(t *testing.T) {
 				paths: []string{
 					path.Join(tmpdir, "does-no-exist"),
 					tmpdir,
+					"$ENVVARDNE",
 				},
 			},
 			Want: []string{sockaddr},
