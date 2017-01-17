@@ -2,6 +2,7 @@
 package socketmgr
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -9,6 +10,174 @@ import (
 	"strings"
 	"testing"
 )
+
+const (
+	evname = "TEST_ENVVAR"
+)
+
+func listenCases(tmpdir string) []*sm {
+	return []*sm{
+		&sm{
+			target: "",
+			paths:  []string{path.Join(tmpdir, "subdir", "asocket")},
+		},
+		&sm{
+			target: "",
+			paths: []string{
+				path.Join(tmpdir, fmt.Sprintf("$%s", evname), "socket"),
+			},
+		},
+		&sm{
+			target: path.Join(tmpdir, "subdir", "bsocket"),
+			paths: []string{
+				path.Join(tmpdir, fmt.Sprintf("$%s", evname), "socket"),
+			},
+		},
+	}
+}
+
+// setupListen sets up a test environment for Listen tests and returns a temp directory.
+// When the 'done' channel is closed, it cleans up the test environment.
+func setupListen(t *testing.T, done chan struct{}) (string, error) {
+	tmpdir, err := ioutil.TempDir("", "discoirc-testing")
+	if err != nil {
+		return "", fmt.Errorf("error in creating empty directory: %v", err)
+	}
+	go func() {
+		<-done
+		if err := os.RemoveAll(tmpdir); err != nil {
+			t.Fatalf("could not clean up %s: %v", tmpdir, err)
+		}
+	}()
+
+	if err := os.Setenv(evname, evname); err != nil {
+		return "", fmt.Errorf("error in creating empty directory: %v", err)
+	}
+	go func() {
+		<-done
+		if err := os.Unsetenv(evname); err != nil {
+			t.Fatalf("could not set environment variable %s: %v", evname, err)
+		}
+	}()
+
+	return tmpdir, nil
+}
+
+// Test that Listen works (fails) when paths do not exist.
+func TestListenPathDne(t *testing.T) {
+	done := make(chan struct{})
+	defer close(done)
+	tmpdir, err := setupListen(t, done)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Directories / paths that don't exist.
+	listenCases := listenCases(tmpdir)
+	// Cases that we expect to return an error.
+	for _, s := range listenCases {
+		lis, path, err := s.Listen()
+		if err == nil {
+			t.Errorf("expected no resolution for %v, got %s", s.paths, path)
+			lis.Close()
+		}
+	}
+}
+
+// Test that Listen works (succeeds) on paths that exist exactly.
+func TestListenExplicit(t *testing.T) {
+	done := make(chan struct{})
+	defer close(done)
+	tmpdir, err := setupListen(t, done)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	listenCases := listenCases(tmpdir)
+
+	// Create directories.
+	for _, s := range listenCases {
+		// Create existing directories.
+		d := []string{path.Dir(s.target)}
+		for _, p := range s.paths {
+			d = append(d, path.Dir(p))
+		}
+		SetupDirs(d)
+	}
+
+	// Create an explicitly-named socket in the existing directory.
+	for _, s := range listenCases {
+		want := s.target
+		if want == "" {
+			want = s.paths[0]
+		}
+		want = os.ExpandEnv(want)
+
+		lis, got, err := s.Listen()
+		if err != nil {
+			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
+		}
+		if got != want {
+			t.Errorf("unexpected socket path: got: %s want: %s", got, want)
+		}
+		if lis == nil {
+			t.Errorf("unexpected nil listener: lis %v path %s err %v", lis, got, err)
+		} else {
+			lis.Close()
+		}
+	}
+}
+
+// Test that Listen works (succeeds) on paths that are existing directories.
+func TestListenDirectory(t *testing.T) {
+	done := make(chan struct{})
+	defer close(done)
+	tmpdir, err := setupListen(t, done)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	listenCases := listenCases(tmpdir)
+
+	// Create directories.
+	for _, s := range listenCases {
+		// Create existing directories.
+		d := []string{path.Dir(s.target)}
+		for _, p := range s.paths {
+			d = append(d, path.Dir(p))
+		}
+		SetupDirs(d)
+	}
+
+	// Substitute directories for paths.
+	for _, s := range listenCases {
+		for i, p := range s.paths {
+			s.paths[i] = path.Dir(p)
+		}
+	}
+
+	// Cases where we create a random socket in an existing directory.
+	for _, s := range listenCases {
+		wantPrefix := path.Dir(s.target)
+		if s.target == "" {
+			wantPrefix = s.paths[0]
+		}
+		wantPrefix = os.ExpandEnv(wantPrefix)
+
+		lis, got, err := s.Listen()
+		if err != nil {
+			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
+		}
+		if !strings.HasPrefix(got, wantPrefix) {
+			t.Errorf("unexpected socket path: got: %s want prefix: %s", got, wantPrefix)
+		}
+		if lis == nil {
+			t.Errorf("unexpected nil listener: lis %v path %s err %v", lis, got, err)
+		} else {
+			lis.Close()
+		}
+	}
+}
 
 func TestGet(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "discoirc-testing")

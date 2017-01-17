@@ -42,6 +42,7 @@ func New() T {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
+	SetupDirs(defaultPaths)
 	return &sm{
 		target: *target,
 		paths:  defaultPaths,
@@ -54,9 +55,10 @@ func SetupDirs(dirs []string) {
 	home := os.ExpandEnv("$HOME")
 	for _, d := range dirs {
 		p := os.ExpandEnv(d)
-		if p == "" {
+		if p == "." {
 			continue
 		}
+
 		var mode os.FileMode
 		if strings.HasPrefix(p, home) {
 			mode = 0750
@@ -66,6 +68,8 @@ func SetupDirs(dirs []string) {
 		err := os.MkdirAll(p, mode)
 		if err != nil {
 			log.Printf("could not set up socket directory %s -> %s: %v", d, p, err)
+		} else {
+			log.Printf("set up socket directory %s", p)
 		}
 	}
 }
@@ -88,9 +92,8 @@ func (s *sm) resolvePaths() []string {
 
 	r := make([]string, 0, len(s.paths))
 	for _, p := range preExp {
-		x := os.ExpandEnv(p)
 		if p != "" {
-			r = append(r, x)
+			r = append(r, os.ExpandEnv(p))
 		}
 	}
 
@@ -149,7 +152,7 @@ func (s *sm) Listen() (net.Listener, string, error) {
 		if err == nil {
 			return lis, p, err
 		} else {
-			log.Printf("could not use path %s for sockets: %v", p, err)
+			log.Printf("could not use path %s for socket: %v", p, err)
 		}
 	}
 
