@@ -181,9 +181,10 @@ func validateFileListen(p string) (net.Listener, error) {
 		if err := f.Close(); err != nil {
 			return nil, err
 		}
-	} else {
+	} else if err != nil {
 		return nil, err
 	}
+	// No err; ok.
 
 	// Set permissions.
 	if err := os.Chmod(p, sockperms); err != nil {
