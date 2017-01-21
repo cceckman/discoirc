@@ -167,31 +167,39 @@ func validateForRead(f os.FileInfo) bool {
 	return ok
 }
 
-// validateFileListen attempts to create a socket on the file name.
-// A file is valid if it is, or can be made, a socket.
-// If it is valid, this returns a Listener bound to the socket.
-func validateFileListen(p string) (net.Listener, error) {
+// mkSock makes or sets the permissions of a socket at p.
+func mkSock(p string) error {
 	_, err := os.Stat(p)
 	if os.IsNotExist(err) {
 		// Make it.
 		f, err := os.OpenFile(p, os.O_CREATE|os.O_EXCL, sockperms)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if err := f.Close(); err != nil {
-			return nil, err
+			return err
 		}
 	} else if err != nil {
-		return nil, err
+		return err
 	}
 	// No err; ok.
 
 	// Set permissions.
 	if err := os.Chmod(p, sockperms); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateFileListen attempts to create a socket on the file name.
+// A file is valid if it is, or can be made, a socket.
+// If it is valid, this returns a Listener bound to the socket.
+func validateFileListen(p string) (net.Listener, error) {
+	if err := mkSock(p); err != nil {
 		return nil, err
 	}
 	// And attempt to bind.
-	return net.ListenUnix("unix", &net.UnixAddr{"unix", p})
+	return net.ListenUnix("unix", &net.UnixAddr{Net: "unix", Name: p})
 }
 
 // validateDirectoryListen looks in a given directory for available sockets.
