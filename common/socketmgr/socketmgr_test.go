@@ -37,33 +37,18 @@ func listenCases(tmpdir string) []*sm {
 }
 
 // Test that the permissions on the socket are user-only, or that the socket is nil.
-func testSocketPerms(t *testing.T, l net.Listener) {
-	if l == nil {
-		return
-	}
-	var f *os.File
-	var err error
-	switch lis := l.(type) {
-	case *net.UnixListener:
-		f, err = lis.File()
-	case *net.TCPListener:
-		f, err = lis.File()
-	default:
-		f, err = nil, fmt.Errorf("unrecognized listener type: ", l)
-	}
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer f.Close()
-
-	info, err := f.Stat()
-	if err != nil {
-		t.Error(err)
+func testPerms(t *testing.T, pth string) {
+	if pth == "" {
 		return
 	}
 
-	var userbits os.FileMode = 0700
+	info, err := os.Stat(pth)
+	if err != nil {
+		t.Errorf("could not stat listener path %s: %v", pth, err)
+		return
+	}
+
+	var userbits os.FileMode = 0750
 	perms := info.Mode().Perm()
 	if perms != userbits {
 		t.Errorf("file %s has wrong mode: got: %o want: %o", info.Name(), perms, userbits)
@@ -111,7 +96,7 @@ func TestListenPathDne(t *testing.T) {
 	// Cases that we expect to return an error.
 	for _, s := range listenCases {
 		lis, path, err := s.Listen()
-		testSocketPerms(t, lis)
+		testPerms(t, path)
 		if err == nil {
 			t.Errorf("expected no resolution for %v, got %s", s.paths, path)
 			lis.Close()
@@ -149,7 +134,7 @@ func TestListenExplicit(t *testing.T) {
 		want = os.ExpandEnv(want)
 
 		lis, got, err := s.Listen()
-		testSocketPerms(t, lis)
+		testPerms(t, got)
 		if err != nil {
 			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
 		}
@@ -201,7 +186,7 @@ func TestListenDirectory(t *testing.T) {
 		wantPrefix = os.ExpandEnv(wantPrefix)
 
 		lis, got, err := s.Listen()
-		testSocketPerms(t, lis)
+		testPerms(t, got)
 		if err != nil {
 			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
 		}
@@ -254,7 +239,7 @@ func TestGet(t *testing.T) {
 	// Create a socket.
 	sockaddr := path.Join(tmpdir, "test.sock")
 	lis, err := net.Listen("unix", sockaddr)
-	testSocketPerms(t, lis)
+	// Don't check permissions, created just for testing.
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
