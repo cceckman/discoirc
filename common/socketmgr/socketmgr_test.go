@@ -136,7 +136,7 @@ func TestListenExplicit(t *testing.T) {
 		lis, got, err := s.Listen()
 		testPerms(t, got)
 		if err != nil {
-			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
+			t.Errorf("expected resolution for %v, got error: %v", s.paths, err)
 		}
 		if got != want {
 			t.Errorf("unexpected socket path: got: %s want: %s", got, want)
