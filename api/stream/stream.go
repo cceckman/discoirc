@@ -7,6 +7,10 @@
 
 package stream
 
+// Aliases, for brevity.
+type Client EventProviderClient
+type Server EventProviderServer
+
 // Exec determines if the Event matches anything in this Filter.
 func (f *Filter) Exec(e *Event) bool {
 	for _, m := range f.Matches {
