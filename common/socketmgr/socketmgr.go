@@ -133,8 +133,6 @@ func (s *sm) Get() []string {
 
 // Listen creates or attaches to a socket along the search path.
 func (s *sm) Listen() (net.Listener, string, error) {
-	var lasterr error
-
 	for _, p := range s.resolvePaths() {
 		// Check if the particular file already exists.
 		info, err := os.Stat(p)
@@ -156,7 +154,7 @@ func (s *sm) Listen() (net.Listener, string, error) {
 		}
 	}
 
-	return nil, "", fmt.Errorf("could not find a valid socket to listen on!", lasterr)
+	return nil, "", fmt.Errorf("could not find a valid socket to listen on!")
 }
 
 // validateForRead determines whether the path appears to be an available socket.
@@ -199,7 +197,12 @@ func validateFileListen(p string) (net.Listener, error) {
 		return nil, err
 	}
 	// And attempt to bind.
-	return net.ListenUnix("unix", &net.UnixAddr{Net: "unix", Name: p})
+	// return net.ListenUnix("unix", &net.UnixAddr{"unix", p})
+	addr , err := net.ResolveUnixAddr("unix", p)
+	if err != nil {
+		return nil, err
+	}
+	return net.ListenUnix("unix", addr)
 }
 
 // validateDirectoryListen looks in a given directory for available sockets.

@@ -82,6 +82,15 @@ func setupListen(t *testing.T, done chan struct{}) (string, error) {
 	return tmpdir, nil
 }
 
+func closer(t *testing.T, lis net.Listener) {
+	if lis == nil {
+		return
+	}
+	if err := lis.Close(); err != nil {
+		t.Error(lis)
+	}
+}
+
 // Test that Listen works (fails) when paths do not exist.
 func TestListenPathDne(t *testing.T) {
 	done := make(chan struct{})
@@ -96,10 +105,11 @@ func TestListenPathDne(t *testing.T) {
 	// Cases that we expect to return an error.
 	for _, s := range listenCases {
 		lis, path, err := s.Listen()
+		defer closer(t, lis)
+
 		testPerms(t, path)
 		if err == nil {
 			t.Errorf("expected no resolution for %v, got %s", s.paths, path)
-			lis.Close()
 		}
 	}
 }
@@ -134,6 +144,8 @@ func TestListenExplicit(t *testing.T) {
 		want = os.ExpandEnv(want)
 
 		lis, got, err := s.Listen()
+		defer closer(t, lis)
+
 		testPerms(t, got)
 		if err != nil {
 			t.Errorf("expected resolution for %v, got error: %v", s.paths, err)
@@ -186,6 +198,8 @@ func TestListenDirectory(t *testing.T) {
 		wantPrefix = os.ExpandEnv(wantPrefix)
 
 		lis, got, err := s.Listen()
+		defer closer(t, lis)
+
 		testPerms(t, got)
 		if err != nil {
 			t.Errorf("expected resolution for %v, got error %v", s.paths, err)
@@ -243,7 +257,7 @@ func TestGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to listen: %v", err)
 	}
-	defer lis.Close()
+	defer closer(t, lis)
 
 	for _, cs := range []struct {
 		Mgr  T
