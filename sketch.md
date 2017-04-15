@@ -56,3 +56,42 @@ If we skip the plugin system, what does the design look like, approximately?
       * Default setup: autojoin, autoopen
       * Last-good setup: autojoin, autoopen
       * Default pref for what to open. 
+
+## Frameworkize
+
+There is a pattern here that generalizes more broadly:
+- IRC as an ~easy case
+- IDEs
+- Build environment
+  - This is kind of how Bazel works: daemon per workspace
+- screen / tmux style session management
+  - Because these also provide a 'view' layer, they mix the below up a bit.
+
+
+I like the common elements between IRC and IDE. Again holding true that this is
+not a terminal emulator / shell / etc: that's the job of your WM or tmux or what
+have you.
+
+- Daemon
+  - Runs, manages lifecycle of plugins
+  - Maintains connections
+    - eg Network, notifications, open files
+  - Keeps cached background state
+    - eg code annotations, build results
+  - Keeps UI state
+    - eg "ui session" : which views are open
+  - Can trigger UI events, e.g. opening new windows
+    - May need to have a UI already active to do so?
+  - Possibly scoped, e.g. per-workspace?
+- UI
+  - Attaches to and/or starts daemon
+    - Possibly scoped, e.g. finding the one for the specified workspace
+    - Possibly explicitly provided, e.g. if the daemon or another UI window
+      starts the view
+    - Posibly starts, if the daemon isn't found through other means
+  - Listens for events
+    - From daemon
+    - From user
+  - Does some (limited) display
+    - Not a tmux, not a graphical shell, none of that.
+    - But may fork to open new views, if directed to (by the daemon).
