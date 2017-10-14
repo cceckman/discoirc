@@ -22,6 +22,7 @@ import (
 // - Logger
 // - "Next" channel for changing views
 // - View-specific intitialization data (channel, etc.)
+// - Later: Model source (daemon connection)
 
 // ViewInfo provides the information necessary to initialize one of the supported Views.
 type ViewInfo interface {
@@ -49,7 +50,13 @@ func (l *LayoutSwitcher) await() {
 		}
 		m := n.NewManager(l.Log, l.next)
 		l.Gui.SetManager(m)
+		// Default keybinding of ctrl-c to exit
+		l.Gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit)
 	}
+}
+
+func Quit(*gocui.Gui, *gocui.View) error {
+	return gocui.ErrQuit
 }
 
 // StartLayout starts the LayoutSwitcher using the provided initial view and logger.

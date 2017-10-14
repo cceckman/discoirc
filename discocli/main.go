@@ -48,7 +48,11 @@ func main() {
 	g := UiOrDie(logger)
 	defer g.Close()
 
-	ls := view.StartLayoutSwitcher(g, logger, nil)
+	// TODO: Populate the initial view from something else.
+	ls := view.StartLayoutSwitcher(g, logger, &view.ChatViewInfo{
+		Connection: "testnet",
+		Channel: "testing",
+	})
 	defer ls.Done()
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
