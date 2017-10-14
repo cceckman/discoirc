@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/cceckman/discoirc/discocli/log"
+	"github.com/cceckman/discoirc/discocli/model"
 	"github.com/cceckman/discoirc/discocli/view"
 	"github.com/jroimartin/gocui"
 )
@@ -49,9 +50,16 @@ func main() {
 	defer g.Close()
 
 	// TODO: Populate the initial view from something else.
-	ls := view.StartLayoutSwitcher(g, logger, &view.ChatViewInfo{
+	// TODO: Implement Client properly.
+	client := model.DumbClient(map[string]model.Connection{
+		"testnet": model.DumbConnection(map[string]model.Channel{
+			"#testing": model.NewMockChannel("#testing"),
+		}),
+	})
+
+	ls := view.StartLayoutSwitcher(client, g, logger, &view.ChatViewInfo{
 		Connection: "testnet",
-		Channel: "#testing",
+		Channel:    "#testing",
 	})
 	defer ls.Done()
 

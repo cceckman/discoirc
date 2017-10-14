@@ -1,5 +1,9 @@
 package model
 
+import (
+	"sort"
+)
+
 // Connection represents a relationship with an IRC network (or server).
 // It may be connected to one or more channels.
 type Connection interface {
@@ -15,7 +19,7 @@ func (f DumbConnection) Channel(name string) Channel {
 	return f[name]
 }
 
-func (f DumbClient) Channels() []string {
+func (f DumbConnection) Channels() []string {
 	result := make([]string, len(f))
 	i := 0
 	for k := range f {

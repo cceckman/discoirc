@@ -38,6 +38,8 @@ type ViewInfo interface {
 type LayoutSwitcher struct {
 	next chan ViewInfo
 
+	Client model.Client
+
 	Gui *gocui.Gui
 	Log *log.Logger
 }
@@ -49,7 +51,7 @@ func (l *LayoutSwitcher) await() {
 			l.Log.Print("LayoutSwitcher received request for a nil view, ignoring.")
 			continue
 		}
-		m := n.NewManager(l.Log, l.next)
+		m := n.NewManager(l.Client, l.Log, l.next)
 		l.Gui.SetManager(m)
 		// Default keybinding of ctrl-c to exit
 		l.Gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit)
@@ -61,9 +63,10 @@ func Quit(*gocui.Gui, *gocui.View) error {
 }
 
 // StartLayout starts the LayoutSwitcher using the provided initial view and logger.
-func StartLayoutSwitcher(g *gocui.Gui, log *log.Logger, initView ViewInfo) *LayoutSwitcher {
+func StartLayoutSwitcher(c model.Client, g *gocui.Gui, log *log.Logger, initView ViewInfo) *LayoutSwitcher {
 	layout := &LayoutSwitcher{
 		next: make(chan ViewInfo),
+		Client: c,
 		Gui: g,
 		Log: log,
 	}

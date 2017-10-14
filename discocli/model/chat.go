@@ -146,7 +146,6 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 	return c
 }
 
-
 func NewMockChannel(name string) Channel {
 	r := &MockChannel{
 		name:          name,
