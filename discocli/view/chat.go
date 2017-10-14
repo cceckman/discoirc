@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/cceckman/discoirc/discocli/model"
 	"github.com/jroimartin/gocui"
@@ -104,7 +103,6 @@ func (m *ChatManager) layoutInput(g *gocui.Gui) error {
 	return nil
 }
 
-
 func (m *ChatManager) addStatusHandlers(g *gocui.Gui) {
 	<-m.connected
 
@@ -197,6 +195,47 @@ func (m *ChatManager) layoutStatus(g *gocui.Gui) error {
 	return nil
 }
 
+func (m *ChatManager) addMessagesHandlers(g *gocui.Gui) {
+	<-m.connected
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		notifications := m.channel.Await(ctx)
+		count := 0
+		for n := range notifications {
+			// Suppress topic-only updates.
+			if n.Messages == count {
+				continue
+			}
+			count = n.Messages
+
+			done := make(chan struct{})
+			g.Update(func(g *gocui.Gui) error {
+				defer close(done)
+				v, err := g.View("messages")
+				switch {
+				case err == gocui.ErrUnknownView:
+					cancel()
+					return nil
+				case err != nil:
+					return err
+				}
+				// TODO: Refactor this controller, s.t. this doesn't take place in the UI thread.
+				_, lines := v.Size()
+				// TODO: allow scrollback. Part of refactoring.
+				messages := m.channel.GetMessages(0, uint(lines))
+				v.Clear()
+				for _, m := range messages {
+					fmt.Fprintln(v, m)
+				}
+				return nil
+			})
+			<-done
+		}
+	}()
+}
+
 func (m *ChatManager) layoutMessages(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	ax, ay, bx, by := 0, 0, maxX-1, maxY-3
@@ -213,39 +252,8 @@ func (m *ChatManager) layoutMessages(g *gocui.Gui) error {
 
 		// TODO attach controller/model here, instead of fake init.
 		v.Autoscroll = true
-		go func() {
-			m.Log.Print("Chat/messages: [start] counting bottles")
-			defer m.Log.Print("Chat/messages: [done] counting bottles")
-			max := 99
-			ctx, cancel := context.WithCancel(context.Background())
-			for i := max; i >= 0; i-- {
-				time.Sleep(time.Millisecond * 500)
-				select {
-				case <-ctx.Done():
-					max = 0
-				default:
-					// do nothing
-				}
-
-				msg := fmt.Sprintf("\n%d bottles of beer on the wall, %d bottles of beer...", i, i)
-
-				m.Log.Print("Chat/messages: [start] handler for: ", msg)
-				g.Update(func(g *gocui.Gui) error {
-					v, err := g.View("messages")
-					if err == gocui.ErrUnknownView {
-						cancel()
-						return nil
-					} else if err != nil {
-						return err
-					}
-					m.Log.Print(msg)
-					if _, err := fmt.Fprint(v, msg); err != nil {
-						return err
-					}
-					return nil
-				})
-			}
-		}()
+		go m.addMessagesHandlers(g)
 	}
+
 	return nil
 }

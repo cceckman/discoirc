@@ -3,7 +3,10 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"sync"
+	"time"
 )
 
 type Channel interface {
@@ -43,31 +46,10 @@ type MockChannel struct {
 
 	messages []string
 	topic    string
-
 	mu sync.RWMutex
 
 	notification chan *Notification
-}
-
-// Notify asyncrhonously notifies listeners that the Channel has been updated.
-// It is thread-safe (it spawns its own goroutine.)
-func (m *MockChannel) Notify() {
-	go func() {
-		next := make(chan *Notification, 1)
-
-		m.mu.RLock()
-		new := &Notification{
-			Messages: len(m.messages),
-			Topic:    m.topic,
-			Next:     next,
-		}
-		m.mu.RUnlock()
-
-		m.mu.Lock()
-		m.notification <- new
-		m.notification = next
-		m.mu.Unlock()
-	}()
+	messageUpdate, topicUpdate chan string
 }
 
 func (m *MockChannel) Name() string {
@@ -97,11 +79,7 @@ func (m *MockChannel) GetMessages(offset, size uint) []string {
 }
 
 func (m *MockChannel) SendMessage(msg string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	defer m.Notify()
-
-	m.messages = append(m.messages, msg)
+	m.messageUpdate <- msg
 }
 
 func (m *MockChannel) GetTopic() string {
@@ -112,14 +90,7 @@ func (m *MockChannel) GetTopic() string {
 }
 
 func (m *MockChannel) SetTopic(topic string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// Don't notify if it's a spurious update.
-	if topic != m.topic {
-		defer m.Notify()
-		m.topic = topic
-	}
+	m.topicUpdate <- topic
 }
 
 func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
@@ -131,15 +102,15 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 		await := m.notification
 
 		select {
-			case <-ctx.Done():
-				return
-			case notification := <-await:
-				// Send on to the next listener; non-blocking
-				await <- notification
-				// Update our listener...
-				await = notification.Next
-				// And notify our own consumer. This is blocking.
-				c <- notification
+		case <-ctx.Done():
+			return
+		case notification := <-await:
+			// Send on to the next listener; non-blocking
+			await <- notification
+			// Update our listener...
+			await = notification.Next
+			// And notify our own consumer. This is blocking.
+			c <- notification
 		}
 	}()
 
@@ -148,8 +119,59 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 
 func NewMockChannel(name string) Channel {
 	r := &MockChannel{
-		name:          name,
+		name:         name,
 		notification: make(chan *Notification, 1),
+
+		messageUpdate: make(chan string),
+		topicUpdate: make(chan string),
 	}
+
+	go func() {
+		for {
+			// TODO if this is still in use: close it.
+			updated := false
+			select {
+			case m := <-r.messageUpdate:
+				r.mu.Lock()
+				r.messages = append(r.messages, m)
+				r.mu.Unlock()
+				updated = true
+			case t := <-r.topicUpdate:
+				r.mu.Lock()
+				if t != r.topic {
+					updated = true
+				}
+				r.topic = t
+				r.mu.Unlock()
+			}
+
+			if updated {
+				next := make(chan *Notification, 1)
+				notification := &Notification{
+					Messages: len(r.messages),
+					Topic: r.topic,
+					Next: next,
+				}
+				r.notification <- notification
+				r.notification = next
+			}
+		}
+	}()
+
 	return r
+}
+
+// MessageGenerator sends message to a Channel.
+func MessageGenerator(logger *log.Logger, max uint, c Channel) {
+	go func() {
+		logger.Print("Chat/messages: [start] counting bottles")
+		defer logger.Print("Chat/messages: [done] counting bottles")
+		for i := max; i >= 0; i-- {
+			time.Sleep(time.Millisecond * 500)
+
+			msg := fmt.Sprintf("\n%d bottles of beer on the wall, %d bottles of beer...", i, i)
+			logger.Print("Chat/messages: [sending] : ", msg)
+			c.SendMessage(msg)
+		}
+	}()
 }

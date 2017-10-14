@@ -17,6 +17,7 @@ type MessageEditor struct {
 func NewMessageEditor(c model.Channel, v *gocui.View) {
 	r := &MessageEditor{
 		View: v,
+		Channel: c,
 	}
 	v.Editor = r
 	v.Editable = true
@@ -44,7 +45,9 @@ func (m *MessageEditor) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Mo
 		// TODO check position; don't go past prompt
 		v.MoveCursor(01, 0, false)
 	case gocui.KeyEnter:
-		// TODO send message to controller
+		// TODO sanitize
+		m.Channel.SendMessage(v.Buffer())
+		v.Clear()
 	case gocui.KeyTab:
 		// TODO tab-complete names
 	}

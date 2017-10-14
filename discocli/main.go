@@ -51,9 +51,10 @@ func main() {
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
+	channel := model.NewMockChannel("#testing")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
-			"#testing": model.NewMockChannel("#testing"),
+			"#testing": channel,
 		}),
 	})
 
@@ -62,6 +63,8 @@ func main() {
 		Channel:    "#testing",
 	})
 	defer ls.Done()
+
+	model.MessageGenerator(logger, 99, channel)
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		logger.Print("encountered error, treating as nonfatal: ", err)
