@@ -51,7 +51,7 @@ func main() {
 	// TODO: Populate the initial view from something else.
 	ls := view.StartLayoutSwitcher(g, logger, &view.ChatViewInfo{
 		Connection: "testnet",
-		Channel: "testing",
+		Channel: "#testing",
 	})
 	defer ls.Done()
 
