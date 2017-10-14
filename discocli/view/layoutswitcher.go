@@ -4,6 +4,7 @@ package view
 import (
 	"log"
 
+	"github.com/cceckman/discoirc/discocli/model"
 	"github.com/jroimartin/gocui"
 )
 
@@ -29,7 +30,7 @@ type ViewInfo interface {
 	// NewManager creates a new gocui.Manager from this ViewInfo.
 	// The ViewInfo incorporates whatever view-specific parameters there are; the arguments to this
 	// function provide the default logger and "change view" channels.
-	NewManager(*log.Logger, chan<- ViewInfo) gocui.Manager
+	NewManager(model.Client, *log.Logger, chan<- ViewInfo) gocui.Manager
 }
 
 // LayoutSwitcher initializes
