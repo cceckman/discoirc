@@ -27,7 +27,9 @@ func New(dir string) (*log.Logger, error) {
 		username = u.Username
 	}
 
-	fname := fmt.Sprintf(logFileFmt, os.Args[0], username, time.Now().Format(timeFmt), os.Getpid())
+	binname := filepath.Base(os.Args[0])
+
+	fname := fmt.Sprintf(logFileFmt, binname, username, time.Now().Format(timeFmt), os.Getpid())
 	logpath := filepath.Join(dir, fname)
 	f, err := os.Create(logpath)
 	if err != nil {

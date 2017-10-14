@@ -4,12 +4,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	golog "log"
 	"io/ioutil"
+	golog "log"
 	"os"
 
+	"github.com/cceckman/discoirc/discocli/log"
+	"github.com/cceckman/discoirc/discocli/view"
 	"github.com/jroimartin/gocui"
-	"github.com/cceckman/discoirc/termui/log"
 )
 
 const (
@@ -43,6 +44,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	logger := LoggerOrDie()
+	g := UiOrDie(logger)
+	defer g.Close()
+
+	ls := view.StartLayoutSwitcher(g, logger, nil)
+	defer ls.Done()
+
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		logger.Print("encountered error, treating as nonfatal: ", err)
+	}
+}
+
+func LoggerOrDie() *golog.Logger {
 	// Initialize logger
 	if *logpath == "" {
 		tmp, err := ioutil.TempDir("", "")
@@ -55,7 +69,10 @@ func main() {
 	if err != nil {
 		golog.Fatal("could not open log file: ", err)
 	}
+	return logger
+}
 
+func UiOrDie(logger *golog.Logger) *gocui.Gui {
 	// Initialize GUI
 	colorMode := gocui.Output256
 	if *lowcolor {
@@ -66,11 +83,5 @@ func main() {
 	if err != nil {
 		logger.Fatal("could not initialize GUI: ", err)
 	}
-	defer g.Close()
-
-	// TODO: set termui manager
-
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		logger.Print("encountered error, treating as nonfatal: ", err)
-	}
+	return g
 }
