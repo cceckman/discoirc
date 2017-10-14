@@ -20,7 +20,7 @@ type Channel interface {
 	SetTopic(string)
 
 	// Await awaits for changes to this channel.
-	Await(context.Context) chan *Notification
+	Await(context.Context) <-chan *Notification
 }
 
 // Notification represents an update to the channel.
@@ -34,7 +34,7 @@ type Notification struct {
 	Topic string
 
 	// Next is a channel to listen on for the next notification.
-	Next <-chan *Notification
+	Next chan *Notification
 }
 
 // MockChannel implements the Channel model, for testing.
@@ -49,21 +49,25 @@ type MockChannel struct {
 	notification chan *Notification
 }
 
+// Notify asyncrhonously notifies listeners that the Channel has been updated.
+// It is thread-safe (it spawns its own goroutine.)
 func (m *MockChannel) Notify() {
-	next := make(chan *Notification, 1)
+	go func() {
+		next := make(chan *Notification, 1)
 
-	m.mu.RLock()
-	new := &Notification{
-		Messages: len(m.messages),
-		Topic:    m.topic,
-		Next:     next,
-	}
-	m.mu.RUnlock()
+		m.mu.RLock()
+		new := &Notification{
+			Messages: len(m.messages),
+			Topic:    m.topic,
+			Next:     next,
+		}
+		m.mu.RUnlock()
 
-	m.mu.Lock()
-	m.notification <- new
-	m.notification = next
-	m.mu.Unlock()
+		m.mu.Lock()
+		m.notification <- new
+		m.notification = next
+		m.mu.Unlock()
+	}()
 }
 
 func (m *MockChannel) Name() string {
@@ -92,10 +96,61 @@ func (m *MockChannel) GetMessages(offset, size uint) []string {
 	return m.messages[start:end]
 }
 
+func (m *MockChannel) SendMessage(msg string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	defer m.Notify()
+
+	m.messages = append(m.messages, msg)
+}
+
+func (m *MockChannel) GetTopic() string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	return m.topic
+}
+
+func (m *MockChannel) SetTopic(topic string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Don't notify if it's a spurious update.
+	if topic != m.topic {
+		defer m.Notify()
+		m.topic = topic
+	}
+}
+
+func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
+	c := make(chan *Notification)
+
+	go func() {
+		defer close(c)
+
+		await := m.notification
+
+		select {
+			case <-ctx.Done():
+				return
+			case notification := <-await:
+				// Send on to the next listener; non-blocking
+				await <- notification
+				// Update our listener...
+				await = notification.Next
+				// And notify our own consumer. This is blocking.
+				c <- notification
+		}
+	}()
+
+	return c
+}
+
+
 func NewMockChannel(name string) Channel {
-	_ = &MockChannel{
+	r := &MockChannel{
 		name:          name,
 		notification: make(chan *Notification, 1),
 	}
-	return nil
+	return r
 }
