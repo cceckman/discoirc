@@ -8,3 +8,20 @@ type Connection interface {
 
 	// TODO add server info
 }
+
+type DumbConnection map[string]Channel
+
+func (f DumbConnection) Channel(name string) Channel {
+	return f[name]
+}
+
+func (f DumbClient) Channels() []string {
+	result := make([]string, len(f))
+	i := 0
+	for k := range f {
+		result[i] = k
+		i++
+	}
+	sort.Strings(result)
+	return result
+}
