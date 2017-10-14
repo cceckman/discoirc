@@ -1,0 +1,15 @@
+[submodule "vendor/github.com/golang/protobuf"]
+	path = vendor/github.com/golang/protobuf
+	url = https://github.com/golang/protobuf
+[submodule "vendor/github.com/fluffle/goirc"]
+	path = vendor/github.com/fluffle/goirc
+	url = https://github.com/fluffle/goirc
+[submodule "vendor/github.com/jroimartin/gocui"]
+	path = vendor/github.com/jroimartin/gocui
+	url = https://github.com/jroimartin/gocui
+[submodule "vendor/github.com/nsf/termbox-go"]
+	path = vendor/github.com/nsf/termbox-go
+	url = https://github.com/nsf/termbox-go
+[submodule "vendor/github.com/mattn/go-runewidth"]
+	path = vendor/github.com/mattn/go-runewidth
+	url = https://github.com/mattn/go-runewidth
