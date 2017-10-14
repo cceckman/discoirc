@@ -19,3 +19,9 @@
 [submodule "vendor/golang.org/net"]
 	path = vendor/golang.org/net
 	url = https://github.com/golang/net
+[submodule "vendor/golang.org/text"]
+	path = vendor/golang.org/text
+	url = https://github.com/golang/text
+[submodule "vendor/google.golang.org/genproto"]
+	path = vendor/google.golang.org/genproto
+	url = https://github.com/google/go-genproto
