@@ -36,8 +36,6 @@ configure channels and connections on the stub server.
 
 * Channel: new messages incoming, send messages, list connection+channel,
   nick.
-* Channelstate: List users, topic.
-* Connection: ??
 * Session: Current connections and channels. Defer editing / starting new
   connections.
 
@@ -47,7 +45,8 @@ statically configure connections and channels. via code.
 
 ### 0.3: Configuration
 Load configuration of connections from file. Write to a file. Support connecting
-to new servers and channels in the UI.
+to new servers and channels in the UI. This may take the form of a new
+"connection" master view, kind of in between sesion and channel.
 
 Allow "autoload" (watch for updates) and "autowrite" (persist settings)
 both as options. Counterintuitively, if you unset 'autowrite', it doesn't write
@@ -74,6 +73,9 @@ Support the client launching new windows in the supported WMs:
 
 ### 0.6: Fit & Finish
 Support more IRC operations. Use `discoirc` daily. Clean TODOs, HACKs, etc.
+
+Maybe: Add UI for "channel meta", e.g. user list, and "connection meta" inasmuch
+as that's not already covered by whatever the connection editor looks like.
 
 ### 0.7: Private release
 Get some folks interested in it to try it out. Get feedback. Incorporate
