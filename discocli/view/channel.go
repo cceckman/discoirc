@@ -1,4 +1,3 @@
-// Package chat provides the Channel view/model/viewmodel for the IRC channel view.
 package view
 
 import (
@@ -10,39 +9,86 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// ChannelViewModel is the ViewModel for the Channel view.
-type ChannelViewModel struct {
+
+const (
+	// View names.
+	ChannelInputView = "channel input"
+	ChannelStatusView = "channel status"
+	ChannelContentsView = "channel contents"
+)
+
+
+// So: what's the flow here?
+// Either the process startup, or some action in a different top-level view, decides that a given
+// *gocui.Gui should be using a particular model.Client as a backend, with logging to a log.Logger.
+
+// Context provides data necessary for all Windows.
+type Context struct {
+	Gui *gocui.Gui
+	Log *log.Logger
+	Backend model.Client
+}
+
+// Window is a top-level view, e.g. Channel or Session.
+type Window interface {
+	// Start replaces the Gui with this Window, or returns an error.
+	Start() error
+}
+
+
+// Channel is the ViewModel for the Channel view.
+type Channel struct {
+	*Context
+
 	Connection, Channel string
 
-	Log  *log.Logger
-
-	// channel is not necessarily populated until 'connected' is closed.
-	channel   model.Channel
+	// channel is not necessarily populated until 'connected' is closed.p
+	// connected blocks some operations until the channel is properly connected from the client side.
 	connected chan struct{}
+	channel   model.Channel
 }
 
-func NewChannelViewModel(connection, channel string, client model.Client, log *log.Logger) gocui.Manager {
-	result := &ChannelViewModel{
-		Connection: connection,
-		Channel:    channel,
-		Log:        log,
-
-		connected: make(chan struct{}),
+func (vm *Channel) validate() error {
+	if vm.Gui == nil {
+		return errors.New("no Gui provided")
 	}
-	go result.Connect(client)
-	return result
+	if vm.Log == nil {
+		return errors.New("no Logger provided")
+		}
+	if vm.Connection == "" {
+		return errors.New("no Connection provided")
+	}
+	if vm.Channel == "" {
+		return errors.New("no Channel provided")
+	}
+	return nil
 }
 
-func (m *ChannelViewModel) Connect(client model.Client) {
-	// Connect in the background.
-	// Once done, signal to waiting layout routines that it's OK to add handlers.
-	defer close(m.connected)
+func (vm *Channel) Start() error {
+	if err := vm.validate(); err != nil {
+		return err
+	}
+	// Start client connection.
+	vm.connected = make(chan struct)
+	go func() {
+		defer close(vm.connected)
+		vm.channel = vm.Client.Connection(vm.Connection).Channel(vm.Channel)
+	}()
 
-	// TODO allow for an error in connection.
-	m.channel = client.Connection(m.Connection).Channel(m.Channel)
+	// Attach ViewModels.
+	vm.Gui.SetManagers(
+		vm.NewInput(),
+		vm.NewStatus(),
+		vm.NewContents(),
+		QuitManager,
+	)
+
+	return nil
 }
 
-var _ gocui.Manager = &ChannelViewModel{}
+func (vm *Channel) NewInput() gocui.Manager {
+	return ChannelInput(vm)
+}
 
 // Layout sets up the Channel view. It creates new views as necessary, including starting threads.
 func (m *ChannelViewModel) Layout(g *gocui.Gui) error {
@@ -63,47 +109,13 @@ func (m *ChannelViewModel) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func Quit(*gocui.Gui, *gocui.View) error {
-	return gocui.ErrQuit
-}
-
-func (m *ChannelViewModel) addInputHandlers(g *gocui.Gui) {
-	g.Update(func(g *gocui.Gui) error {
-		g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit)
+// QuitManager is a Manager that provides a Ctrl+C quit handler.
+var QuitManager gocui.Manager = gocui.ManagerFunc(func(g *gocui.Gui) error {
+		g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, func(*gocui.Gui, *gocui.View) error {
+			return gocui.ErrQuit
+		})
 		return nil
 	})
-	<-m.connected
-	g.Update(func(g *gocui.Gui) error {
-		v, err := g.View("input")
-		switch {
-		case err == gocui.ErrUnknownView:
-			return nil
-		case err != nil:
-			return err
-		}
-		NewMessageEditor(m.channel, v)
-		return nil
-	})
-}
-
-func (m *ChannelViewModel) layoutInput(g *gocui.Gui) error {
-	maxX, maxY := g.Size()
-	// These are good!
-	ax, ay, bx, by := -1, maxY-2, maxX, maxY
-	v, err := g.SetView("input", ax, ay, bx, by)
-	switch err {
-	case nil:
-		return nil
-	case gocui.ErrUnknownView:
-		m.Log.Print("Channel/input: [start] initial layout")
-		defer m.Log.Print("Channel/input: [done] initial layout")
-		v.Frame = false
-		go m.addInputHandlers(g)
-	default:
-		return err
-	}
-	return nil
-}
 
 func (m *ChannelViewModel) addStatusHandlers(g *gocui.Gui) {
 	<-m.connected
