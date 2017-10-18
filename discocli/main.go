@@ -58,12 +58,7 @@ func main() {
 		}),
 	})
 
-	ls := view.StartLayoutSwitcher(client, g, logger, &view.ChannelViewInfo{
-		Connection: "testnet",
-		Channel:    "#testing",
-	})
-	defer ls.Done()
-
+	g.SetManager(view.NewChannelViewModel("testnet", "#testing", client, logger))
 	model.MessageGenerator(logger, 99, channel)
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {

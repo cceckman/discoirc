@@ -10,28 +10,22 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// ChannelManager is the ViewModel for the Channel view.
-type ChannelManager struct {
-	*ChannelViewInfo
+// ChannelViewModel is the ViewModel for the Channel view.
+type ChannelViewModel struct {
+	Connection, Channel string
 
 	Log  *log.Logger
-	done chan<- ViewInfo
 
 	// channel is not necessarily populated until 'connected' is closed.
 	channel   model.Channel
 	connected chan struct{}
 }
 
-// ChannelViewInfo is the normal view of a channel or PM thread: scrolling text, an input field, etc.
-type ChannelViewInfo struct {
-	Connection, Channel string
-}
-
-func (vi *ChannelViewInfo) NewManager(client model.Client, log *log.Logger, done chan<- ViewInfo) gocui.Manager {
-	result := &ChannelManager{
-		ChannelViewInfo: vi,
-		Log:          log,
-		done:         done,
+func NewChannelViewModel(connection, channel string, client model.Client, log *log.Logger) gocui.Manager {
+	result := &ChannelViewModel{
+		Connection: connection,
+		Channel:    channel,
+		Log:        log,
 
 		connected: make(chan struct{}),
 	}
@@ -39,7 +33,7 @@ func (vi *ChannelViewInfo) NewManager(client model.Client, log *log.Logger, done
 	return result
 }
 
-func (m *ChannelManager) Connect(client model.Client) {
+func (m *ChannelViewModel) Connect(client model.Client) {
 	// Connect in the background.
 	// Once done, signal to waiting layout routines that it's OK to add handlers.
 	defer close(m.connected)
@@ -48,10 +42,10 @@ func (m *ChannelManager) Connect(client model.Client) {
 	m.channel = client.Connection(m.Connection).Channel(m.Channel)
 }
 
-var _ gocui.Manager = &ChannelManager{}
+var _ gocui.Manager = &ChannelViewModel{}
 
 // Layout sets up the Channel view. It creates new views as necessary, including starting threads.
-func (m *ChannelManager) Layout(g *gocui.Gui) error {
+func (m *ChannelViewModel) Layout(g *gocui.Gui) error {
 	m.Log.Print("Channel: [start] layout")
 	defer m.Log.Print("Channel: [done] layout")
 	// Create three views: input, status, messages.
@@ -69,7 +63,15 @@ func (m *ChannelManager) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChannelManager) addInputHandlers(g *gocui.Gui) {
+func Quit(*gocui.Gui, *gocui.View) error {
+	return gocui.ErrQuit
+}
+
+func (m *ChannelViewModel) addInputHandlers(g *gocui.Gui) {
+	g.Update(func(g *gocui.Gui) error {
+		g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit)
+		return nil
+	})
 	<-m.connected
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View("input")
@@ -84,7 +86,7 @@ func (m *ChannelManager) addInputHandlers(g *gocui.Gui) {
 	})
 }
 
-func (m *ChannelManager) layoutInput(g *gocui.Gui) error {
+func (m *ChannelViewModel) layoutInput(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	// These are good!
 	ax, ay, bx, by := -1, maxY-2, maxX, maxY
@@ -103,7 +105,7 @@ func (m *ChannelManager) layoutInput(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChannelManager) addStatusHandlers(g *gocui.Gui) {
+func (m *ChannelViewModel) addStatusHandlers(g *gocui.Gui) {
 	<-m.connected
 
 	// Create a stream of topics to update.
@@ -169,7 +171,7 @@ func (m *ChannelManager) addStatusHandlers(g *gocui.Gui) {
 	}()
 }
 
-func (m *ChannelManager) layoutStatus(g *gocui.Gui) error {
+func (m *ChannelViewModel) layoutStatus(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	ax, ay, bx, by := -1, maxY-3, maxX, maxY-1
 	if v, err := g.SetView("status", ax, ay, bx, by); err != nil {
@@ -195,7 +197,7 @@ func (m *ChannelManager) layoutStatus(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChannelManager) addMessagesHandlers(g *gocui.Gui) {
+func (m *ChannelViewModel) addMessagesHandlers(g *gocui.Gui) {
 	<-m.connected
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -236,7 +238,7 @@ func (m *ChannelManager) addMessagesHandlers(g *gocui.Gui) {
 	}()
 }
 
-func (m *ChannelManager) layoutMessages(g *gocui.Gui) error {
+func (m *ChannelViewModel) layoutMessages(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	ax, ay, bx, by := 0, 0, maxX-1, maxY-3
 	if v, err := g.SetView("messages", ax, ay, bx, by); err != nil {
