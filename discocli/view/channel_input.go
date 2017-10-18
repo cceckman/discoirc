@@ -34,7 +34,6 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 	}
 	return nil
 
-
 	return nil
 }
 
