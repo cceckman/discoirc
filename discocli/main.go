@@ -58,7 +58,7 @@ func main() {
 		}),
 	})
 
-	ls := view.StartLayoutSwitcher(client, g, logger, &view.ChatViewInfo{
+	ls := view.StartLayoutSwitcher(client, g, logger, &view.ChannelViewInfo{
 		Connection: "testnet",
 		Channel:    "#testing",
 	})

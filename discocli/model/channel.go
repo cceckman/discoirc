@@ -46,9 +46,9 @@ type MockChannel struct {
 
 	messages []string
 	topic    string
-	mu sync.RWMutex
+	mu       sync.RWMutex
 
-	notification chan *Notification
+	notification               chan *Notification
 	messageUpdate, topicUpdate chan string
 }
 
@@ -101,16 +101,18 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 
 		await := m.notification
 
-		select {
-		case <-ctx.Done():
-			return
-		case notification := <-await:
-			// Send on to the next listener; non-blocking
-			await <- notification
-			// Update our listener...
-			await = notification.Next
-			// And notify our own consumer. This is blocking.
-			c <- notification
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case notification := <-await:
+				// Send on to the next listener; non-blocking
+				await <- notification
+				// Update our listener...
+				await = notification.Next
+				// And notify our own consumer. This is blocking.
+				c <- notification
+			}
 		}
 	}()
 
@@ -123,7 +125,7 @@ func NewMockChannel(name string) Channel {
 		notification: make(chan *Notification, 1),
 
 		messageUpdate: make(chan string),
-		topicUpdate: make(chan string),
+		topicUpdate:   make(chan string),
 	}
 
 	go func() {
@@ -149,8 +151,8 @@ func NewMockChannel(name string) Channel {
 				next := make(chan *Notification, 1)
 				notification := &Notification{
 					Messages: len(r.messages),
-					Topic: r.topic,
-					Next: next,
+					Topic:    r.topic,
+					Next:     next,
 				}
 				r.notification <- notification
 				r.notification = next

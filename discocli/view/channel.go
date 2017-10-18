@@ -1,4 +1,4 @@
-// Package chat provides the Chat view/model/viewmodel for the IRC channel view.
+// Package chat provides the Channel view/model/viewmodel for the IRC channel view.
 package view
 
 import (
@@ -10,9 +10,9 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// ChatManager is the ViewModel for the Chat view.
-type ChatManager struct {
-	*ChatViewInfo
+// ChannelManager is the ViewModel for the Channel view.
+type ChannelManager struct {
+	*ChannelViewInfo
 
 	Log  *log.Logger
 	done chan<- ViewInfo
@@ -22,14 +22,14 @@ type ChatManager struct {
 	connected chan struct{}
 }
 
-// ChatViewInfo is the normal view of a channel or PM thread: scrolling text, an input field, etc.
-type ChatViewInfo struct {
+// ChannelViewInfo is the normal view of a channel or PM thread: scrolling text, an input field, etc.
+type ChannelViewInfo struct {
 	Connection, Channel string
 }
 
-func (vi *ChatViewInfo) NewManager(client model.Client, log *log.Logger, done chan<- ViewInfo) gocui.Manager {
-	result := &ChatManager{
-		ChatViewInfo: vi,
+func (vi *ChannelViewInfo) NewManager(client model.Client, log *log.Logger, done chan<- ViewInfo) gocui.Manager {
+	result := &ChannelManager{
+		ChannelViewInfo: vi,
 		Log:          log,
 		done:         done,
 
@@ -39,7 +39,7 @@ func (vi *ChatViewInfo) NewManager(client model.Client, log *log.Logger, done ch
 	return result
 }
 
-func (m *ChatManager) Connect(client model.Client) {
+func (m *ChannelManager) Connect(client model.Client) {
 	// Connect in the background.
 	// Once done, signal to waiting layout routines that it's OK to add handlers.
 	defer close(m.connected)
@@ -48,12 +48,12 @@ func (m *ChatManager) Connect(client model.Client) {
 	m.channel = client.Connection(m.Connection).Channel(m.Channel)
 }
 
-var _ gocui.Manager = &ChatManager{}
+var _ gocui.Manager = &ChannelManager{}
 
-// Layout sets up the Chat view. It creates new views as necessary, including starting threads.
-func (m *ChatManager) Layout(g *gocui.Gui) error {
-	m.Log.Print("Chat: [start] layout")
-	defer m.Log.Print("Chat: [done] layout")
+// Layout sets up the Channel view. It creates new views as necessary, including starting threads.
+func (m *ChannelManager) Layout(g *gocui.Gui) error {
+	m.Log.Print("Channel: [start] layout")
+	defer m.Log.Print("Channel: [done] layout")
 	// Create three views: input, status, messages.
 	// Create them in that order, since 'input' is fixed-len, but 'status' and 'messages' may need to flex.
 	if err := m.layoutInput(g); err != nil {
@@ -69,7 +69,7 @@ func (m *ChatManager) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChatManager) addInputHandlers(g *gocui.Gui) {
+func (m *ChannelManager) addInputHandlers(g *gocui.Gui) {
 	<-m.connected
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View("input")
@@ -84,7 +84,7 @@ func (m *ChatManager) addInputHandlers(g *gocui.Gui) {
 	})
 }
 
-func (m *ChatManager) layoutInput(g *gocui.Gui) error {
+func (m *ChannelManager) layoutInput(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	// These are good!
 	ax, ay, bx, by := -1, maxY-2, maxX, maxY
@@ -93,8 +93,8 @@ func (m *ChatManager) layoutInput(g *gocui.Gui) error {
 	case nil:
 		return nil
 	case gocui.ErrUnknownView:
-		m.Log.Print("Chat/input: [start] initial layout")
-		defer m.Log.Print("Chat/input: [done] initial layout")
+		m.Log.Print("Channel/input: [start] initial layout")
+		defer m.Log.Print("Channel/input: [done] initial layout")
 		v.Frame = false
 		go m.addInputHandlers(g)
 	default:
@@ -103,7 +103,7 @@ func (m *ChatManager) layoutInput(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChatManager) addStatusHandlers(g *gocui.Gui) {
+func (m *ChannelManager) addStatusHandlers(g *gocui.Gui) {
 	<-m.connected
 
 	// Create a stream of topics to update.
@@ -169,7 +169,7 @@ func (m *ChatManager) addStatusHandlers(g *gocui.Gui) {
 	}()
 }
 
-func (m *ChatManager) layoutStatus(g *gocui.Gui) error {
+func (m *ChannelManager) layoutStatus(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	ax, ay, bx, by := -1, maxY-3, maxX, maxY-1
 	if v, err := g.SetView("status", ax, ay, bx, by); err != nil {
@@ -178,8 +178,8 @@ func (m *ChatManager) layoutStatus(g *gocui.Gui) error {
 			return err
 		}
 		// Initialize the view.
-		m.Log.Print("Chat/status: [start] initial layout")
-		defer m.Log.Print("Chat/status: [done] initial layout")
+		m.Log.Print("Channel/status: [start] initial layout")
+		defer m.Log.Print("Channel/status: [done] initial layout")
 
 		v.Editable = false
 		v.Frame = false
@@ -195,7 +195,7 @@ func (m *ChatManager) layoutStatus(g *gocui.Gui) error {
 	return nil
 }
 
-func (m *ChatManager) addMessagesHandlers(g *gocui.Gui) {
+func (m *ChannelManager) addMessagesHandlers(g *gocui.Gui) {
 	<-m.connected
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -236,7 +236,7 @@ func (m *ChatManager) addMessagesHandlers(g *gocui.Gui) {
 	}()
 }
 
-func (m *ChatManager) layoutMessages(g *gocui.Gui) error {
+func (m *ChannelManager) layoutMessages(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	ax, ay, bx, by := 0, 0, maxX-1, maxY-3
 	if v, err := g.SetView("messages", ax, ay, bx, by); err != nil {
@@ -245,8 +245,8 @@ func (m *ChatManager) layoutMessages(g *gocui.Gui) error {
 			return err
 		}
 		// Initialize the view.
-		m.Log.Print("Chat/messages: [start] initial layout")
-		defer m.Log.Print("Chat/messages: [done] initial layout")
+		m.Log.Print("Channel/messages: [start] initial layout")
+		defer m.Log.Print("Channel/messages: [done] initial layout")
 		v.Editable = false
 		v.Frame = true
 
