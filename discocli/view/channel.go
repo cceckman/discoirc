@@ -86,29 +86,6 @@ func (vm *Channel) Start() error {
 	return nil
 }
 
-func (vm *Channel) NewInput() gocui.Manager {
-	return ChannelInput(vm)
-}
-
-// Layout sets up the Channel view. It creates new views as necessary, including starting threads.
-func (m *ChannelViewModel) Layout(g *gocui.Gui) error {
-	m.Log.Print("Channel: [start] layout")
-	defer m.Log.Print("Channel: [done] layout")
-	// Create three views: input, status, messages.
-	// Create them in that order, since 'input' is fixed-len, but 'status' and 'messages' may need to flex.
-	if err := m.layoutInput(g); err != nil {
-		return err
-	}
-	if err := m.layoutStatus(g); err != nil {
-		return err
-	}
-	if err := m.layoutMessages(g); err != nil {
-		return err
-	}
-	g.SetCurrentView("input")
-	return nil
-}
-
 // QuitManager is a Manager that provides a Ctrl+C quit handler.
 var QuitManager gocui.Manager = gocui.ManagerFunc(func(g *gocui.Gui) error {
 		g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, func(*gocui.Gui, *gocui.View) error {
@@ -116,98 +93,6 @@ var QuitManager gocui.Manager = gocui.ManagerFunc(func(g *gocui.Gui) error {
 		})
 		return nil
 	})
-
-func (m *ChannelViewModel) addStatusHandlers(g *gocui.Gui) {
-	<-m.connected
-
-	// Create a stream of topics to update.
-	topics := make(chan string)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	// Worker: Consume notifications, issue updates to the channel as available.
-	go func() {
-		defer close(topics)
-		notifications := m.channel.Await(ctx)
-
-		// Initialize by getting the current topic.
-		topicReceived := m.channel.GetTopic()
-		topics <- topicReceived
-		topicSent := topicReceived
-
-		for {
-			if topicReceived == topicSent {
-				// Just await a new notification.
-				select {
-				case <-ctx.Done():
-					return
-				case n := <-notifications:
-					topicReceived = n.Topic
-				}
-			} else {
-				// We have a topic to send, but may get a notification in the mean time.
-				select {
-				case <-ctx.Done():
-					return
-				case n := <-notifications:
-					topicReceived = n.Topic
-				case topics <- topicReceived:
-					topicSent = topicReceived
-				}
-			}
-		}
-	}()
-
-	// Worker: Take topics from the queue, issue updates to the UI thread.
-	// Shut down the context (and therefore the producer) if the window is gone.
-	go func() {
-		for topic := range topics {
-			// Serialize topic updates, since Update isn't serialized itself.
-			done := make(chan struct{})
-			g.Update(func(g *gocui.Gui) error {
-				defer close(done)
-				v, err := g.View("status")
-				switch {
-				case err == gocui.ErrUnknownView:
-					// If the view is gone, stop working.
-					cancel()
-					return nil
-				case err != nil:
-					return err
-				}
-				v.Clear()
-				_, err = fmt.Fprintf(v, "%s %s %s", m.Connection, m.Channel, topic)
-				return err
-			})
-			<-done
-		}
-	}()
-}
-
-func (m *ChannelViewModel) layoutStatus(g *gocui.Gui) error {
-	maxX, maxY := g.Size()
-	ax, ay, bx, by := -1, maxY-3, maxX, maxY-1
-	if v, err := g.SetView("status", ax, ay, bx, by); err != nil {
-		if err != gocui.ErrUnknownView {
-			// unknown error, percolate it up
-			return err
-		}
-		// Initialize the view.
-		m.Log.Print("Channel/status: [start] initial layout")
-		defer m.Log.Print("Channel/status: [done] initial layout")
-
-		v.Editable = false
-		v.Frame = false
-		// TODO more color customization
-		v.BgColor, v.FgColor = gocui.ColorWhite, gocui.ColorBlack
-		// TODO attach controller/model here, instead of static init.
-		if _, err := fmt.Fprintf(v, "%s / %s", m.Connection, m.Channel); err != nil {
-			return err
-		}
-
-		go m.addStatusHandlers(g)
-	}
-	return nil
-}
 
 func (m *ChannelViewModel) addMessagesHandlers(g *gocui.Gui) {
 	<-m.connected

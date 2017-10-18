@@ -2,8 +2,11 @@ package view
 
 import (
 	"github.com/jroimartin/gocui"
-	"github.com/cceckman/discoirc/discocli/model"
 )
+
+func (vm *Channel) NewInput() gocui.Manager {
+	return ChannelInput(vm)
+}
 
 // ChannelInput is the ViewModel for the Channel window's message input field.
 type ChannelInput *Channel
@@ -21,8 +24,8 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 	case nil:
 		return nil
 	case gocui.ErrUnknownView:
-		c.Log.Printf("%s [start] initial setup")
-		defer c.Log.Printf("%s [done] initial setup")
+		c.Log.Printf("%s [start] initial setup", ChannelInputView)
+		defer c.Log.Printf("%s [done] initial setup", ChannelInputView)
 		v.Frame = false
 		v.Editable = true
 		v.Editor = c
