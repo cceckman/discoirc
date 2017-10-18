@@ -1,9 +1,9 @@
 package view
 
 import (
-	"sync"
+	"context"
+	"fmt"
 
-	"github.com/cceckman/discoirc/discocli/model"
 	"github.com/jroimartin/gocui"
 )
 
@@ -13,7 +13,7 @@ type ChannelContents struct {
 	laidOut chan struct{}
 }
 
-var _ gocui.Manager = *ChannelContents(nil)
+var _ gocui.Manager = &ChannelContents{}
 
 // Layout sets up the ChannelContents view.
 func (c *ChannelContents) Layout(g *gocui.Gui) error {
@@ -35,15 +35,12 @@ func (c *ChannelContents) Layout(g *gocui.Gui) error {
 		defer c.Log.Printf("%s [done] initial setup", ChannelContentsView)
 		defer close(c.laidOut)
 		v.Frame = false
-		v.Editable = False
+		v.Editable = false
 		// TODO better handling of scroll / etc. behavior
 		v.Autoscroll = true
 	default:
 		return err
 	}
-	// Now that we have a size, update the current size with that data.
-	_, contentsHeight := v.Size()
-	c.windowSize <- contentsHeight
 
 	return nil
 }
@@ -74,7 +71,7 @@ func (c *ChannelContents) Listen() {
 
 		// Only enqueue one update at a time, to make sure we don't go backwards in time.
 		done := make(chan struct{})
-		g.Update(func(g *gocui.Gui) error {
+		c.Gui.Update(func(g *gocui.Gui) error {
 			defer close(done)
 			v, err := g.View(ChannelContentsView)
 			switch {

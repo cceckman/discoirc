@@ -1,7 +1,9 @@
 package view
 
 import (
-	"github.com/cceckman/discoirc/discocli/model"
+	"context"
+	"fmt"
+
 	"github.com/jroimartin/gocui"
 )
 
@@ -11,7 +13,7 @@ type ChannelStatus struct {
 	laidOut chan struct{}
 }
 
-var _ gocui.Manager = *ChannelStatus(nil)
+var _ gocui.Manager = &ChannelStatus{}
 
 // Layout sets up the ChannelStatus view.
 func (c *ChannelStatus) Layout(g *gocui.Gui) error {
@@ -33,7 +35,7 @@ func (c *ChannelStatus) Layout(g *gocui.Gui) error {
 		defer c.Log.Printf("%s [done] initial setup", ChannelStatusView)
 		defer close(c.laidOut)
 		v.Frame = false
-		v.Editable = False
+		v.Editable = false
 		// TODO more color customization
 		v.BgColor, v.FgColor = gocui.ColorWhite, gocui.ColorBlack
 
@@ -74,7 +76,10 @@ func (c *ChannelStatus) Listen() {
 				return err
 			}
 			v.Clear()
-			fmt.Fprintf(v, "[%s] %s | %s", c.Connection, c.Channel, topic)
+			if _, err := fmt.Fprintf(v, "[%s] %s | %s", c.Connection, c.Channel, topic); err != nil {
+				return err
+			}
+			return nil
 		})
 	}
 }

@@ -5,14 +5,16 @@ import (
 )
 
 func (vm *Channel) NewInput() gocui.Manager {
-	return ChannelInput(vm)
+	return &ChannelInput{vm}
 }
 
 // ChannelInput is the ViewModel for the Channel window's message input field.
-type ChannelInput *Channel
+type ChannelInput struct {
+	*Channel
+}
 
-var _ gocui.Editor = *ChannelInput(nil)
-var _ gocui.Manager = *ChannelInput(nil)
+var _ gocui.Editor = &ChannelInput{&Channel{}}
+var _ gocui.Manager = &ChannelInput{&Channel{}}
 
 // Layout sets up the ChannelInput view.
 func (c *ChannelInput) Layout(g *gocui.Gui) error {

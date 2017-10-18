@@ -1,8 +1,8 @@
+// Package view provides Views and ViewModel/Controllers for UI elemets.
 package view
 
 import (
-	"context"
-	"fmt"
+	"errors"
 	"log"
 
 	"github.com/cceckman/discoirc/discocli/model"
@@ -69,11 +69,11 @@ func (vm *Channel) Start() error {
 	vm.connected = make(chan struct{})
 	go func() {
 		defer close(vm.connected)
-		vm.channel = vm.Client.Connection(vm.Connection).Channel(vm.Channel)
+		vm.channel = vm.Backend.Connection(vm.Connection).Channel(vm.Channel)
 	}()
 
 	// Attach ViewModels.
-	vm.Gui.SetManagers(
+	vm.Gui.SetManager(
 		vm.NewInput(),
 		vm.NewStatus(),
 		vm.NewContents(),
