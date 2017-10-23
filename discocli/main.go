@@ -75,7 +75,7 @@ func main() {
 	model.MessageGenerator(logger, 99, channel)
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		logger.Print("encountered error, treating as nonfatal: ", err)
+		logger.Print("encountered error, dying", err)
 	}
 }
 
