@@ -25,6 +25,9 @@ author).
 Because I'm not going to learn Perl, and the config file is untyped and
 undocumented.
 
+## Why not [Komanda](https://github.com/mephux/comanda-cli)?
+I haven't tried it yet! Maybe it's fine.
+
 ## 1.0 Roadmap
 
 These are the features I'd like to land to get up to 1.0:
