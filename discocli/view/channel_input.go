@@ -1,6 +1,8 @@
 package view
 
 import (
+	"fmt"
+
 	"github.com/jroimartin/gocui"
 )
 
@@ -21,6 +23,7 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	// No border at the bottom of the terminal, full width.
 	ax, ay, bx, by := -1, maxY-2, maxX, maxY
+	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelInputView, ax, ay, bx, by)
 	v, err := g.SetView(ChannelInputView, ax, ay, bx, by)
 	switch err {
 	case nil:
@@ -32,7 +35,7 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 		v.Editable = true
 		v.Editor = c
 	default:
-		return err
+		return fmt.Errorf("error in laying out %s: %v", ChannelInputView, err)
 	}
 	return nil
 

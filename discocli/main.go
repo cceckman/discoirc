@@ -49,7 +49,6 @@ func main() {
 	g := UiOrDie(logger)
 	defer g.Close()
 
-
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
 	channel := model.NewMockChannel("#testing")
@@ -61,21 +60,21 @@ func main() {
 
 	chanobj := view.Channel{
 		Context: &view.Context{
-			Log: logger,
-			Gui: g,
+			Log:     logger,
+			Gui:     g,
 			Backend: client,
 		},
 		Connection: "testnet",
-		Channel: "#testing",
+		Channel:    "#testing",
 	}
-	if err := chanobj.Start() ; err != nil {
+	if err := chanobj.Start(); err != nil {
 		logger.Fatal(err)
 	}
 
 	model.MessageGenerator(logger, 99, channel)
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		logger.Print("encountered error, dying", err)
+		logger.Print("encountered error, exiting: ", err)
 	}
 }
 

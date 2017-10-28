@@ -18,13 +18,14 @@ var _ gocui.Manager = &ChannelContents{}
 // Layout sets up the ChannelContents view.
 func (c *ChannelContents) Layout(g *gocui.Gui) error {
 	// Full width; no frame. Position relative to ChannelStatusView.
-	input, err := g.View(ChannelStatusView)
+	status, err := g.View(ChannelStatusView)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in laying out %s: could not find status bar: %v", ChannelContentsView, err)
 	}
-	_, y := input.Origin()
+	_, y := status.Origin()
 	maxX, _ := g.Size()
 	ax, ay, bx, by := -1, -1, maxX, y-1
+	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelContentsView, ax, ay, bx, by)
 	// No border at the bottom of the terminal, full width.
 	v, err := g.SetView(ChannelContentsView, ax, ay, bx, by)
 	switch err {
@@ -39,7 +40,7 @@ func (c *ChannelContents) Layout(g *gocui.Gui) error {
 		// TODO better handling of scroll / etc. behavior
 		v.Autoscroll = true
 	default:
-		return err
+		return fmt.Errorf("error in laying out %s: %v", ChannelContentsView, err)
 	}
 
 	return nil

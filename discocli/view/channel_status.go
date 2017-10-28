@@ -22,9 +22,14 @@ func (c *ChannelStatus) Layout(g *gocui.Gui) error {
 	if err != nil {
 		return err
 	}
-	_, y := input.Origin()
+	ox, oy := input.Origin()
+	dx, dy := input.Size()
+	c.Log.Printf("%s: got %s at (%d, %d) size (%d, %d)", ChannelStatusView, ChannelInputView, ox, oy, dx, dy)
+	y := oy + dy
 	maxX, _ := g.Size()
+
 	ax, ay, bx, by := -1, y-2, maxX, y-1
+	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelStatusView, ax, ay, bx, by)
 	// No border at the bottom of the terminal, full width.
 	v, err := g.SetView(ChannelStatusView, ax, ay, bx, by)
 	switch err {
@@ -38,9 +43,8 @@ func (c *ChannelStatus) Layout(g *gocui.Gui) error {
 		v.Editable = false
 		// TODO more color customization
 		v.BgColor, v.FgColor = gocui.ColorWhite, gocui.ColorBlack
-
 	default:
-		return err
+		return fmt.Errorf("error in laying out %s: %v", ChannelStatusView, err)
 	}
 	return nil
 }
