@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
@@ -48,7 +49,10 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 // Send sends a message to the backend if a connection is available. If the message is sent, it clears the View buffer.
 func (c *ChannelInput) Send(rawmsg string) {
 	// TODO sanitize!
-	msg := rawmsg
+	msg := strings.TrimSpace(rawmsg)
+	if msg == "" {
+		return
+	}
 
 	// Check if we're connected. If not, just return - without even clearing the field.
 	select {
@@ -70,6 +74,7 @@ func (c *ChannelInput) Send(rawmsg string) {
 		// If the user has modified the buffer since we sent the message, keep the existing message.
 		if v.Buffer() == rawmsg {
 			v.Clear()
+			v.SetCursor(0, 0)
 		}
 		return nil
 	})

@@ -175,7 +175,7 @@ func MessageGenerator(logger *log.Logger, max uint, c Channel) {
 		for i := max; i >= 0; i-- {
 			time.Sleep(time.Millisecond * 500)
 
-			msg := fmt.Sprintf("\n%d bottles of beer on the wall, %d bottles of beer...", i, i)
+			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
 			logger.Print("Chat/messages: [sending] : ", msg)
 			c.SendMessage(msg)
 		}

@@ -86,7 +86,7 @@ func (c *ChannelContents) Listen() {
 			messages := c.channel.GetMessages(0, uint(lines))
 			v.Clear()
 			for _, m := range messages {
-				fmt.Fprint(v, m)
+				fmt.Fprintf(v, "\n%s", m)
 			}
 			return nil
 		})
