@@ -8,9 +8,9 @@ import (
 	golog "log"
 	"os"
 
-	"github.com/cceckman/discoirc/discocli/log"
-	"github.com/cceckman/discoirc/discocli/model"
-	"github.com/cceckman/discoirc/discocli/view"
+	"github.com/cceckman/discoirc/log"
+	"github.com/cceckman/discoirc/model"
+	"github.com/cceckman/discoirc/view"
 	"github.com/jroimartin/gocui"
 )
 

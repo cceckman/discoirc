@@ -3,8 +3,15 @@ package view
 import (
 	"errors"
 
-	"github.com/cceckman/discoirc/discocli/model"
+	"github.com/cceckman/discoirc/model"
 	"github.com/jroimartin/gocui"
+)
+
+const (
+	// View names.
+	ChannelInputView    = "channel input"
+	ChannelStatusView   = "channel status"
+	ChannelContentsView = "channel contents"
 )
 
 // Channel is the ViewModel for the Channel view.
