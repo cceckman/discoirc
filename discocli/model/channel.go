@@ -119,7 +119,7 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 	return c
 }
 
-func NewMockChannel(name string) Channel {
+func NewMockChannel(name, topic string) Channel {
 	r := &MockChannel{
 		name:         name,
 		notification: make(chan *Notification, 1),
@@ -127,6 +127,10 @@ func NewMockChannel(name string) Channel {
 		messageUpdate: make(chan string),
 		topicUpdate:   make(chan string),
 	}
+
+	go func() {
+		r.topicUpdate <- topic
+	}()
 
 	go func() {
 		for {

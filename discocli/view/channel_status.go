@@ -17,21 +17,12 @@ var _ gocui.Manager = &ChannelStatus{}
 
 // Layout sets up the ChannelStatus view.
 func (c *ChannelStatus) Layout(g *gocui.Gui) error {
-	// Full width; no frame. Position relative to ChannelInputView.
-	input, err := g.View(ChannelInputView)
-	if err != nil {
-		return err
-	}
-	ox, oy := input.Origin()
-	dx, dy := input.Size()
-	c.Log.Printf("%s: got %s at (%d, %d) size (%d, %d)", ChannelStatusView, ChannelInputView, ox, oy, dx, dy)
-	y := oy + dy
-	maxX, _ := g.Size()
-
-	ax, ay, bx, by := -1, y-2, maxX, y-1
+	// Full width; no frame. Reserve one line below for input.
+	maxX, maxY := g.Size()
+	ax, ay, bx, by := -1, maxY-3, maxX, maxY-1
 	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelStatusView, ax, ay, bx, by)
-	// No border at the bottom of the terminal, full width.
 	v, err := g.SetView(ChannelStatusView, ax, ay, bx, by)
+
 	switch err {
 	case nil:
 		return nil
@@ -80,7 +71,7 @@ func (c *ChannelStatus) Listen() {
 				return err
 			}
 			v.Clear()
-			if _, err := fmt.Fprintf(v, "[%s] %s | %s", c.Connection, c.Channel, topic); err != nil {
+			if _, err := fmt.Fprintf(v, "[%s] %s | %s", c.Connection, c.channel.Name(), topic); err != nil {
 				return err
 			}
 			return nil

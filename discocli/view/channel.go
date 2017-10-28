@@ -1,37 +1,11 @@
-// Package view provides Views and ViewModel/Controllers for UI elemets.
 package view
 
 import (
 	"errors"
-	"log"
 
 	"github.com/cceckman/discoirc/discocli/model"
 	"github.com/jroimartin/gocui"
 )
-
-const (
-	// View names.
-	ChannelInputView    = "channel input"
-	ChannelStatusView   = "channel status"
-	ChannelContentsView = "channel contents"
-)
-
-// So: what's the flow here?
-// Either the process startup, or some action in a different top-level view, decides that a given
-// *gocui.Gui should be using a particular model.Client as a backend, with logging to a log.Logger.
-
-// Context provides data necessary for all Windows.
-type Context struct {
-	Gui     *gocui.Gui
-	Log     *log.Logger
-	Backend model.Client
-}
-
-// Window is a top-level view, e.g. Channel or Session.
-type Window interface {
-	// Start replaces the Gui with this Window, or returns an error.
-	Start() error
-}
 
 // Channel is the ViewModel for the Channel view.
 type Channel struct {

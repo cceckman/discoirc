@@ -25,6 +25,7 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 	ax, ay, bx, by := -1, maxY-2, maxX, maxY
 	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelInputView, ax, ay, bx, by)
 	v, err := g.SetView(ChannelInputView, ax, ay, bx, by)
+
 	switch err {
 	case nil:
 		return nil
@@ -34,11 +35,13 @@ func (c *ChannelInput) Layout(g *gocui.Gui) error {
 		v.Frame = false
 		v.Editable = true
 		v.Editor = c
+		g.Update(func(g *gocui.Gui) error {
+			g.SetCurrentView(ChannelInputView)
+			return nil
+		})
 	default:
 		return fmt.Errorf("error in laying out %s: %v", ChannelInputView, err)
 	}
-	return nil
-
 	return nil
 }
 
