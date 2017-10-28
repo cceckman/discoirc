@@ -84,7 +84,7 @@ as that's not already covered by whatever the connection editor looks like.
 Get some folks interested in it to try it out. Get feedback. Incorporate
 feedback.
 
-Jennifer (coworker) has volunteered.
+Jennifer and David Anderson (coworkers) have volunteered.
 
 ### 0.8: Packaging and OSSing
 Open-source, and package for some platforms (at least Debian, Ubuntu).
