@@ -22,9 +22,13 @@ func (c *ChannelContents) Layout(g *gocui.Gui) error {
 	if err != nil {
 		return fmt.Errorf("error in laying out %s: could not find status bar: %v", ChannelContentsView, err)
 	}
-	_, y := status.Origin()
+
+	_, oy := status.Origin()
+	_, dy := status.Size()
 	maxX, _ := g.Size()
-	ax, ay, bx, by := -1, -1, maxX, y-1
+
+	ax, ay, bx, by := -1, oy+dy-2, maxX, -1
+
 	c.Log.Printf("%s: laying out at (%d, %d) (%d, %d)", ChannelContentsView, ax, ay, bx, by)
 	// No border at the bottom of the terminal, full width.
 	v, err := g.SetView(ChannelContentsView, ax, ay, bx, by)
