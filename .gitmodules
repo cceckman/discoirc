@@ -25,3 +25,6 @@
 [submodule "vendor/google.golang.org/genproto"]
 	path = vendor/google.golang.org/genproto
 	url = https://github.com/google/go-genproto
+[submodule "vendor/github.com/marcusolsson/tui-go"]
+	path = vendor/github.com/marcusolsson/tui-go
+	url = https://github.com/marcusolsson/tui-go

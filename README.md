@@ -30,7 +30,9 @@ working, for instance.
 * IRC
   * https://github.com/fluffle/goirc for IRC connections.
 * UI
-  * https://github.com/jroimartin/gocui for discoirc UI.
+  * https://github.com/jroimartin/gocui  is one terminal UI.
+  * https://github.com/marcusolsson/tui-go is an alternative that provides
+    higher-level interfaces.
   * https://github.com/gizak/termui isn't particuarly useful, but it looks cool.
 * Config & scripting Interfaces
   * https://github.com/golang/protobuf for internal data structures & config.
