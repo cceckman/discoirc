@@ -33,17 +33,24 @@ func NewEvents(es []Event) Events {
 // Events is an ordered set of events.
 type Events []Event
 
+// Select returns a slice from its receiver with those within the EventRange.
 func (e Events) Select(r EventRange) Events {
 	// Events must already be sorted.
 
 	// Find the first element >= Min
 	start := sort.Search(len(e), func(i int) bool {
-		return e[i].ID.Epoch >= r.Min.Epoch && e[i].ID.Seq >= r.Min.Seq
+		if e[i].ID.Epoch == r.Min.Epoch {
+			return e[i].ID.Seq >= r.Min.Seq
+		}
+		return e[i].ID.Epoch > r.Min.Epoch
 	})
 
 	// Find the first element >= Max
 	end := sort.Search(len(e), func(i int) bool {
-		return e[i].ID.Epoch >= r.Max.Epoch && e[i].ID.Seq >= r.Max.Seq
+		if e[i].ID.Epoch == r.Max.Epoch {
+			return e[i].ID.Seq > r.Max.Seq
+		}
+		return e[i].ID.Epoch > r.Max.Epoch
 	})
 
 	return Events(e[start:end])
