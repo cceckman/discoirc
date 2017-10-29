@@ -11,6 +11,7 @@ import (
 	"github.com/cceckman/discoirc/log"
 	"github.com/cceckman/discoirc/model"
 	"github.com/cceckman/discoirc/view"
+	"github.com/cceckman/discoirc/view/channel"
 	"github.com/jroimartin/gocui"
 )
 
@@ -51,14 +52,14 @@ func main() {
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	channel := model.NewMockChannel("#testing", "We're all mad here")
+	mchan:= model.NewMockChannel("#testing", "We're all mad here")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
-			"#testing": channel,
+			"#testing": mchan,
 		}),
 	})
 
-	chanobj := view.Channel{
+	chanobj := channel.Channel{
 		Context: &view.Context{
 			Log:     logger,
 			Gui:     g,
@@ -71,7 +72,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	model.MessageGenerator(logger, 99, channel)
+	model.MessageGenerator(logger, 99, mchan)
 
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		logger.Print("encountered error, exiting: ", err)

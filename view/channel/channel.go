@@ -1,9 +1,11 @@
-package view
+// Package channel implements the Views and ViewModels for the Channel display.
+package channel
 
 import (
 	"errors"
 
 	"github.com/cceckman/discoirc/model"
+	"github.com/cceckman/discoirc/view"
 	"github.com/jroimartin/gocui"
 )
 
@@ -16,7 +18,7 @@ const (
 
 // Channel is the ViewModel for the Channel view.
 type Channel struct {
-	*Context
+	*view.Context
 
 	Connection, Channel string
 

@@ -8,10 +8,6 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-// So: what's the flow here?
-// Either the process startup, or some action in a different top-level view, decides that a given
-// *gocui.Gui should be using a particular model.Client as a backend, with logging to a log.Logger.
-
 // Context provides data necessary for all Windows.
 type Context struct {
 	Gui     *gocui.Gui

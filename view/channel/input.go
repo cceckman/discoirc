@@ -1,4 +1,4 @@
-package view
+package channel
 
 import (
 	"fmt"
