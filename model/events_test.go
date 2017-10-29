@@ -62,6 +62,7 @@ func TestSelect(t *testing.T) {
 		{minE: -2, minS: 0, maxE: -1, maxS: 0, want: ""},
 		{minE: 1, minS: 1, maxE: 1, maxS: 1, want: "worldX"},
 		{minE: 1, minS: 1, maxE: 2, maxS: 1, want: "worldX, helloY"},
+		{minE: 2, minS: 2, maxE: 4, maxS: 1, want: "worldY, helloZ, worldZ"},
 	} {
 		sel := model.EventRange{
 			Min: model.EventID{Epoch: c.minE, Seq: c.minS},
