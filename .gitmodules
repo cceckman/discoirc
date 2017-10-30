@@ -28,3 +28,15 @@
 [submodule "vendor/github.com/marcusolsson/tui-go"]
 	path = vendor/github.com/marcusolsson/tui-go
 	url = https://github.com/marcusolsson/tui-go
+[submodule "vendor/github.com/gdamore/tcell"]
+	path = vendor/github.com/gdamore/tcell
+	url = https://github.com/gdamore/tcell
+[submodule "vendor/github.com/mitchellh/go-wordwrap"]
+	path = vendor/github.com/mitchellh/go-wordwrap
+	url = https://github.com/mitchellh/go-wordwrap
+[submodule "vendor/github.com/gdamore/encoding"]
+	path = vendor/github.com/gdamore/encoding
+	url = https://github.com/gdamore/encoding
+[submodule "vendor/github.com/lucasb-eyer/go-colorful"]
+	path = vendor/github.com/lucasb-eyer/go-colorful
+	url = https://github.com/lucasb-eyer/go-colorful

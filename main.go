@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -10,9 +11,8 @@ import (
 
 	"github.com/cceckman/discoirc/log"
 	"github.com/cceckman/discoirc/model"
-	"github.com/cceckman/discoirc/view"
 	"github.com/cceckman/discoirc/view/channel"
-	"github.com/jroimartin/gocui"
+	"github.com/marcusolsson/tui-go"
 )
 
 const (
@@ -47,35 +47,26 @@ func main() {
 	}
 
 	logger := LoggerOrDie()
-	g := UiOrDie(logger)
-	defer g.Close()
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	mchan:= model.NewMockChannel("#testing", "We're all mad here")
+	mchan := model.NewMockChannel("#testing", "We're all mad here")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
 			"#testing": mchan,
 		}),
 	})
 
-	chanobj := channel.Channel{
-		Context: &view.Context{
-			Log:     logger,
-			Gui:     g,
-			Backend: client,
-		},
-		Connection: "testnet",
-		Channel:    "#testing",
-	}
-	if err := chanobj.Start(); err != nil {
-		logger.Fatal(err)
-	}
-
 	model.MessageGenerator(logger, 99, mchan)
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		logger.Print("encountered error, exiting: ", err)
+	ctx := context.Background()
+	w := channel.New(ctx, client, "testnet", "#testing")
+	ui := tui.New(w)
+
+	ui.SetKeybinding("Esc", func() { ui.Quit() })
+
+	if err := ui.Run(); err != nil {
+		logger.Fatalf("unknown error: %v", err)
 	}
 }
 
@@ -93,18 +84,4 @@ func LoggerOrDie() *golog.Logger {
 		golog.Fatal("could not open log file: ", err)
 	}
 	return logger
-}
-
-func UiOrDie(logger *golog.Logger) *gocui.Gui {
-	// Initialize GUI
-	colorMode := gocui.Output256
-	if *lowcolor {
-		colorMode = gocui.OutputNormal
-	}
-
-	g, err := gocui.NewGui(colorMode)
-	if err != nil {
-		logger.Fatal("could not initialize GUI: ", err)
-	}
-	return g
 }
