@@ -31,7 +31,6 @@ const (
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
 
-	lowcolor = flag.Bool("low-color", false, "Use 8-bit color rather than 256-bit.")
 	logpath  = flag.String("log-path", "", "Path to write debug logs to. Use a temporary directory if unset.")
 )
 
@@ -60,8 +59,9 @@ func main() {
 	model.MessageGenerator(logger, 99, mchan)
 
 	ctx := context.Background()
-	w := channel.New(ctx, client, "testnet", "#testing")
-	ui := tui.New(w)
+	v := channel.NewView()
+	ui := tui.New(v)
+	channel.New(ctx, v, ui, client, "testnet", "#testing")
 
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
 

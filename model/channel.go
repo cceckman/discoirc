@@ -17,7 +17,7 @@ type Channel interface {
 	// begins with the most recent message.
 	// The returned slice is sorted from least (0) to most (len-1) recent.
 	GetMessages(offset, size uint) []string
-	SendMessage(string)
+	MessageInput() chan<- string
 
 	GetTopic() string
 	SetTopic(string)
@@ -78,8 +78,8 @@ func (m *MockChannel) GetMessages(offset, size uint) []string {
 	return m.messages[start:end]
 }
 
-func (m *MockChannel) SendMessage(msg string) {
-	m.messageUpdate <- msg
+func (m *MockChannel) MessageInput() chan<- string {
+	return m.messageUpdate
 }
 
 func (m *MockChannel) GetTopic() string {
@@ -177,7 +177,7 @@ func MessageGenerator(logger *log.Logger, max uint, c Channel) {
 
 			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
 			logger.Print("Chat/messages: [sending] : ", msg)
-			c.SendMessage(msg)
+			c.MessageInput() <- msg
 		}
 	}()
 }
