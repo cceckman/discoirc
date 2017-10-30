@@ -98,14 +98,18 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 	sizeUpdate := make(chan uint)
 	go func() {
 		defer close(sizeUpdate)
-		var x int
+		var newSize int
+		var lastSize int
 		for {
 			// Upper loop: read a new value
 			select {
 			case <-ctx.Done():
 				return
-			case x = <-ctl.View.Contents.Resized:
+			case newSize = <-ctl.View.Contents.Resized:
 				// pass
+			}
+			if newSize == lastSize {
+				continue
 			}
 			// Lower loop: pass on old value, or read a new value
 		lowerLoop:
@@ -113,9 +117,10 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 				select {
 				case <-ctx.Done():
 					return
-				case x = <-ctl.View.Contents.Resized:
+				case newSize = <-ctl.View.Contents.Resized:
 					// pass
-				case sizeUpdate <- uint(x):
+				case sizeUpdate <- uint(newSize):
+					lastSize = newSize
 					break lowerLoop
 				}
 			}
