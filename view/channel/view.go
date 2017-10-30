@@ -102,4 +102,5 @@ func (c *Contents) Set(s []string) {
 
 func (c *Contents) Resize(size image.Point) {
 	c.Resized <- size.X
+	c.List.Resize(size)
 }

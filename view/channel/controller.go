@@ -9,12 +9,12 @@ import (
 
 type Controller struct {
 	View *View
-	UI tui.UI
+	UI   tui.UI
 
-	Client           model.Client
+	Client model.Client
 
 	msgSend chan string
-	resize chan int
+	resize  chan int
 }
 
 // Send queues a message for sending.
@@ -92,19 +92,32 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 		}
 	}()
 
-
-	// Resize loop: get the current size.
+	// Resize loop: get the most recent size, pass it on.
+	// Isolates the UI thread (writing to ctl.View.Contents.Resized)
+	// from the getting-messages thread (reading from size)
 	size := make(chan int)
 	go func() {
+		defer close(size)
+		var x int
 		for {
-			var x int
+			// Upper loop: read a new value
 			select {
 			case <-ctx.Done():
 				return
 			case x = <-ctl.View.Contents.Resized:
 				// pass
-			case size <- x:
-				// pass
+			}
+			// Lower loop: pass on old value, or read a new value
+		lowerLoop:
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case x = <- ctl.View.Contents.Resized:
+					// pass
+				case size <- x:
+					break lowerLoop
+				}
 			}
 		}
 	}()
@@ -112,23 +125,30 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 	// Receive/resize loop; pass messages to UI.
 	go func() {
 		// Wait for channel to be ready.
-		ch := <- gotChannel
+		ch := <-gotChannel
 		gotChannel <- ch
 
 		// Listen for resize events
 		notices := ch.Await(ctx)
 		msgCount := 0
-		var messages []string
-		var sz int
+		var messages = []string{"an initial message"}
+		var sz int = 1
+		var ok bool
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case sz = <-size:
+			case sz, ok = <-size:
+				if !ok {
+					return
+				}
 				// Resize, so refetch.
-				// TODO: allow for starting not at the end.
+				// TODO: allow for non-zero-index, i.e. using EventRange.
 				messages = ch.GetMessages(0, uint(sz))
-			case notice := <-notices:
+			case notice, ok := <-notices:
+				if !ok {
+					return
+				}
 				if notice.Messages != msgCount {
 					msgCount = notice.Messages
 					messages = ch.GetMessages(0, uint(sz))

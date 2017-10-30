@@ -43,6 +43,7 @@ type Notification struct {
 // MockChannel implements the Channel model, for testing.
 type MockChannel struct {
 	name string
+	log *log.Logger
 
 	messages []string
 	topic    string
@@ -56,9 +57,14 @@ func (m *MockChannel) Name() string {
 	return m.name
 }
 
-func (m *MockChannel) GetMessages(offset, size uint) []string {
+func (m *MockChannel) GetMessages(offset, size uint) (ret []string) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	defer func() {
+		// Use a closure s.t. len(ret) gets evaluated after defer
+		m.log.Printf("Responded to request for messages at offset %d size %d; served %d", offset, size, len(ret))
+	}()
+
 	// The 'messages' dict is indexed oldest to newest, but offset here is from newest.
 	// i                                offset
 	// 0 hi                             3
@@ -68,14 +74,15 @@ func (m *MockChannel) GetMessages(offset, size uint) []string {
 	// But "end" of a slice is one beyond the end.
 	end := len(m.messages) - int(offset)
 	if end < 1 {
-		return []string{}
+		return
 	}
 	start := end - int(size)
 	if start < 0 {
 		start = 0
 	}
 
-	return m.messages[start:end]
+	ret = m.messages[start:end]
+	return 
 }
 
 func (m *MockChannel) MessageInput() chan<- string {
@@ -119,8 +126,9 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 	return c
 }
 
-func NewMockChannel(name, topic string) Channel {
+func NewMockChannel(log *log.Logger, name, topic string) Channel {
 	r := &MockChannel{
+		log: log,
 		name:         name,
 		notification: make(chan *Notification, 1),
 

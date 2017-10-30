@@ -49,7 +49,7 @@ func main() {
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	mchan := model.NewMockChannel("#testing", "We're all mad here")
+	mchan := model.NewMockChannel(logger, "#testing", "We're all mad here")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
 			"#testing": mchan,
