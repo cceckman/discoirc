@@ -95,9 +95,9 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 	// Resize loop: get the most recent size, pass it on.
 	// Isolates the UI thread (writing to ctl.View.Contents.Resized)
 	// from the getting-messages thread (reading from size)
-	size := make(chan int)
+	sizeUpdate := make(chan uint)
 	go func() {
-		defer close(size)
+		defer close(sizeUpdate)
 		var x int
 		for {
 			// Upper loop: read a new value
@@ -113,48 +113,88 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 				select {
 				case <-ctx.Done():
 					return
-				case x = <- ctl.View.Contents.Resized:
+				case x = <-ctl.View.Contents.Resized:
 					// pass
-				case size <- x:
+				case sizeUpdate <- uint(x):
 					break lowerLoop
 				}
 			}
 		}
 	}()
 
-	// Receive/resize loop; pass messages to UI.
+	newMessages := make(chan []string)
+	// Refresh thread: Schedule message updates against UI thread.
+	// Use an independent channel for this s.t. writes are ordered regardless of
+	// whether Update is.
 	go func() {
+		for {
+			var messages []string
+			var ok bool
+			// Upper loop: await new messages, have none to send.
+			select {
+			case <-ctx.Done():
+				return
+			case messages, ok = <-newMessages:
+				if !ok {
+					return
+				}
+			}
+			// Schedule a UI thread that joins on contents.
+			contents := make(chan []string)
+			ctl.UI.Update(func() {
+				ctl.View.Contents.Set(<-contents)
+			})
+			defer close(contents)
+			// Lower loop: await either more messages, or the UI thread to consume.
+		lowerLoop:
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case messages, ok = <-newMessages:
+					if !ok {
+						return
+					}
+				case contents <- messages:
+					break lowerLoop
+				}
+			}
+		}
+	}()
+
+	// Receive/resize loop; get new contents for UI.
+	// TODO: This should be its own method and/or class.
+	go func() {
+		defer close(newMessages)
 		// Wait for channel to be ready.
 		ch := <-gotChannel
 		gotChannel <- ch
 
 		// Listen for resize events
 		notices := ch.Await(ctx)
-		msgCount := 0
-		var messages = []string{"an initial message"}
-		var sz int = 1
+		var size uint
 		var ok bool
+		var msgCount int
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case sz, ok = <-size:
+			case size, ok = <-sizeUpdate:
 				if !ok {
 					return
 				}
-				// Resize, so refetch.
+				// Resize event. Re-fetch messages.
 				// TODO: allow for non-zero-index, i.e. using EventRange.
-				messages = ch.GetMessages(0, uint(sz))
+				newMessages <- ch.GetMessages(0, size)
 			case notice, ok := <-notices:
 				if !ok {
 					return
 				}
 				if notice.Messages != msgCount {
 					msgCount = notice.Messages
-					messages = ch.GetMessages(0, uint(sz))
+					newMessages <- ch.GetMessages(0, size)
 				}
 			}
-			ctl.View.Contents.Set(messages)
 		}
 	}()
 }
