@@ -25,7 +25,7 @@ func NewView() *View {
 		},
 		Contents: &Contents{
 			List:    tui.NewList(),
-			Resized: make(chan int),
+			Resized: make(chan int, 1),
 		},
 	}
 
@@ -101,6 +101,13 @@ func (c *Contents) Set(s []string) {
 }
 
 func (c *Contents) Resize(size image.Point) {
-	c.Resized <- size.X
+	// Non-blocking, lossy send.
+	select {
+	case c.Resized <- size.X:
+		// Sent the value. Mission accomplished.
+	case _ = <-c.Resized:
+		// There was a cached value. Send a new one.
+		c.Resized <- size.X
+	}
 	c.List.Resize(size)
 }

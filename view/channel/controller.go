@@ -49,10 +49,11 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 		}
 	}()
 
-	// Send loop: pass messages through to client.
+	// Send loop: pass sent messages to the client.
 	go func() {
 		queuedMessages := []string{}
 		var ch model.Channel
+
 		// Wait for connection to establish.
 	connectLoop:
 		for {
@@ -67,10 +68,11 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 				break connectLoop
 			}
 		}
-		// Start sending messages.
+
+		// Send any queued messages to the client.
 		for {
 			for len(queuedMessages) > 0 {
-				// Pop a message in order to send to network.
+				// Pop a message, attempt to forward it.
 				var hd string
 				hd, queuedMessages = queuedMessages[0], queuedMessages[1:]
 				select {
@@ -92,85 +94,11 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 		}
 	}()
 
-	// Resize loop: get the most recent size, pass it on.
-	// Isolates the UI thread (writing to ctl.View.Contents.Resized)
-	// from the getting-messages thread (reading from size)
-	sizeUpdate := make(chan uint)
-	go func() {
-		defer close(sizeUpdate)
-		var newSize int
-		var lastSize int
-		for {
-			// Upper loop: read a new value
-			select {
-			case <-ctx.Done():
-				return
-			case newSize = <-ctl.View.Contents.Resized:
-				// pass
-			}
-			if newSize == lastSize {
-				continue
-			}
-			// Lower loop: pass on old value, or read a new value
-		lowerLoop:
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case newSize = <-ctl.View.Contents.Resized:
-					// pass
-				case sizeUpdate <- uint(newSize):
-					lastSize = newSize
-					break lowerLoop
-				}
-			}
-		}
-	}()
-
-	newMessages := make(chan []string)
-	// Refresh thread: Schedule message updates against UI thread.
-	// Use an independent channel for this s.t. writes are ordered regardless of
-	// whether Update is.
-	go func() {
-		for {
-			var messages []string
-			var ok bool
-			// Upper loop: await new messages, have none to send.
-			select {
-			case <-ctx.Done():
-				return
-			case messages, ok = <-newMessages:
-				if !ok {
-					return
-				}
-			}
-			// Schedule a UI thread that joins on contents.
-			contents := make(chan []string)
-			ctl.UI.Update(func() {
-				ctl.View.Contents.Set(<-contents)
-			})
-			defer close(contents)
-			// Lower loop: await either more messages, or the UI thread to consume.
-		lowerLoop:
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case messages, ok = <-newMessages:
-					if !ok {
-						return
-					}
-				case contents <- messages:
-					break lowerLoop
-				}
-			}
-		}
-	}()
-
+	newRange := make(chan uint, 1)
 	// Receive/resize loop; get new contents for UI.
 	// TODO: This should be its own method and/or class.
 	go func() {
-		defer close(newMessages)
+		defer close(newRange)
 		// Wait for channel to be ready.
 		ch := <-gotChannel
 		gotChannel <- ch
@@ -178,30 +106,69 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 		// Listen for resize events
 		notices := ch.Await(ctx)
 		var size uint
-		var ok bool
 		var msgCount int
+		// Await resize or more messages received.
+		// TODO support non-zero start.
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case size, ok = <-sizeUpdate:
+			case newSize, ok := <-ctl.View.Contents.Resized:
 				if !ok {
 					return
 				}
-				// Resize event. Re-fetch messages.
-				// TODO: allow for non-zero-index, i.e. using EventRange.
-				newMessages <- ch.GetMessages(0, size)
+				if uint(newSize) == size {
+					// Don't need to resize; ignore.
+					break
+				}
+				size = uint(newSize)
+				// Resize with non-blocking / lossy write.
+				select {
+				case newRange <- size:
+					// pass
+				case _ = <-newRange:
+					newRange <- size
+				}
 			case notice, ok := <-notices:
 				if !ok {
 					return
 				}
-				if notice.Messages != msgCount {
-					msgCount = notice.Messages
-					newMessages <- ch.GetMessages(0, size)
+				if notice.Messages == msgCount {
+					// Don't need to resize; ignore
+					break
+				}
+				select {
+				case newRange <- size:
+					// pass
+				case _ = <-newRange:
+					newRange <- size
 				}
 			}
 		}
 	}()
+
+	// Refresh thread: read the new range, get its contents, and update the
+	// display.
+	newContents := make(chan []string, 1)
+	go func() {
+		defer close(newContents)
+		// Wait for channel to be ready.
+		ch := <-gotChannel
+		gotChannel <- ch
+
+		updateDone := make(chan *struct{})
+		for size := range newRange {
+			messages := ch.GetMessages(0, size)
+			// Schedule the GUI update and block on its completion before
+			// continuing to pick up the new size.
+			ctl.UI.Update(func() {
+				ctl.View.Contents.Set(messages)
+				updateDone <- nil
+			})
+			_ = <-updateDone
+		}
+	}()
+
 }
 
 func New(ctx context.Context, view *View, ui tui.UI, client model.Client, network, channel string) {
@@ -209,7 +176,7 @@ func New(ctx context.Context, view *View, ui tui.UI, client model.Client, networ
 		Client:  client,
 		View:    view,
 		UI:      ui,
-		msgSend: make(chan string),
+		msgSend: make(chan string, 1),
 	}
 
 	ctl.Start(ctx, network, channel)
