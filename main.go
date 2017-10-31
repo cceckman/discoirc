@@ -31,7 +31,7 @@ const (
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
 
-	logpath  = flag.String("log-path", "", "Path to write debug logs to. Use a temporary directory if unset.")
+	logdir  = flag.String("log-dir", "", "Directory to write debug logs to. Use a temporary directory if unset.")
 )
 
 func main() {
@@ -72,14 +72,14 @@ func main() {
 
 func LoggerOrDie() *golog.Logger {
 	// Initialize logger
-	if *logpath == "" {
+	if *logdir == "" {
 		tmp, err := ioutil.TempDir("", "")
 		if err != nil {
 			golog.Fatal("could not create directory for logging: ", err)
 		}
-		*logpath = tmp
+		*logdir = tmp
 	}
-	logger, err := log.New(*logpath)
+	logger, err := log.New(*logdir)
 	if err != nil {
 		golog.Fatal("could not open log file: ", err)
 	}
