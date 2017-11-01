@@ -1,8 +1,10 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"sync"
 	"testing"
@@ -11,7 +13,7 @@ import (
 
 // TestMockChannel creates a MockChannel and exercises it.
 func TestMockChannel(t *testing.T) {
-	var m Channel = NewMockChannel("#foobar")
+	var m Channel = NewMockChannel(log.New(&bytes.Buffer{}, "", 0), "#foobar", "")
 	if m.Name() != "#foobar" {
 		t.Error("bad Name")
 	}
@@ -53,13 +55,13 @@ func TestMockChannel(t *testing.T) {
 
 				// Topic updates are inlined.
 				if n.Topic != topics[lastTopic] {
-					t.Log("listener [%d]: got topic '%s' after topic '%s', bumping up counter to %d'",
+					t.Logf("listener [%d]: got topic '%s' after topic '%s', bumping up counter to %d'",
 						i, n.Topic, topics[lastTopic])
 					lastTopic += 1
 					updateTopic = true
 				}
 				if lastTopic == len(topics) {
-					t.Errorf("listener [%d]: unexpected topic notification: got: '%s' after running off the list", i, n.Topic)
+					t.Fatalf("listener [%d]: unexpected topic notification: got: '%s' after running off the list", i, n.Topic)
 				} else if n.Topic != topics[lastTopic] {
 					t.Errorf("listener [%d]: unexpected topic notification: got: '%s' want: '%s'", i,
 						n.Topic, topics[lastTopic])
@@ -109,7 +111,7 @@ func TestMockChannel(t *testing.T) {
 	}
 
 	// Producers.
-	wg.Add(1)
+	wg.Add(2)
 	go func() {
 		defer wg.Done()
 		for _, msg := range messages {
@@ -118,7 +120,7 @@ func TestMockChannel(t *testing.T) {
 				sleep = 0
 			}
 			time.Sleep(time.Millisecond * sleep)
-			m.SendMessage(msg)
+			m.MessageInput() <- msg
 		}
 	}()
 	go func() {
@@ -157,7 +159,7 @@ func TestMockChannelGetMessages(t *testing.T) {
 		{4, 1, []string{}},
 		{2, 3, []string{"0 hello muddah", "1 hello faddah"}},
 	} {
-		got := m.GetMessages(cs.Size, cs.Offset)
+		got := m.GetMessages(cs.Offset, cs.Size)
 		err := fmt.Sprintf("unexpected result for test case %d: got: %v want: %v", i, got, cs.Want)
 		if len(got) != len(cs.Want) {
 			t.Errorf(err)
