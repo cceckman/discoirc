@@ -14,8 +14,28 @@ const (
 	defaultMode = "default"
 )
 
-func NewView() *View {
-	w := &View{
+// View is the root of a Channel. All its methods should be called from the UI thread.
+type View interface {
+	tui.Widget
+
+	// SetLocation updates the view with the current network and channel.
+	SetLocation(network, channel string)
+
+	// Connect shows teh UI that the connection is active.
+	Connect(ctl *Controller)
+
+	// Disconnect shows the UI that the connection is inactive.
+	Disconnect()
+
+	// SetContents updates the Contents view.
+	SetContents([]string)
+
+	// ContentSize provides a channel from which the most content size can be read.
+	ContentSize() <-chan image.Point
+}
+
+func NewView() View {
+	w := &view{
 		Input:  tui.NewEntry(),
 		NetBar: tui.NewStatusBar(""),
 		ModeBar: &ModeBar{
@@ -24,8 +44,8 @@ func NewView() *View {
 			input:     defaultMode,
 		},
 		Contents: &Contents{
-			List:    tui.NewList(),
-			Resized: make(chan int, 1),
+			List: tui.NewList(),
+			SizeUpdate: make(chan image.Point, 1),
 		},
 	}
 
@@ -47,8 +67,8 @@ func NewView() *View {
 	return w
 }
 
-// View is the root of the Channel view.
-type View struct {
+// view is the root of the Channel view.
+type view struct {
 	tui.Widget // root widget
 
 	Input    *tui.Entry
@@ -58,7 +78,7 @@ type View struct {
 }
 
 // Connect updates the UI to show the connection is active.
-func (v *View) Connect(ctl *Controller) {
+func (v *view) Connect(ctl *Controller) {
 	v.Input.OnSubmit(func(entry *tui.Entry) {
 		ctl.Send(entry.Text())
 		entry.SetText("")
@@ -66,7 +86,12 @@ func (v *View) Connect(ctl *Controller) {
 	v.ModeBar.SetConnected(true)
 }
 
-func (v *View) SetLocation(network, channel string) {
+func (v *view) Disconnect() {
+	v.Input.OnSubmit(func(_ *tui.Entry) {})
+	v.ModeBar.SetConnected(false)
+}
+
+func (v *view) SetLocation(network, channel string) {
 	v.NetBar.SetText(fmt.Sprintf("%s / %s", network, channel))
 }
 
@@ -96,22 +121,26 @@ func (m *ModeBar) SetConnected(connected bool) {
 type Contents struct {
 	*tui.List
 
-	Resized chan int
+	SizeUpdate chan image.Point
 }
 
-func (c *Contents) Set(s []string) {
-	c.RemoveItems()
-	c.AddItems(s...)
+func (v *view) SetContents(s []string) {
+	v.Contents.RemoveItems()
+	v.Contents.AddItems(s...)
+}
+
+func (v *view) ContentSize() <-chan image.Point {
+	return v.Contents.SizeUpdate
 }
 
 func (c *Contents) Resize(size image.Point) {
 	// Non-blocking, lossy send.
 	select {
-	case c.Resized <- size.X:
+	case c.SizeUpdate <- size:
 		// Sent the value. Mission accomplished.
-	case _ = <-c.Resized:
+	case _ = <-c.SizeUpdate:
 		// There was a cached value. Send a new one.
-		c.Resized <- size.X
+		c.SizeUpdate <- size
 	}
 	c.List.Resize(size)
 }

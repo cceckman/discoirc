@@ -31,7 +31,7 @@ const (
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
 
-	logdir  = flag.String("log-dir", "", "Directory to write debug logs to. Use a temporary directory if unset.")
+	logdir = flag.String("log-dir", "", "Directory to write debug logs to. Use a temporary directory if unset.")
 )
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	mchan := model.NewMockChannel(logger, "#testing", "We're all mad here")
+	mchan := model.NewMockChannel(logger, "testnet", "#testing", "We're all mad here")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
 			"#testing": mchan,
@@ -73,7 +73,7 @@ func main() {
 
 func Theme() *tui.Theme {
 	t := tui.NewTheme()
-	instance :=tui.Style{
+	instance := tui.Style{
 		Fg: tui.ColorWhite,
 		Bg: tui.ColorBlack,
 	}

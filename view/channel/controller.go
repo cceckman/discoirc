@@ -8,10 +8,8 @@ import (
 )
 
 type Controller struct {
-	View *View
+	View View
 	UI   tui.UI
-
-	Client model.Client
 
 	msgSend chan string
 	resize  chan int
@@ -22,86 +20,26 @@ func (ctl *Controller) Send(msg string) {
 	ctl.msgSend <- msg
 }
 
-func (ctl *Controller) Start(ctx context.Context, network, channel string) {
-	gotChannel := make(chan model.Channel, 1)
+func (ctl *Controller) Start(ctx context.Context, getCh chan model.Channel) {
+	// Wait for channel to connect.
+	ch := <-getCh
 
-	// Start / establish connection in background.
-	go func() {
-		gotChannel <- ctl.Client.Connection(network).Channel(channel)
-	}()
-
-	// Update UI with channel.
-	ctl.UI.Update(func() {
-		ctl.View.SetLocation(network, channel)
+	// Update UI to indicate connection.
+	go ctl.UI.Update(func() {
+		ctl.View.Connect(ctl)
 	})
 
-	// Connection state update.
-	// TODO: handle this more generally- as connected / disconnected state.
-	go func() {
-		select {
-		case <-ctx.Done():
-			return
-		case ch := <-gotChannel:
-			go ctl.UI.Update(func() {
-				ctl.View.Connect(ctl)
-			})
-			gotChannel <- ch
-		}
-	}()
+	go ctl.sendMessages(ctx, ch)
+	newRange := ctl.rerange(ctx, ch)
 
-	// Send loop: pass sent messages to the client.
-	go func() {
-		queuedMessages := []string{}
-		var ch model.Channel
+	go ctl.updateContents(ctx, ch, newRange)
+}
 
-		// Wait for connection to establish.
-	connectLoop:
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case msg := <-ctl.msgSend:
-				queuedMessages = append(queuedMessages, msg)
-			case c := <-gotChannel:
-				ch = c
-				gotChannel <- c
-				break connectLoop
-			}
-		}
-
-		// Send any queued messages to the client.
-		for {
-			for len(queuedMessages) > 0 {
-				// Pop a message, attempt to forward it.
-				var hd string
-				hd, queuedMessages = queuedMessages[0], queuedMessages[1:]
-				select {
-				case <-ctx.Done():
-					return
-				case msg := <-ctl.msgSend:
-					queuedMessages = append(queuedMessages, msg)
-				case ch.MessageInput() <- hd:
-					// pass
-				}
-			}
-			// Wait for another message to come in.
-			select {
-			case <-ctx.Done():
-				return
-			case msg := <-ctl.msgSend:
-				queuedMessages = append(queuedMessages, msg)
-			}
-		}
-	}()
-
+// reerange loop, getting new contents fo the UI.
+func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint {
 	newRange := make(chan uint, 1)
-	// Receive/resize loop; get new contents for UI.
-	// TODO: This should be its own method and/or class.
 	go func() {
 		defer close(newRange)
-		// Wait for channel to be ready.
-		ch := <-gotChannel
-		gotChannel <- ch
 
 		// Listen for resize events
 		notices := ch.Await(ctx)
@@ -113,15 +51,15 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 			select {
 			case <-ctx.Done():
 				return
-			case newSize, ok := <-ctl.View.Contents.Resized:
+			case newSize, ok := <-ctl.View.ContentSize():
 				if !ok {
 					return
 				}
-				if uint(newSize) == size {
+				if uint(newSize.X) == size {
 					// Don't need to resize; ignore.
 					break
 				}
-				size = uint(newSize)
+				size = uint(newSize.X)
 				// Resize with non-blocking / lossy write.
 				select {
 				case newRange <- size:
@@ -137,6 +75,7 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 					// Don't need to resize; ignore
 					break
 				}
+				// New messages received. Redraw. We signal that as resize.
 				select {
 				case newRange <- size:
 					// pass
@@ -146,38 +85,69 @@ func (ctl *Controller) Start(ctx context.Context, network, channel string) {
 			}
 		}
 	}()
-
-	// Refresh thread: read the new range, get its contents, and update the
-	// display.
-	newContents := make(chan []string, 1)
-	go func() {
-		defer close(newContents)
-		// Wait for channel to be ready.
-		ch := <-gotChannel
-		gotChannel <- ch
-
-		updateDone := make(chan *struct{})
-		for size := range newRange {
-			messages := ch.GetMessages(0, size)
-			// Schedule the GUI update and block on its completion before
-			// continuing to pick up the new size.
-			ctl.UI.Update(func() {
-				ctl.View.Contents.Set(messages)
-				updateDone <- nil
-			})
-			_ = <-updateDone
-		}
-	}()
-
+	return newRange
 }
 
-func New(ctx context.Context, view *View, ui tui.UI, client model.Client, network, channel string) {
+// updateContents updates the contents of the View
+func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, update chan uint) {
+	updateDone := make(chan *struct{})
+	for size := range update {
+		messages := ch.GetMessages(0, size)
+		// Schedule the GUI update and block on its completion before
+		// continuing to pick up the new size.
+		go ctl.UI.Update(func() {
+			ctl.View.SetContents(messages)
+			updateDone <- nil
+		})
+		_ = <-updateDone
+	}
+}
+
+// sendMessages is the send loop, passing messages from the UI to the network.
+func (ctl *Controller) sendMessages(ctx context.Context, ch model.Channel) {
+	queuedMessages := []string{}
+	// Send any queued messages to the client.
+	for {
+		for len(queuedMessages) > 0 {
+			// Pop a message, attempt to forward it.
+			var hd string
+			hd, queuedMessages = queuedMessages[0], queuedMessages[1:]
+			select {
+			case <-ctx.Done():
+				return
+			case msg := <-ctl.msgSend:
+				queuedMessages = append(queuedMessages, msg)
+			case ch.MessageInput() <- hd:
+				// pass
+			}
+		}
+		// Wait for another message to come in.
+		select {
+		case <-ctx.Done():
+			return
+		case msg := <-ctl.msgSend:
+			queuedMessages = append(queuedMessages, msg)
+		}
+	}
+}
+
+func New(ctx context.Context, view View, ui tui.UI, client model.Client, network, channel string) {
 	ctl := &Controller{
-		Client:  client,
 		View:    view,
 		UI:      ui,
 		msgSend: make(chan string, 1),
 	}
 
-	ctl.Start(ctx, network, channel)
+	// Queue UI update with channel location.
+	go ctl.UI.Update(func() {
+		ctl.View.SetLocation(network, channel)
+	})
+
+	gotChannel := make(chan model.Channel)
+	// Start / establish connection in background.
+	go func() {
+		gotChannel <- client.Connection(network).Channel(channel)
+	}()
+
+	go ctl.Start(ctx, gotChannel)
 }

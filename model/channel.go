@@ -11,6 +11,7 @@ import (
 
 type Channel interface {
 	Name() string
+	Network() string
 
 	// GetMessages requests a range of messages.
 	// 'size' gives how many messages to return; "start" gives a starting offset, where an offset of 0
@@ -42,8 +43,9 @@ type Notification struct {
 
 // MockChannel implements the Channel model, for testing.
 type MockChannel struct {
-	name string
-	log *log.Logger
+	name    string
+	network string
+	log     *log.Logger
 
 	messages []string
 	topic    string
@@ -55,6 +57,10 @@ type MockChannel struct {
 
 func (m *MockChannel) Name() string {
 	return m.name
+}
+
+func (m *MockChannel) Network() string {
+	return m.network
 }
 
 func (m *MockChannel) GetMessages(offset, size uint) (ret []string) {
@@ -82,7 +88,7 @@ func (m *MockChannel) GetMessages(offset, size uint) (ret []string) {
 	}
 
 	ret = m.messages[start:end]
-	return 
+	return
 }
 
 func (m *MockChannel) MessageInput() chan<- string {
@@ -126,10 +132,11 @@ func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
 	return c
 }
 
-func NewMockChannel(log *log.Logger, name, topic string) Channel {
+func NewMockChannel(log *log.Logger, network, name, topic string) Channel {
 	r := &MockChannel{
-		log: log,
+		log:          log,
 		name:         name,
+		network:      network,
 		notification: make(chan *Notification, 1),
 
 		messageUpdate: make(chan string),
