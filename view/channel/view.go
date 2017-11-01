@@ -18,7 +18,7 @@ func NewView() *View {
 	w := &View{
 		Input:  tui.NewEntry(),
 		NetBar: tui.NewStatusBar(""),
-		ModeBar: ModeBar{
+		ModeBar: &ModeBar{
 			StatusBar: tui.NewStatusBar(""),
 			con:       nocon,
 			input:     defaultMode,
@@ -53,7 +53,7 @@ type View struct {
 
 	Input    *tui.Entry
 	NetBar   *tui.StatusBar
-	ModeBar  ModeBar
+	ModeBar  *ModeBar
 	Contents *Contents
 }
 
@@ -74,6 +74,10 @@ type ModeBar struct {
 	*tui.StatusBar
 
 	con, input string
+}
+
+func (m *ModeBar) Draw(p *tui.Painter) {
+	p.WithStyle("reverse", m.StatusBar.Draw)
 }
 
 func (m *ModeBar) render() {

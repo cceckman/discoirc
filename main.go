@@ -61,6 +61,7 @@ func main() {
 	ctx := context.Background()
 	v := channel.NewView()
 	ui := tui.New(v)
+	ui.SetTheme(Theme())
 	channel.New(ctx, v, ui, client, "testnet", "#testing")
 
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
@@ -68,6 +69,18 @@ func main() {
 	if err := ui.Run(); err != nil {
 		logger.Fatalf("unknown error: %v", err)
 	}
+}
+
+func Theme() *tui.Theme {
+	t := tui.NewTheme()
+	instance :=tui.Style{
+		Fg: tui.ColorWhite,
+		Bg: tui.ColorBlack,
+	}
+	t.SetStyle("default", instance)
+	instance.Reverse = true
+	t.SetStyle("reverse", instance)
+	return t
 }
 
 func LoggerOrDie() *golog.Logger {
