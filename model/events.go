@@ -17,29 +17,34 @@ type EventID struct {
 	Seq   uint
 }
 
-
-// NewEvents returns a new Event object, ensuring that it is sorted.
-func NewEvents(es []Event) Events {
-	r := make([]Event, len(es))
-	copy(r, es)
-	sort.Sort(Events(r))
-	return Events(r)
+type Events interface {
+	SelectSize(uint) []Event
+	SelectSizeMax(uint, EventID) []Event
+	SelectMinSize(EventID, uint) []Event
+	SelectMinMax(EventID, EventID) []Event
 }
 
-// Events is an ordered set of events.
-type Events []Event
+// NewEvents returns a new EventList, ensuring that it is sorted.
+func NewEvents(es []Event) EventList {
+	r := make([]Event, len(es))
+	copy(r, es)
+	sort.Sort(EventList(r))
+	return r
+}
+
+type EventList []Event
 
 // SelectSize selects the most recent n events.
-func (e Events) SelectSize(n uint) Events {
+func (e EventList) SelectSize(n uint) []Event {
 	start := len(e) - int(n)
 	if start < 0 {
 		start = 0
 	}
-	return Events(e[start:])
+	return e[start:]
 }
 
 // SelectMaxSize selects at most n Events ending at max.
-func (e Events) SelectMaxSize(n uint, max EventID) Events {
+func (e EventList) SelectSizeMax(n uint, max EventID) []Event {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
 		if e[i].ID.Epoch == max.Epoch {
@@ -56,7 +61,7 @@ func (e Events) SelectMaxSize(n uint, max EventID) Events {
 }
 
 // SelectMinSize selects at most n Events starting from min.
-func (e Events) SelectMinSize(min EventID, n uint) Events {
+func (e EventList) SelectMinSize(min EventID, n uint) []Event {
 	// Find the first element >= Min
 	start := sort.Search(len(e), func(i int) bool {
 		if e[i].ID.Epoch == min.Epoch {
@@ -69,12 +74,12 @@ func (e Events) SelectMinSize(min EventID, n uint) Events {
 	if end > len(e) {
 		end = len(e)
 	}
-	return Events(e[start:end])
+	return e[start:end]
 }
 
 
 // Select returns a slice from its receiver with those within the EventRange.
-func (e Events) SelectMinMax(min, max EventID) Events {
+func (e EventList) SelectMinMax(min, max EventID) []Event {
 	// Events must already be sorted.
 
 	// Find the first element >= Min
@@ -93,11 +98,11 @@ func (e Events) SelectMinMax(min, max EventID) Events {
 		return e[i].ID.Epoch > max.Epoch
 	})
 
-	return Events(e[start:end])
+	return e[start:end]
 }
 
-func (e Events) Len() int { return len(e) }
-func (e Events) Less(i, j int) bool {
+func (e EventList) Len() int { return len(e) }
+func (e EventList) Less(i, j int) bool {
 	a, b := e[i].ID, e[j].ID
 	if a.Epoch == b.Epoch {
 		return a.Seq < b.Seq
@@ -107,7 +112,7 @@ func (e Events) Less(i, j int) bool {
 	}
 	return false
 }
-func (e Events) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
+func (e EventList) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
 
 // An Event represents an event in IRC, e.g. a message.
 type Event struct {
