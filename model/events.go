@@ -17,10 +17,6 @@ type EventID struct {
 	Seq   uint
 }
 
-// An EventRange selects a range of events.
-type EventRange struct {
-	Min, Max EventID
-}
 
 // NewEvents returns a new Event object, ensuring that it is sorted.
 func NewEvents(es []Event) Events {
@@ -33,24 +29,68 @@ func NewEvents(es []Event) Events {
 // Events is an ordered set of events.
 type Events []Event
 
+// SelectSize selects the most recent n events.
+func (e Events) SelectSize(n uint) Events {
+	start := len(e) - int(n)
+	if start < 0 {
+		start = 0
+	}
+	return Events(e[start:])
+}
+
+// SelectMaxSize selects at most n Events ending at max.
+func (e Events) SelectMaxSize(n uint, max EventID) Events {
+	// Find the first element > Max
+	end := sort.Search(len(e), func(i int) bool {
+		if e[i].ID.Epoch == max.Epoch {
+			return e[i].ID.Seq > max.Seq
+		}
+		return e[i].ID.Epoch > max.Epoch
+	})
+
+	start := end - int(n)
+	if start < 0 {
+		start  = 0
+	}
+	return e[start:end]
+}
+
+// SelectMinSize selects at most n Events starting from min.
+func (e Events) SelectMinSize(min EventID, n uint) Events {
+	// Find the first element >= Min
+	start := sort.Search(len(e), func(i int) bool {
+		if e[i].ID.Epoch == min.Epoch {
+			return e[i].ID.Seq >= min.Seq
+		}
+		return e[i].ID.Epoch > min.Epoch
+	})
+
+	end := start + int(n)
+	if end > len(e) {
+		end = len(e)
+	}
+	return Events(e[start:end])
+}
+
+
 // Select returns a slice from its receiver with those within the EventRange.
-func (e Events) Select(r EventRange) Events {
+func (e Events) SelectMinMax(min, max EventID) Events {
 	// Events must already be sorted.
 
 	// Find the first element >= Min
 	start := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == r.Min.Epoch {
-			return e[i].ID.Seq >= r.Min.Seq
+		if e[i].ID.Epoch == min.Epoch {
+			return e[i].ID.Seq >= min.Seq
 		}
-		return e[i].ID.Epoch > r.Min.Epoch
+		return e[i].ID.Epoch > min.Epoch
 	})
 
 	// Find the first element >= Max
 	end := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == r.Max.Epoch {
-			return e[i].ID.Seq > r.Max.Seq
+		if e[i].ID.Epoch == max.Epoch {
+			return e[i].ID.Seq > max.Seq
 		}
-		return e[i].ID.Epoch > r.Max.Epoch
+		return e[i].ID.Epoch > max.Epoch
 	})
 
 	return Events(e[start:end])
