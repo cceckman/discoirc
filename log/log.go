@@ -7,7 +7,9 @@ package log
 import (
 	"fmt"
 	"log"
+	"io/ioutil"
 	"os"
+	"io"
 	"os/user"
 	"path/filepath"
 	"time"
@@ -20,7 +22,12 @@ const (
 	loggerFlags = log.Ldate | log.Ltime | log.Lshortfile
 )
 
-func New(dir string) (*log.Logger, error) {
+func New() (*log.Logger, error) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, err
+	}
+
 	username := "unknown"
 	u, userErr := user.Current()
 	if userErr == nil {
@@ -31,18 +38,17 @@ func New(dir string) (*log.Logger, error) {
 
 	fname := fmt.Sprintf(logFileFmt, binname, username, time.Now().Format(timeFmt), os.Getpid())
 	logpath := filepath.Join(dir, fname)
+	log.Print("started log file at ", logpath)
 	f, err := os.Create(logpath)
 	if err != nil {
 		return nil, err
 	}
+	return NewFor(f)
+}
 
+func NewFor(f io.Writer) (*log.Logger, error) {
 	result := log.New(f, "discoirc-cli", loggerFlags)
-	log.Print("started log file at ", logpath)
-	result.Print("started log file at ", logpath)
-
-	if userErr != nil {
-		result.Print("error in determining own user: ", userErr)
-	}
+	result.Print("starting new debug log")
 
 	return result, nil
 }

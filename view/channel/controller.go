@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"log"
 
 	"github.com/cceckman/discoirc/model"
 	"github.com/marcusolsson/tui-go"
@@ -10,6 +11,7 @@ import (
 type Controller struct {
 	View View
 	UI   tui.UI
+	*log.Logger
 
 	msgSend chan string
 	resize  chan int
@@ -86,14 +88,15 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 			case <-ctx.Done():
 				return
 			case newSize, ok := <-ctl.View.ContentSize():
+				ctl.Printf("size changed to %v", newSize)
 				if !ok {
 					return
 				}
-				if uint(newSize.X) == size {
+				if uint(newSize.Y) == size {
 					// Don't need to resize; ignore.
 					break
 				}
-				size = uint(newSize.X)
+				size = uint(newSize.Y)
 				// Resize with non-blocking / lossy write.
 				select {
 				case newRange <- size:
@@ -123,6 +126,7 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	go func() {
 		updateDone := make(chan *struct{})
 		for size := range update {
+			ctl.Printf("updateContents got size update of %v", size)
 			events := ch.SelectSize(size)
 			messages := make([]string, len(events))
 			for i, event := range events {
@@ -131,6 +135,13 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 			// Schedule the GUI update and block on its completion before
 			// continuing to pick up the new size.
 			go ctl.UI.Update(func() {
+				if len(events) == 0 {
+					ctl.Printf("showing zero events")
+				} else {
+					last := len(events) - 1
+					ctl.Printf("showing %d messages, from (%d, %d) to (%d, %d)",
+						len(messages), events[0].Epoch, events[0].Seq, events[last].Epoch, events[last].Seq)
+				}
 				ctl.View.SetContents(messages)
 				updateDone <- nil
 			})
@@ -139,9 +150,10 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	}()
 }
 
-func New(ctx context.Context, view View, ui tui.UI, client model.Client, network, channel string) {
+func New(ctx context.Context, log *log.Logger, view View, ui tui.UI, client model.Client, network, channel string) {
 	ctl := &Controller{
 		View:    view,
+		Logger:  log,
 		UI:      ui,
 		msgSend: make(chan string, 1),
 	}

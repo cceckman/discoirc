@@ -5,7 +5,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	golog "log"
 	"os"
 
@@ -31,7 +30,7 @@ const (
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
 
-	logdir = flag.String("log-dir", "", "Directory to write debug logs to. Use a temporary directory if unset.")
+	logpath = flag.String("logpath", "", "File to write debug logs to. Use a temporary file and directory if unset.")
 )
 
 func main() {
@@ -61,7 +60,7 @@ func main() {
 	v := channel.NewView()
 	ui := tui.New(v)
 	ui.SetTheme(Theme())
-	channel.New(ctx, v, ui, client, "testnet", "#testing")
+	channel.New(ctx, logger, v, ui, client, "testnet", "#testing")
 
 	ui.SetKeybinding("Esc", func() { ui.Quit() })
 
@@ -84,16 +83,21 @@ func Theme() *tui.Theme {
 
 func LoggerOrDie() *golog.Logger {
 	// Initialize logger
-	if *logdir == "" {
-		tmp, err := ioutil.TempDir("", "")
+	if *logpath == "" {
+		logger, err := log.New()
 		if err != nil {
-			golog.Fatal("could not create directory for logging: ", err)
+			golog.Fatal("could not create log: ", err)
 		}
-		*logdir = tmp
+		return logger
 	}
-	logger, err := log.New(*logdir)
+	file, err := os.OpenFile(*logpath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0755)
 	if err != nil {
-		golog.Fatal("could not open log file: ", err)
+		golog.Fatal("could not open log: ", err)
 	}
-	return logger
+	result, err := log.NewFor(file)
+	if err != nil {
+
+		golog.Fatal("could not open log: ", err)
+	}
+	return result
 }
