@@ -49,13 +49,12 @@ func main() {
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	mchan := model.NewMockChannel(logger, "testnet", "#testing", "We're all mad here")
+	mchan := model.NewMockChannel(logger, "testnet", "#testing")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
 			"#testing": mchan,
 		}),
 	})
-
 	model.MessageGenerator(logger, 99, mchan)
 
 	ctx := context.Background()

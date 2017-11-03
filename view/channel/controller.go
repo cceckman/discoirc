@@ -36,6 +36,12 @@ func (ctl *Controller) Start(ctx context.Context, getCh chan model.Channel) {
 
 // sendMessages is the send loop, passing messages from the UI to the network.
 func (ctl *Controller) sendMessages(ctx context.Context, ch model.Channel) {
+	messages := make(chan string)
+	go func() {
+		for msg := range messages {
+			ch.Send(msg)
+		}
+	}()
 	go func() {
 		queuedMessages := []string{}
 		// Send any queued messages to the client.
@@ -49,7 +55,7 @@ func (ctl *Controller) sendMessages(ctx context.Context, ch model.Channel) {
 					return
 				case msg := <-ctl.msgSend:
 					queuedMessages = append(queuedMessages, msg)
-				case ch.MessageInput() <- hd:
+				case messages <- hd:
 					// pass
 				}
 			}
@@ -71,9 +77,8 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 		defer close(newRange)
 
 		// Listen for resize events
-		notices := ch.Await(ctx)
+		notices := ch.Updates(ctx)
 		var size uint
-		var msgCount int
 		// Await resize or more messages received.
 		// TODO support non-zero start.
 		for {
@@ -96,13 +101,9 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 				case _ = <-newRange:
 					newRange <- size
 				}
-			case notice, ok := <-notices:
+			case _, ok := <-notices:
 				if !ok {
 					return
-				}
-				if notice.Messages == msgCount {
-					// Don't need to resize; ignore
-					break
 				}
 				// New messages received. Redraw. We signal that as resize.
 				select {
@@ -122,7 +123,11 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	go func() {
 		updateDone := make(chan *struct{})
 		for size := range update {
-			messages := ch.GetMessages(0, size)
+			events := ch.SelectSize(size)
+			messages := make([]string, len(events))
+			for i, event := range events {
+				messages[i] = event.Contents
+			}
 			// Schedule the GUI update and block on its completion before
 			// continuing to pick up the new size.
 			go ctl.UI.Update(func() {

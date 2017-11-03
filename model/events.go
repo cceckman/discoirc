@@ -47,10 +47,10 @@ func (e EventList) SelectSize(n uint) []Event {
 func (e EventList) SelectSizeMax(n uint, max EventID) []Event {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == max.Epoch {
-			return e[i].ID.Seq > max.Seq
+		if e[i].Epoch == max.Epoch {
+			return e[i].Seq > max.Seq
 		}
-		return e[i].ID.Epoch > max.Epoch
+		return e[i].Epoch > max.Epoch
 	})
 
 	start := end - int(n)
@@ -64,10 +64,10 @@ func (e EventList) SelectSizeMax(n uint, max EventID) []Event {
 func (e EventList) SelectMinSize(min EventID, n uint) []Event {
 	// Find the first element >= Min
 	start := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == min.Epoch {
-			return e[i].ID.Seq >= min.Seq
+		if e[i].Epoch == min.Epoch {
+			return e[i].Seq >= min.Seq
 		}
-		return e[i].ID.Epoch > min.Epoch
+		return e[i].Epoch > min.Epoch
 	})
 
 	end := start + int(n)
@@ -84,26 +84,24 @@ func (e EventList) SelectMinMax(min, max EventID) []Event {
 
 	// Find the first element >= Min
 	start := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == min.Epoch {
-			return e[i].ID.Seq >= min.Seq
+		if e[i].Epoch == min.Epoch {
+			return e[i].Seq >= min.Seq
 		}
-		return e[i].ID.Epoch > min.Epoch
+		return e[i].Epoch > min.Epoch
 	})
 
 	// Find the first element >= Max
 	end := sort.Search(len(e), func(i int) bool {
-		if e[i].ID.Epoch == max.Epoch {
-			return e[i].ID.Seq > max.Seq
+		if e[i].Epoch == max.Epoch {
+			return e[i].Seq > max.Seq
 		}
-		return e[i].ID.Epoch > max.Epoch
+		return e[i].Epoch > max.Epoch
 	})
 
 	return e[start:end]
 }
 
-func (e EventList) Len() int { return len(e) }
-func (e EventList) Less(i, j int) bool {
-	a, b := e[i].ID, e[j].ID
+func Less(a EventID, b EventID) bool {
 	if a.Epoch == b.Epoch {
 		return a.Seq < b.Seq
 	}
@@ -112,11 +110,16 @@ func (e EventList) Less(i, j int) bool {
 	}
 	return false
 }
+
+func (e EventList) Len() int { return len(e) }
+func (e EventList) Less(i, j int) bool {
+	return Less(e[i].EventID, e[j].EventID)
+}
 func (e EventList) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
 
 // An Event represents an event in IRC, e.g. a message.
 type Event struct {
-	ID EventID
+	EventID
 
 	Contents string
 }

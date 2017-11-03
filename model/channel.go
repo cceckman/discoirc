@@ -5,181 +5,138 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 )
 
 type Channel interface {
+	Events
+
 	Name() string
 	Network() string
 
-	// GetMessages requests a range of messages.
-	// 'size' gives how many messages to return; "start" gives a starting offset, where an offset of 0
-	// begins with the most recent message.
-	// The returned slice is sorted from least (0) to most (len-1) recent.
-	GetMessages(offset, size uint) []string
-	MessageInput() chan<- string
-
-	GetTopic() string
-	SetTopic(string)
-
-	// Await awaits for changes to this channel.
-	Await(context.Context) <-chan *Notification
+	Send(string)
+	Updates(context.Context) <-chan Event
 }
 
-// Notification represents an update to the channel.
 type Notification struct {
-	// Messages represents the total count of messages available.
-	// A Notification receiver should always request the maximum number of messages it is able
-	// to display, as more messages may have been received by the Channel since the Notification
-	// arrived.
-	Messages int
-	// Topic indicates the topic of the channel.
-	Topic string
-
-	// Next is a channel to listen on for the next notification.
-	Next chan *Notification
+	Latest Event
+	Next   chan Notification
 }
 
-// MockChannel implements the Channel model, for testing.
+func (c *MockChannel) Name() string {
+	return c.name
+}
+
+func (c *MockChannel) Network() string {
+	return c.network
+}
+
+// MockChannel implements the Channel interface.
 type MockChannel struct {
 	name    string
 	network string
 	log     *log.Logger
 
-	messages []string
-	topic    string
-	mu       sync.RWMutex
+	request chan Events
 
-	notification               chan *Notification
-	messageUpdate, topicUpdate chan string
+	subscribe chan chan Notification
+	send      chan string
 }
 
-func (m *MockChannel) Name() string {
-	return m.name
+func (c *MockChannel) SelectSize(n uint) []Event {
+	return (<-c.request).SelectSize(n)
 }
 
-func (m *MockChannel) Network() string {
-	return m.network
+func (c *MockChannel) SelectSizeMax(n uint, e EventID) []Event {
+	return (<-c.request).SelectSizeMax(n, e)
 }
 
-func (m *MockChannel) GetMessages(offset, size uint) (ret []string) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	defer func() {
-		// Use a closure s.t. len(ret) gets evaluated after defer
-		m.log.Printf("Responded to request for messages at offset %d size %d; served %d", offset, size, len(ret))
-	}()
-
-	// The 'messages' dict is indexed oldest to newest, but offset here is from newest.
-	// i                                offset
-	// 0 hi                             3
-	// 1 how are you                    2
-	// 2 i'm well thank you very much   1
-	// 3 ok bye                         0
-	// But "end" of a slice is one beyond the end.
-	end := len(m.messages) - int(offset)
-	if end < 1 {
-		return
-	}
-	start := end - int(size)
-	if start < 0 {
-		start = 0
-	}
-
-	ret = m.messages[start:end]
-	return
+func (c *MockChannel) SelectMinSize(e EventID, n uint) []Event {
+	return (<-c.request).SelectMinSize(e, n)
 }
 
-func (m *MockChannel) MessageInput() chan<- string {
-	return m.messageUpdate
+func (c *MockChannel) SelectMinMax(min, max EventID) []Event {
+	return (<-c.request).SelectMinMax(min, max)
 }
 
-func (m *MockChannel) GetTopic() string {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	return m.topic
-}
-
-func (m *MockChannel) SetTopic(topic string) {
-	m.topicUpdate <- topic
-}
-
-func (m *MockChannel) Await(ctx context.Context) <-chan *Notification {
-	c := make(chan *Notification)
-
+func (c *MockChannel) Updates(ctx context.Context) <-chan Event {
+	c.log.Printf("added listener to channel %s / %s", c.Network(), c.Name())
+	result := make(chan Event)
 	go func() {
-		defer close(c)
-
-		await := m.notification
+		// Block on subscription request.
+		var notices chan Notification
+		select {
+		case <-ctx.Done():
+			return
+		case notices = <-c.subscribe:
+			// Have a channel to listen on.
+		}
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case notification := <-await:
-				// Send on to the next listener; non-blocking
-				await <- notification
-				// Update our listener...
-				await = notification.Next
-				// And notify our own consumer. This is blocking.
-				c <- notification
+			case notice := <-notices:
+				// Put it back in the broadcast channel immediately.
+				notices <- notice
+				result <- notice.Latest
+			}
+		}
+	}()
+	return result
+}
+
+func (c *MockChannel) Send(msg string) {
+	c.log.Printf("awaiting send for message \"%s\"", msg)
+	c.send <- msg
+}
+
+func NewMockChannel(log *log.Logger, network, name string) Channel {
+	c := &MockChannel{
+		log:       log,
+		name:      name,
+		network:   network,
+		request:   make(chan Events),
+		subscribe: make(chan chan Notification, 1),
+		send:      make(chan string),
+	}
+
+	go func() {
+		events := []Event{}
+		var epoch int
+		var seq uint
+		next := make(chan Notification, 1)
+
+		for {
+			select {
+			case c.request <- EventList(events):
+				// handled state request
+			case c.subscribe <- next:
+				// handled subscribe request.
+			case msg := <-c.send:
+				c.log.Printf("sending new message: \"%s\"", msg)
+				// Add to buffer
+				event := Event{
+					EventID: EventID{
+						Epoch: epoch,
+						Seq:   seq,
+					},
+					Contents: msg,
+				}
+				events = append(events, event)
+				seq++
+				// And notify
+				notice := Notification{
+					Latest: event,
+					Next:   make(chan Notification, 1),
+				}
+				next <- notice
+				next = notice.Next
 			}
 		}
 	}()
 
 	return c
-}
-
-func NewMockChannel(log *log.Logger, network, name, topic string) Channel {
-	r := &MockChannel{
-		log:          log,
-		name:         name,
-		network:      network,
-		notification: make(chan *Notification, 1),
-
-		messageUpdate: make(chan string),
-		topicUpdate:   make(chan string),
-	}
-
-	go func() {
-		r.topicUpdate <- topic
-	}()
-
-	go func() {
-		for {
-			// TODO if this is still in use: close it.
-			updated := false
-			select {
-			case m := <-r.messageUpdate:
-				r.mu.Lock()
-				r.messages = append(r.messages, m)
-				r.mu.Unlock()
-				updated = true
-			case t := <-r.topicUpdate:
-				r.mu.Lock()
-				if t != r.topic {
-					updated = true
-				}
-				r.topic = t
-				r.mu.Unlock()
-			}
-
-			if updated {
-				next := make(chan *Notification, 1)
-				notification := &Notification{
-					Messages: len(r.messages),
-					Topic:    r.topic,
-					Next:     next,
-				}
-				r.notification <- notification
-				r.notification = next
-			}
-		}
-	}()
-
-	return r
 }
 
 // MessageGenerator sends message to a Channel.
@@ -192,7 +149,7 @@ func MessageGenerator(logger *log.Logger, max uint, c Channel) {
 
 			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
 			logger.Print("Chat/messages: [sending] : ", msg)
-			c.MessageInput() <- msg
+			c.Send(msg)
 		}
 	}()
 }
