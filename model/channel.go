@@ -79,6 +79,9 @@ func (c *MockChannel) Updates(ctx context.Context) <-chan Event {
 			case notice := <-notices:
 				// Put it back in the broadcast channel immediately.
 				notices <- notice
+				// Await the next notice
+				notices = notice.Next
+				// And forward the semantic content
 				result <- notice.Latest
 			}
 		}

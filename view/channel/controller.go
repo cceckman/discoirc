@@ -72,15 +72,15 @@ func (ctl *Controller) sendMessages(ctx context.Context, ch model.Channel) {
 	}()
 }
 
-// reerange loop, getting new contents fo the UI.
-func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint {
-	newRange := make(chan uint, 1)
+// rerange is the layout loop, handling resize and message-received events.
+func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan int {
+	newRange := make(chan int, 1)
 	go func() {
 		defer close(newRange)
 
 		// Listen for resize events
 		notices := ch.Updates(ctx)
-		var size uint
+		var size int
 		// Await resize or more messages received.
 		// TODO support non-zero start.
 		for {
@@ -88,15 +88,15 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 			case <-ctx.Done():
 				return
 			case newSize, ok := <-ctl.View.ContentSize():
-				ctl.Printf("size changed to %v", newSize)
 				if !ok {
 					return
 				}
-				if uint(newSize.Y) == size {
+				if newSize.Y == size {
 					// Don't need to resize; ignore.
 					break
 				}
-				size = uint(newSize.Y)
+				ctl.Printf("rerange: size changed to %v", newSize)
+				size = newSize.Y
 				// Resize with non-blocking / lossy write.
 				select {
 				case newRange <- size:
@@ -105,6 +105,7 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 					newRange <- size
 				}
 			case _, ok := <-notices:
+				ctl.Printf("rerange: received notice of new content")
 				if !ok {
 					return
 				}
@@ -122,12 +123,12 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan uint 
 }
 
 // updateContents updates the contents of the View
-func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, update chan uint) {
+func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, update chan int) {
 	go func() {
 		updateDone := make(chan *struct{})
 		for size := range update {
 			ctl.Printf("updateContents got size update of %v", size)
-			events := ch.SelectSize(size)
+			events := ch.SelectSize(uint(size))
 			messages := make([]string, len(events))
 			for i, event := range events {
 				messages[i] = event.Contents
