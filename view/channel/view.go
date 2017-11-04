@@ -38,7 +38,7 @@ func NewView() View {
 	w := &view{
 		Input:  tui.NewEntry(),
 		NetBar: tui.NewStatusBar(""),
-		ModeBar: &ModeBar{
+		modeBar: &modeBar{
 			StatusBar: tui.NewStatusBar(""),
 			con:       nocon,
 			input:     defaultMode,
@@ -52,16 +52,16 @@ func NewView() View {
 	// Layout
 	w.Contents.SetSizePolicy(tui.Expanding, tui.Expanding)
 	w.NetBar.SetSizePolicy(tui.Expanding, tui.Preferred)
-	w.ModeBar.SetSizePolicy(tui.Expanding, tui.Preferred)
+	w.modeBar.SetSizePolicy(tui.Expanding, tui.Preferred)
 	w.Input.SetSizePolicy(tui.Expanding, tui.Preferred)
 
 	// Initialization
 	w.Input.SetFocused(true)
-	w.ModeBar.render()
+	w.modeBar.render()
 
 	w.Widget = tui.NewVBox(
 		w.Contents,
-		tui.NewHBox(w.NetBar, w.ModeBar),
+		tui.NewHBox(w.NetBar, w.modeBar),
 		w.Input,
 	)
 	return w
@@ -73,7 +73,7 @@ type view struct {
 
 	Input    *tui.Entry
 	NetBar   *tui.StatusBar
-	ModeBar  *ModeBar
+	modeBar  *modeBar
 	Contents *Contents
 }
 
@@ -83,33 +83,33 @@ func (v *view) Connect(ctl *Controller) {
 		ctl.Send(entry.Text())
 		entry.SetText("")
 	})
-	v.ModeBar.SetConnected(true)
+	v.modeBar.SetConnected(true)
 }
 
 func (v *view) Disconnect() {
 	v.Input.OnSubmit(func(_ *tui.Entry) {})
-	v.ModeBar.SetConnected(false)
+	v.modeBar.SetConnected(false)
 }
 
 func (v *view) SetLocation(network, channel string) {
 	v.NetBar.SetText(fmt.Sprintf("%s / %s", network, channel))
 }
 
-type ModeBar struct {
+type modeBar struct {
 	*tui.StatusBar
 
 	con, input string
 }
 
-func (m *ModeBar) Draw(p *tui.Painter) {
+func (m *modeBar) Draw(p *tui.Painter) {
 	p.WithStyle("reverse", m.StatusBar.Draw)
 }
 
-func (m *ModeBar) render() {
+func (m *modeBar) render() {
 	m.SetPermanentText(fmt.Sprintf("[%s] [%s]", m.con, m.input))
 }
 
-func (m *ModeBar) SetConnected(connected bool) {
+func (m *modeBar) SetConnected(connected bool) {
 	if connected {
 		m.con = okcon
 	} else {
