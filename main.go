@@ -2,15 +2,15 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	golog "log"
 	"os"
+	"time"
 
 	"github.com/cceckman/discoirc/log"
 	"github.com/cceckman/discoirc/model"
-	"github.com/cceckman/discoirc/view/channel"
+	"github.com/cceckman/discoirc/view"
 	"github.com/marcusolsson/tui-go"
 )
 
@@ -56,15 +56,14 @@ func main() {
 	})
 	model.MessageGenerator(logger, 99, mchan)
 
-	ctx := context.Background()
-	v := channel.NewView()
-	ui := tui.New(v)
-	ui.SetTheme(Theme())
-	channel.New(ctx, logger, v, ui, client, "testnet", "#testing")
+	session := view.NewConsoleSession(logger, client)
+	session.SetTheme(Theme())
+	go func() {
+		time.Sleep(1 * time.Second)
+		session.OpenChannel("testnet", "#testing")
+	}()
 
-	ui.SetKeybinding("Esc", func() { ui.Quit() })
-
-	if err := ui.Run(); err != nil {
+	if err := session.Run(); err != nil {
 		logger.Fatalf("unknown error: %v", err)
 	}
 }

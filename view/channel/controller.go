@@ -151,9 +151,9 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	}()
 }
 
-func New(ctx context.Context, log *log.Logger, view View, ui tui.UI, client model.Client, network, channel string) {
+func New(ctx context.Context, log *log.Logger, ui tui.UI, client model.Client, network, channel string) tui.Widget {
 	ctl := &Controller{
-		View:    view,
+		View:    NewView(),
 		Logger:  log,
 		UI:      ui,
 		msgSend: make(chan string, 1),
@@ -171,4 +171,5 @@ func New(ctx context.Context, log *log.Logger, view View, ui tui.UI, client mode
 	}()
 
 	go ctl.Start(ctx, gotChannel)
+	return ctl.View
 }
