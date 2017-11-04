@@ -32,49 +32,60 @@ type View interface {
 
 	// ContentSize provides a channel from which the most content size can be read.
 	ContentSize() <-chan image.Point
+
+	// SetNick sets the user's name in this channel.
+	SetNick(string)
 }
 
 func NewView() View {
 	w := &view{
-		Input:  tui.NewEntry(),
+		Contents: &Contents{
+			List: tui.NewList(),
+			SizeUpdate: make(chan image.Point, 1),
+		},
+
 		NetBar: tui.NewStatusBar(""),
 		modeBar: &modeBar{
 			StatusBar: tui.NewStatusBar(""),
 			con:       nocon,
 			input:     defaultMode,
 		},
-		Contents: &Contents{
-			List: tui.NewList(),
-			SizeUpdate: make(chan image.Point, 1),
-		},
+
+		Nick: tui.NewLabel(""),
+		Input:  tui.NewEntry(),
 	}
 
 	// Layout
 	w.Contents.SetSizePolicy(tui.Expanding, tui.Expanding)
 	w.NetBar.SetSizePolicy(tui.Expanding, tui.Preferred)
 	w.modeBar.SetSizePolicy(tui.Expanding, tui.Preferred)
+	w.Nick.SetSizePolicy(tui.Preferred, tui.Preferred)
 	w.Input.SetSizePolicy(tui.Expanding, tui.Preferred)
+
+	w.Widget = tui.NewVBox(
+		w.Contents,
+		tui.NewHBox(w.NetBar, w.modeBar),
+		tui.NewHBox(w.Nick, w.Input),
+	)
 
 	// Initialization
 	w.Input.SetFocused(true)
 	w.modeBar.render()
 
-	w.Widget = tui.NewVBox(
-		w.Contents,
-		tui.NewHBox(w.NetBar, w.modeBar),
-		w.Input,
-	)
 	return w
 }
 
 // view is the root of the Channel view.
 type view struct {
-	tui.Widget // root widget
+	Contents *Contents
 
-	Input    *tui.Entry
 	NetBar   *tui.StatusBar
 	modeBar  *modeBar
-	Contents *Contents
+
+	Input    *tui.Entry
+	Nick *tui.Label
+
+	tui.Widget // root widget
 }
 
 // Connect updates the UI to show the connection is active.
@@ -93,6 +104,10 @@ func (v *view) Disconnect() {
 
 func (v *view) SetLocation(network, channel string) {
 	v.NetBar.SetText(fmt.Sprintf("%s / %s", network, channel))
+}
+
+func (v *view) SetNick(nick string) {
+	v.Nick.SetText(fmt.Sprintf("<%s>", nick))
 }
 
 type modeBar struct {
