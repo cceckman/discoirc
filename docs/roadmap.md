@@ -13,9 +13,9 @@ Allow switching between them, but not launching windows. Statically
 configure channels and connections on the stub server.
 
 - [ ] Channel
-  - [ ] New messages incoming
-  - [ ] Send messages
-  - [ ] List network + channel
+  - [X] New messages incoming
+  - [X] Send messages
+  - [X] List network + channel
   - [ ] List nick
 - [ ] Session
   - [ ] Networks
