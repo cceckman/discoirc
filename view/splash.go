@@ -5,7 +5,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-const splash string = `
+const splash string = "
              ||
              ||
           ,<><><>,
@@ -14,12 +14,12 @@ const splash string = `
         <><><><><><>
         <><><><><><>
          <><><><><>
-          ,<><><>,
+          `<><><>`
 
           discoirc
 
 github.com/cceckman/discoirc
-`
+"
 
 type splashRequest int
 
