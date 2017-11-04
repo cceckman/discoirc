@@ -47,7 +47,7 @@ func New() (*log.Logger, error) {
 }
 
 func NewFor(f io.Writer) (*log.Logger, error) {
-	result := log.New(f, "discoirc-cli", loggerFlags)
+	result := log.New(f, "", loggerFlags)
 	result.Print("starting new debug log")
 
 	return result, nil
