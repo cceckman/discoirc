@@ -41,7 +41,7 @@ func (ctl *Controller) sendMessages(ctx context.Context, ch model.Channel) {
 	messages := make(chan string)
 	go func() {
 		for msg := range messages {
-			ch.Send(msg)
+			ch.SendMessage(msg)
 		}
 	}()
 	go func() {
@@ -79,7 +79,7 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan int {
 		defer close(newRange)
 
 		// Listen for resize events
-		notices := ch.Updates(ctx)
+		notices := ch.Events(ctx)
 		var size int
 		// Await resize or more messages received.
 		// TODO support non-zero start.
