@@ -175,16 +175,11 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 
 func New(ctx context.Context, log *log.Logger, ui tui.UI, client model.Client, network, channel string) tui.Widget {
 	ctl := &Controller{
-		View:    NewView(),
+		View:    NewView(network, channel),
 		Logger:  log,
 		UI:      ui,
 		msgSend: make(chan string, 1),
 	}
-
-	// Queue UI update with channel location.
-	go ctl.UI.Update(func() {
-		ctl.View.SetLocation(network, channel)
-	})
 
 	gotChannel := make(chan model.Channel)
 	// Start / establish connection in background.

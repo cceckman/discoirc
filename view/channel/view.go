@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	nocon       = "disconnected"
-	okcon       = "connected"
-	defaultMode = "default"
+	disconnected = "disconnected"
+	connected    = "connected"
+
+	joining = "joining"
+	kicked  = "kicked"
+	left    = "left"
 )
 
 // View is the root of a Channel. All its methods should be called from the UI thread.
 type View interface {
 	tui.Widget
-
-	// SetLocation updates the view with the current network and channel.
-	SetLocation(network, channel string)
 
 	// Connect shows teh UI that the connection is active.
 	Connect(ctl *Controller)
@@ -37,40 +37,33 @@ type View interface {
 	SetNick(string)
 }
 
-func NewView() View {
+func NewView(network, channel string) View {
 	w := &view{
 		Contents: &Contents{
-			List: tui.NewList(),
+			List:       tui.NewList(),
 			SizeUpdate: make(chan image.Point, 1),
 		},
 
-		NetBar: tui.NewStatusBar(""),
-		modeBar: &modeBar{
-			StatusBar: tui.NewStatusBar(""),
-			con:       nocon,
-			input:     defaultMode,
-		},
+		Nick:  tui.NewLabel(""),
+		Input: tui.NewEntry(),
 
-		Nick: tui.NewLabel(""),
-		Input:  tui.NewEntry(),
+		Status: newStatusBar(network, channel),
 	}
 
 	// Layout
 	w.Contents.SetSizePolicy(tui.Expanding, tui.Expanding)
-	w.NetBar.SetSizePolicy(tui.Expanding, tui.Preferred)
-	w.modeBar.SetSizePolicy(tui.Expanding, tui.Preferred)
+	w.Status.SetSizePolicy(tui.Expanding, tui.Preferred)
 	w.Nick.SetSizePolicy(tui.Preferred, tui.Preferred)
 	w.Input.SetSizePolicy(tui.Expanding, tui.Preferred)
 
 	w.Widget = tui.NewVBox(
 		w.Contents,
-		tui.NewHBox(w.NetBar, w.modeBar),
+		w.Status,
 		tui.NewHBox(w.Nick, w.Input),
 	)
 
 	// Initialization
 	w.Input.SetFocused(true)
-	w.modeBar.render()
 
 	return w
 }
@@ -79,13 +72,48 @@ func NewView() View {
 type view struct {
 	Contents *Contents
 
-	NetBar   *tui.StatusBar
-	modeBar  *modeBar
+	Input *tui.Entry
+	Nick  *tui.Label
 
-	Input    *tui.Entry
-	Nick *tui.Label
+	Status *statusBar
 
 	tui.Widget // root widget
+}
+
+type statusBar struct {
+	*tui.Box
+
+	Con  *tui.Label
+	Mode *tui.Label
+}
+
+func newStatusBar(network, channel string) *statusBar {
+	r := &statusBar{}
+
+	// elements, in order:
+	// network [ <> connected <> ] / #channel [ <> joined <> ]
+
+	networkLabel := tui.NewLabel(fmt.Sprintf("%s [", network))
+	networkLabel.SetSizePolicy(tui.Preferred, tui.Preferred)
+
+	r.Con = tui.NewLabel(connected)
+	r.Con.SetSizePolicy(tui.Preferred, tui.Preferred)
+
+	channelLabel := tui.NewLabel(fmt.Sprintf("] / %s [", channel))
+	channelLabel.SetSizePolicy(tui.Preferred, tui.Preferred)
+
+	r.Mode = tui.NewLabel(joining)
+	r.Mode.SetSizePolicy(tui.Preferred, tui.Preferred)
+
+	endcap := tui.NewStatusBar("]")
+	endcap.SetSizePolicy(tui.Preferred, tui.Preferred)
+
+	r.Box = tui.NewHBox(networkLabel, r.Con, channelLabel, r.Mode, endcap)
+	return r
+}
+
+func (m *statusBar) Draw(p *tui.Painter) {
+	p.WithStyle("reverse", m.Box.Draw)
 }
 
 // Connect updates the UI to show the connection is active.
@@ -94,43 +122,16 @@ func (v *view) Connect(ctl *Controller) {
 		ctl.Send(entry.Text())
 		entry.SetText("")
 	})
-	v.modeBar.SetConnected(true)
+	v.Status.Con.SetText(connected)
 }
 
 func (v *view) Disconnect() {
 	v.Input.OnSubmit(func(_ *tui.Entry) {})
-	v.modeBar.SetConnected(false)
-}
-
-func (v *view) SetLocation(network, channel string) {
-	v.NetBar.SetText(fmt.Sprintf("%s / %s", network, channel))
+	v.Status.Con.SetText(disconnected)
 }
 
 func (v *view) SetNick(nick string) {
 	v.Nick.SetText(fmt.Sprintf("<%s> ", nick))
-}
-
-type modeBar struct {
-	*tui.StatusBar
-
-	con, input string
-}
-
-func (m *modeBar) Draw(p *tui.Painter) {
-	p.WithStyle("reverse", m.StatusBar.Draw)
-}
-
-func (m *modeBar) render() {
-	m.SetPermanentText(fmt.Sprintf("[%s] [%s]", m.con, m.input))
-}
-
-func (m *modeBar) SetConnected(connected bool) {
-	if connected {
-		m.con = okcon
-	} else {
-		m.con = nocon
-	}
-	m.render()
 }
 
 type Contents struct {
