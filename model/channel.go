@@ -3,9 +3,7 @@ package model
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"time"
 )
 
 type Channel interface {
@@ -28,7 +26,7 @@ type Channel interface {
 }
 
 type ChannelState struct {
-	Connected, Joined bool
+	Connected         bool
 	Nick, Mode, Topic string
 	next              chan ChannelState
 }
@@ -58,7 +56,6 @@ type MockChannel struct {
 	send           chan string
 
 	updateState chan ChannelState
-	present     chan bool
 	connected   chan bool
 
 	stateSubscribe chan chan ChannelState
@@ -175,7 +172,7 @@ func (c *MockChannel) State(ctx context.Context) <-chan ChannelState {
 				select {
 				case r <- newState:
 					// have enqueued.
-				case _ = <- r:
+				case _ = <-r:
 					// dequeued old state; enqueue the new one.
 					r <- newState
 				}
@@ -201,8 +198,6 @@ func (c *MockChannel) stateLoop() {
 			// Sent handler to last state to the new listener.
 			continue
 			// It'll pick up the next field and continue the stream from there.
-		case present := <-c.present:
-			state.Joined = present
 		case con := <-c.connected:
 			state.Connected = con
 		case update := <-c.updateState:
@@ -223,7 +218,7 @@ func (c *MockChannel) stateLoop() {
 	}
 }
 
-func NewMockChannel(log *log.Logger, network, name string) Channel {
+func NewMockChannel(log *log.Logger, network, name string) *MockChannel {
 	c := &MockChannel{
 		log:            log,
 		name:           name,
@@ -233,7 +228,6 @@ func NewMockChannel(log *log.Logger, network, name string) Channel {
 		send:           make(chan string),
 
 		updateState: make(chan ChannelState),
-		present:     make(chan bool),
 		connected:   make(chan bool),
 
 		stateSubscribe: make(chan chan ChannelState, 1),
@@ -244,19 +238,4 @@ func NewMockChannel(log *log.Logger, network, name string) Channel {
 	go c.stateLoop()
 
 	return c
-}
-
-// MessageGenerator sends message to a Channel.
-func MessageGenerator(logger *log.Logger, max uint, c Channel) {
-	go func() {
-		logger.Print("Chat/messages: [start] counting bottles")
-		defer logger.Print("Chat/messages: [done] counting bottles")
-		for i := max; i >= 0; i-- {
-			time.Sleep(time.Millisecond * 500)
-
-			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
-			logger.Print("Chat/messages: [sending] : ", msg)
-			c.SendMessage(msg)
-		}
-	}()
 }

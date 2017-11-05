@@ -54,7 +54,7 @@ func main() {
 			"#testing": mchan,
 		}),
 	})
-	model.MessageGenerator(logger, 99, mchan)
+	model.EventGenerator(logger, mchan)
 
 	session := view.NewConsoleSession(logger, client)
 	session.SetTheme(Theme())
