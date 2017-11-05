@@ -23,17 +23,39 @@ func (ctl *Controller) Send(msg string) {
 }
 
 func (ctl *Controller) Start(ctx context.Context, getCh chan model.Channel) {
-	// Wait for channel to connect.
+	// Wait for Channel object to be availabe.
 	ch := <-getCh
 
 	ctl.sendMessages(ctx, ch)
-	newRange := ctl.rerange(ctx, ch)
-	ctl.updateContents(ctx, ch, newRange)
+	ctl.updateContents(ctx, ch, ctl.rerange(ctx, ch))
+	ctl.updateState(ctx, ch)
+}
 
-	// Update UI to indicate connection.
-	go ctl.UI.Update(func() {
-		ctl.View.Connect(ctl)
-	})
+// updateState updates the static portions of the view: connection state, nick, etc.
+func (ctl *Controller) updateState(ctx context.Context, ch model.Channel) {
+	go func() {
+		stateChan := ch.State(ctx)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case newState := <-stateChan:
+				ctl.Logger.Printf("controller got state notification: %+v", newState)
+				await := make(chan struct{})
+				ctl.UI.Update(func() {
+					defer close(await)
+					if newState.Connected {
+						ctl.View.Connect(ctl)
+					} else {
+						ctl.View.Disconnect()
+					}
+					ctl.View.SetNick(newState.Nick)
+					// TODO set topic, mode
+				})
+				<-await
+			}
+		}
+	}()
 }
 
 // sendMessages is the send loop, passing messages from the UI to the network.

@@ -107,7 +107,7 @@ func (v *view) SetLocation(network, channel string) {
 }
 
 func (v *view) SetNick(nick string) {
-	v.Nick.SetText(fmt.Sprintf("<%s>", nick))
+	v.Nick.SetText(fmt.Sprintf("<%s> ", nick))
 }
 
 type modeBar struct {
@@ -128,7 +128,7 @@ func (m *modeBar) SetConnected(connected bool) {
 	if connected {
 		m.con = okcon
 	} else {
-		m.input = nocon
+		m.con = nocon
 	}
 	m.render()
 }
