@@ -16,7 +16,9 @@ configure channels and connections on the stub server.
   - [X] New messages incoming
   - [X] Send messages
   - [X] List network + channel
-  - [ ] List nick
+  - [X] List nick
+  - [ ] List mode
+  - [ ] List connection state
 - [ ] Session
   - [ ] Networks
   - [ ] Channels on networks
