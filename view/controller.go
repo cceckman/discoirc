@@ -10,7 +10,7 @@ import (
 
 	"github.com/cceckman/discoirc/model"
 	"github.com/cceckman/discoirc/view/channel"
-	"github.com/marcusolsson/tui-go"
+	"github.com/cceckman/tui-go"
 )
 
 // ConsoleSession is the controller for an instance of the discoirc TUI.

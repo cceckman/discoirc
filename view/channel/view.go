@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 
-	"github.com/marcusolsson/tui-go"
+	"github.com/cceckman/tui-go"
 )
 
 const (
@@ -105,8 +105,8 @@ func newStatusBar(network, channel string) *statusBar {
 	r.Mode = tui.NewLabel(joining)
 	r.Mode.SetSizePolicy(tui.Preferred, tui.Preferred)
 
-	endcap := tui.NewStatusBar("]")
-	endcap.SetSizePolicy(tui.Preferred, tui.Preferred)
+	endcap := tui.NewLabel("]")
+	endcap.SetSizePolicy(tui.Expanding, tui.Preferred)
 
 	r.Box = tui.NewHBox(networkLabel, r.Con, channelLabel, r.Mode, endcap)
 	return r
