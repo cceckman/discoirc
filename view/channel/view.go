@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 
-	"github.com/marcusolsson/tui-go"
+	"github.com/cceckman/tui-go"
 )
 
 const (

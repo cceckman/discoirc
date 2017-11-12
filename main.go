@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/marcusolsson/discoirc/log"
-	"github.com/marcusolsson/discoirc/model"
-	"github.com/marcusolsson/discoirc/view"
-	"github.com/marcusolsson/tui-go"
+	"github.com/cceckman/discoirc/log"
+	"github.com/cceckman/discoirc/model"
+	"github.com/cceckman/discoirc/view"
+	"github.com/cceckman/tui-go"
 )
 
 const (
