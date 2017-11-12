@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/cceckman/discoirc/model"
-	"github.com/cceckman/discoirc/view/channel"
-	"github.com/cceckman/tui-go"
+	"github.com/marcusolsson/discoirc/model"
+	"github.com/marcusolsson/discoirc/view/channel"
+	"github.com/marcusolsson/tui-go"
 )
 
 // ConsoleSession is the controller for an instance of the discoirc TUI.

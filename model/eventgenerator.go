@@ -1,6 +1,6 @@
 //
 // lorem.go
-// Copyright (C) 2017 cceckman <charles@cceckman.com>
+// Copyright (C) 2017 marcusolsson <charles@marcusolsson.com>
 //
 // Distributed under terms of the MIT license.
 //
@@ -25,7 +25,7 @@ func EventGenerator(logger *log.Logger, c *MockChannel) {
 
 		connected := false
 
-		initialNick := strings.Split("cceckman", "")
+		initialNick := strings.Split("marcusolsson", "")
 		sort.Strings(initialNick)
 		nick := initialNick
 		mode := strings.Split("one", "")

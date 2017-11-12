@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/cceckman/discoirc/model"
-	"github.com/cceckman/tui-go"
+	"github.com/marcusolsson/discoirc/model"
+	"github.com/marcusolsson/tui-go"
 )
 
 type Controller struct {

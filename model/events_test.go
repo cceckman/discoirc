@@ -1,11 +1,11 @@
-// 2017-10-28 cceckman <charles@cceckman.com>
+// 2017-10-28 marcusolsson <charles@marcusolsson.com>
 package model_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/cceckman/discoirc/model"
+	"github.com/marcusolsson/discoirc/model"
 )
 
 var testdata = []model.Event{
