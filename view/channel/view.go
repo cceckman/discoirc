@@ -35,6 +35,9 @@ type View interface {
 
 	// SetNick sets the user's name in this channel.
 	SetNick(string)
+
+	// SetMode sets the user's mode in the channel.
+	SetMode(string)
 }
 
 func NewView(network, channel string) View {
@@ -114,6 +117,10 @@ func newStatusBar(network, channel string) *statusBar {
 
 func (m *statusBar) Draw(p *tui.Painter) {
 	p.WithStyle("reverse", m.Box.Draw)
+}
+
+func (v *view) SetMode(mode string) {
+	v.Status.Mode.SetText(mode)
 }
 
 // Connect updates the UI to show the connection is active.
