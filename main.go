@@ -46,7 +46,7 @@ func main() {
 
 	// use glog for standard logging as well as any explicitly-glogged stuff.
 	glog.CopyStandardLogTo("INFO")
-	defer glog.Flush()
+	defer CloseLog()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go LogFlusher(ctx, *logPeriod)
@@ -85,6 +85,11 @@ func LogFlusher(ctx context.Context, p time.Duration) {
 			return
 		}
 	}
+}
+
+func CloseLog() {
+	glog.Info("shutting down")
+	glog.Flush()
 }
 
 func Theme() *tui.Theme {
