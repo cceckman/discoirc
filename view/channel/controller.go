@@ -2,16 +2,16 @@ package channel
 
 import (
 	"context"
-	"log"
+
+	"github.com/golang/glog"
+	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/model"
-	"github.com/marcusolsson/tui-go"
 )
 
 type Controller struct {
 	View View
 	UI   tui.UI
-	*log.Logger
 
 	msgSend chan string
 	resize  chan int
@@ -40,7 +40,7 @@ func (ctl *Controller) updateState(ctx context.Context, ch model.Channel) {
 			case <-ctx.Done():
 				return
 			case newState := <-stateChan:
-				ctl.Logger.Printf("controller got state notification: %+v", newState)
+				glog.V(1).Infof("controller got state notification: %+v", newState)
 				await := make(chan struct{})
 				ctl.UI.Update(func() {
 					defer close(await)
@@ -118,7 +118,7 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan int {
 					// Don't need to resize; ignore.
 					break
 				}
-				ctl.Printf("rerange: size changed to %v", newSize)
+				glog.V(1).Infof("rerange: size changed to %v", newSize)
 				size = newSize.Y
 				// Resize with non-blocking / lossy write.
 				select {
@@ -128,7 +128,7 @@ func (ctl *Controller) rerange(ctx context.Context, ch model.Channel) chan int {
 					newRange <- size
 				}
 			case _, ok := <-notices:
-				ctl.Printf("rerange: received notice of new content")
+				glog.V(1).Infof("rerange: received notice of new content")
 				if !ok {
 					return
 				}
@@ -150,7 +150,7 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	go func() {
 		updateDone := make(chan *struct{})
 		for size := range update {
-			ctl.Printf("updateContents got size update of %v", size)
+			glog.V(1).Infof("updateContents got size update of %v", size)
 			events := ch.SelectSize(uint(size))
 			messages := make([]string, len(events))
 			for i, event := range events {
@@ -160,10 +160,10 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 			// continuing to pick up the new size.
 			go ctl.UI.Update(func() {
 				if len(events) == 0 {
-					ctl.Printf("showing zero events")
+					glog.V(1).Infof("showing zero events")
 				} else {
 					last := len(events) - 1
-					ctl.Printf("showing %d messages, from (%d, %d) to (%d, %d)",
+					glog.V(1).Infof("showing %d messages, from (%d, %d) to (%d, %d)",
 						len(messages), events[0].Epoch, events[0].Seq, events[last].Epoch, events[last].Seq)
 				}
 				ctl.View.SetContents(messages)
@@ -174,10 +174,9 @@ func (ctl *Controller) updateContents(ctx context.Context, ch model.Channel, upd
 	}()
 }
 
-func New(ctx context.Context, log *log.Logger, ui tui.UI, client model.Client, network, channel string) tui.Widget {
+func New(ctx context.Context, ui tui.UI, client model.Client, network, channel string) tui.Widget {
 	ctl := &Controller{
 		View:    NewView(network, channel),
-		Logger:  log,
 		UI:      ui,
 		msgSend: make(chan string, 1),
 	}

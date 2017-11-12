@@ -6,11 +6,12 @@ package view
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/golang/glog"
+	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/model"
 	"github.com/cceckman/discoirc/view/channel"
-	"github.com/marcusolsson/tui-go"
 )
 
 // ConsoleSession is the controller for an instance of the discoirc TUI.
@@ -18,16 +19,14 @@ import (
 // as well as interfaces common to those views.
 type ConsoleSession struct {
 	tui.UI
-	*log.Logger
 	model.Client
 
 	viewRequest chan ViewRequest
 }
 
-func NewConsoleSession(logger *log.Logger, client model.Client) *ConsoleSession {
+func NewConsoleSession(client model.Client) *ConsoleSession {
 	r := &ConsoleSession{
 		UI:     tui.New(splashRequest(0).New(nil, nil)),
-		Logger: logger,
 		Client: client,
 		// Use a nonblocking buffer s.t. updates to the view are nonblocking.
 		viewRequest: make(chan ViewRequest, 1),
@@ -41,7 +40,7 @@ func (cs *ConsoleSession) handleViewChange() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	for req := range cs.viewRequest {
-		cs.Printf("laying out new view: %s", req)
+		glog.Infof("laying out new view: %s", req)
 		// stop old threads
 		cancel()
 		ctx, cancel = context.WithCancel(context.Background())
@@ -90,5 +89,5 @@ func (c *channelViewRequest) String() string {
 }
 
 func (c *channelViewRequest) New(ctx context.Context, cs *ConsoleSession) tui.Widget {
-	return channel.New(ctx, cs.Logger, cs.UI, cs.Client, c.Network, c.Channel)
+	return channel.New(ctx, cs.UI, cs.Client, c.Network, c.Channel)
 }

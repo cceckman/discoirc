@@ -55,7 +55,7 @@ func main() {
 	})
 	model.EventGenerator(mchan)
 
-	session := view.NewConsoleSession(logger, client)
+	session := view.NewConsoleSession(client)
 	session.SetTheme(Theme())
 	go func() {
 		time.Sleep(1 * time.Second)
@@ -63,7 +63,7 @@ func main() {
 	}()
 
 	if err := session.Run(); err != nil {
-		logger.Fatalf("unknown error: %v", err)
+		glog.Fatalf("unknown error: %v", err)
 	}
 }
 
@@ -77,25 +77,4 @@ func Theme() *tui.Theme {
 	instance.Reverse = true
 	t.SetStyle("reverse", instance)
 	return t
-}
-
-func LoggerOrDie() *golog.Logger {
-	// Initialize logger
-	if *logpath == "" {
-		logger, err := log.New()
-		if err != nil {
-			golog.Fatal("could not create log: ", err)
-		}
-		return logger
-	}
-	file, err := os.OpenFile(*logpath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0755)
-	if err != nil {
-		golog.Fatal("could not open log: ", err)
-	}
-	result, err := log.NewFor(file)
-	if err != nil {
-
-		golog.Fatal("could not open log: ", err)
-	}
-	return result
 }
