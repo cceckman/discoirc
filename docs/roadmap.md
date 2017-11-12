@@ -17,10 +17,9 @@ configure channels and connections on the stub server.
   - [X] Send messages
   - [X] List network + channel
   - [X] Show nick
-  - [ ] Show mode
+  - [X] Show mode
   - [X] Show connection state
-  - [ ] Show channel sync state
-  - [ ] Show topic
+  - [X] Show topic
   - [ ] Jump to session view
 - [ ] Session
   - [ ] Networks
@@ -31,7 +30,8 @@ configure channels and connections on the stub server.
 Deferred:
 
 - Adding / editing / closing connections
-- Show pending messages for channels
+- Show pending messages for channels ("more")
+- Show channel livenesss state (i.e. "1s delay")
 
 ### 0.2: IRC
 Implement the backend interface as a connection to IRC servers. Still
