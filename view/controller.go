@@ -72,7 +72,6 @@ func (cs *ConsoleSession) Splash() {
 	cs.viewRequest <- splashRequest(0)
 }
 
-
 // A ViewRequest is a request to jump to a specific view.
 type ViewRequest interface {
 	fmt.Stringer

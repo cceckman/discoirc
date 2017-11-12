@@ -55,7 +55,7 @@ func (e EventList) SelectSizeMax(n uint, max EventID) []Event {
 
 	start := end - int(n)
 	if start < 0 {
-		start  = 0
+		start = 0
 	}
 	return e[start:end]
 }
@@ -76,7 +76,6 @@ func (e EventList) SelectMinSize(min EventID, n uint) []Event {
 	}
 	return e[start:end]
 }
-
 
 // Select returns a slice from its receiver with those within the EventRange.
 func (e EventList) SelectMinMax(min, max EventID) []Event {

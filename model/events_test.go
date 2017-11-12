@@ -46,16 +46,16 @@ func joinEvents(e []model.Event) string {
 func TestSelectMinSize(t *testing.T) {
 	evs := model.NewEvents(testdata)
 	for i, c := range []struct {
-		N uint
+		N     uint
 		Epoch int
-		Seq uint
-		Want string
-	} {
-		{ N: 0, Epoch: 2, Seq: 1, Want: "" },
-		{ N: 1, Epoch: 2, Seq: 1, Want: "helloY" },
-		{ N: 2, Epoch: 2, Seq: 0, Want: "helloY, worldY" },
-		{ N: 2, Epoch: 4, Seq: 1, Want: "" },
-		{ N: 10, Epoch: 2, Seq: 1, Want: "helloY, worldY, helloZ, worldZ" },
+		Seq   uint
+		Want  string
+	}{
+		{N: 0, Epoch: 2, Seq: 1, Want: ""},
+		{N: 1, Epoch: 2, Seq: 1, Want: "helloY"},
+		{N: 2, Epoch: 2, Seq: 0, Want: "helloY, worldY"},
+		{N: 2, Epoch: 4, Seq: 1, Want: ""},
+		{N: 10, Epoch: 2, Seq: 1, Want: "helloY, worldY, helloZ, worldZ"},
 	} {
 		id := model.EventID{Epoch: c.Epoch, Seq: c.Seq}
 		got := joinEvents(evs.SelectMinSize(id, c.N))
@@ -68,16 +68,16 @@ func TestSelectMinSize(t *testing.T) {
 func TestSelectSizeMax(t *testing.T) {
 	evs := model.NewEvents(testdata)
 	for i, c := range []struct {
-		N uint
+		N     uint
 		Epoch int
-		Seq uint
-		Want string
-	} {
-		{ N: 0, Epoch: 2, Seq: 1, Want: "" },
-		{ N: 1, Epoch: 2, Seq: 1, Want: "helloY" },
-		{ N: 2, Epoch: 2, Seq: 0, Want: "helloX, worldX" },
-		{ N: 2, Epoch: 4, Seq: 1, Want: "helloZ, worldZ" },
-		{ N: 10, Epoch: 2, Seq: 1, Want: "helloX, worldX, helloY" },
+		Seq   uint
+		Want  string
+	}{
+		{N: 0, Epoch: 2, Seq: 1, Want: ""},
+		{N: 1, Epoch: 2, Seq: 1, Want: "helloY"},
+		{N: 2, Epoch: 2, Seq: 0, Want: "helloX, worldX"},
+		{N: 2, Epoch: 4, Seq: 1, Want: "helloZ, worldZ"},
+		{N: 10, Epoch: 2, Seq: 1, Want: "helloX, worldX, helloY"},
 	} {
 		id := model.EventID{Epoch: c.Epoch, Seq: c.Seq}
 		got := joinEvents(evs.SelectSizeMax(c.N, id))
@@ -90,13 +90,13 @@ func TestSelectSizeMax(t *testing.T) {
 func TestSelectSize(t *testing.T) {
 	evs := model.NewEvents(testdata)
 	for i, c := range []struct {
-		N uint
+		N    uint
 		Want string
-	} {
-		{ N: 0, Want: "" },
-		{ N: 1, Want: "worldZ" },
-		{ N: 2, Want: "helloZ, worldZ" },
-		{ N: 10, Want: "helloX, worldX, helloY, worldY, helloZ, worldZ" },
+	}{
+		{N: 0, Want: ""},
+		{N: 1, Want: "worldZ"},
+		{N: 2, Want: "helloZ, worldZ"},
+		{N: 10, Want: "helloX, worldX, helloY, worldY, helloZ, worldZ"},
 	} {
 		got := joinEvents(evs.SelectSize(c.N))
 		if c.Want != got {
