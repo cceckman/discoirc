@@ -68,7 +68,7 @@ func EventGenerator(c *MockChannel) {
 			}
 
 			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
-			glog.V(1).Infof("Chat/messages: [sending] : ", msg)
+			glog.V(1).Infof("Chat/messages: [sending] : %v", msg)
 			c.SendMessage(msg)
 		}
 	}()
