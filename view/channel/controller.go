@@ -51,7 +51,7 @@ func (ctl *Controller) updateState(ctx context.Context, ch model.Channel) {
 					}
 					ctl.View.SetMode(newState.Mode)
 					ctl.View.SetNick(newState.Nick)
-					// TODO set topic
+					ctl.View.SetTopic(newState.Topic)
 				})
 				<-await
 			}

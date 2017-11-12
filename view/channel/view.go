@@ -38,10 +38,15 @@ type View interface {
 
 	// SetMode sets the user's mode in the channel.
 	SetMode(string)
+
+	// SetTopic sets the topic of the channel.
+	SetTopic(string)
 }
 
 func NewView(network, channel string) View {
 	w := &view{
+		Topic: &topic{Label: tui.NewLabel("")},
+
 		Contents: &Contents{
 			List:       tui.NewList(),
 			SizeUpdate: make(chan image.Point, 1),
@@ -54,12 +59,15 @@ func NewView(network, channel string) View {
 	}
 
 	// Layout
+	w.Topic.SetSizePolicy(tui.Expanding, tui.Preferred)
+	w.Topic.SetWordWrap(true)
 	w.Contents.SetSizePolicy(tui.Expanding, tui.Expanding)
 	w.Status.SetSizePolicy(tui.Expanding, tui.Preferred)
 	w.Nick.SetSizePolicy(tui.Preferred, tui.Preferred)
 	w.Input.SetSizePolicy(tui.Expanding, tui.Preferred)
 
 	w.Widget = tui.NewVBox(
+		w.Topic,
 		w.Contents,
 		w.Status,
 		tui.NewHBox(w.Nick, w.Input),
@@ -73,6 +81,7 @@ func NewView(network, channel string) View {
 
 // view is the root of the Channel view.
 type view struct {
+	Topic    *topic
 	Contents *Contents
 
 	Input *tui.Entry
@@ -81,6 +90,14 @@ type view struct {
 	Status *statusBar
 
 	tui.Widget // root widget
+}
+
+type topic struct {
+	*tui.Label
+}
+
+func (t *topic) Draw(p *tui.Painter) {
+	p.WithStyle("reverse", t.Label.Draw)
 }
 
 type statusBar struct {
@@ -121,6 +138,10 @@ func (m *statusBar) Draw(p *tui.Painter) {
 
 func (v *view) SetMode(mode string) {
 	v.Status.Mode.SetText(mode)
+}
+
+func (v *view) SetTopic(topic string) {
+	v.Topic.SetText(topic)
 }
 
 // Connect updates the UI to show the connection is active.
