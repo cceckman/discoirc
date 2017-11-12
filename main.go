@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -28,7 +29,8 @@ const (
 )
 
 var (
-	help = flag.Bool("help", false, "Display a usage message.")
+	help      = flag.Bool("help", false, "Display a usage message.")
+	logPeriod = flag.Duration("dbglog_flush_period", 10*time.Second, "How often to write debug logs out to disk.")
 )
 
 func main() {
@@ -44,6 +46,10 @@ func main() {
 
 	// use glog for standard logging as well as any explicitly-glogged stuff.
 	glog.CopyStandardLogTo("INFO")
+	defer glog.Flush()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go LogFlusher(ctx, *logPeriod)
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
@@ -64,6 +70,20 @@ func main() {
 
 	if err := session.Run(); err != nil {
 		glog.Fatalf("unknown error: %v", err)
+	}
+}
+
+// LogFlusther periodically flushes the glog.
+func LogFlusher(ctx context.Context, p time.Duration) {
+	tick := time.NewTicker(p)
+	defer tick.Stop()
+	for {
+		select {
+		case <-tick.C:
+			glog.Flush()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
