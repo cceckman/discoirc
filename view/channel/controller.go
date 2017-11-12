@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/cceckman/discoirc/model"
-	"github.com/cceckman/tui-go"
+	"github.com/marcusolsson/tui-go"
 )
 
 type Controller struct {

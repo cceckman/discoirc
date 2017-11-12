@@ -2,7 +2,7 @@ package view
 
 import (
 	"context"
-	"github.com/cceckman/tui-go"
+	"github.com/marcusolsson/tui-go"
 )
 
 const splash string = `

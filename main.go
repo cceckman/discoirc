@@ -11,7 +11,7 @@ import (
 	"github.com/cceckman/discoirc/log"
 	"github.com/cceckman/discoirc/model"
 	"github.com/cceckman/discoirc/view"
-	"github.com/cceckman/tui-go"
+	"github.com/marcusolsson/tui-go"
 )
 
 const (
