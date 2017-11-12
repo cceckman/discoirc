@@ -4,14 +4,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	golog "log"
 	"os"
 	"time"
 
-	"github.com/cceckman/discoirc/log"
+	"github.com/golang/glog"
+	"github.com/marcusolsson/tui-go"
+
 	"github.com/cceckman/discoirc/model"
 	"github.com/cceckman/discoirc/view"
-	"github.com/marcusolsson/tui-go"
 )
 
 const (
@@ -29,8 +29,6 @@ const (
 
 var (
 	help = flag.Bool("help", false, "Display a usage message.")
-
-	logpath = flag.String("logpath", "", "File to write debug logs to. Use a temporary file and directory if unset.")
 )
 
 func main() {
@@ -44,17 +42,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := LoggerOrDie()
+	// use glog for standard logging as well as any explicitly-glogged stuff.
+	glog.CopyStandardLogTo("INFO")
 
 	// TODO: Populate the initial view from something else.
 	// TODO: Implement Client properly.
-	mchan := model.NewMockChannel(logger, "testnet", "#testing")
+	mchan := model.NewMockChannel("testnet", "#testing")
 	client := model.DumbClient(map[string]model.Connection{
 		"testnet": model.DumbConnection(map[string]model.Channel{
 			"#testing": mchan,
 		}),
 	})
-	model.EventGenerator(logger, mchan)
+	model.EventGenerator(mchan)
 
 	session := view.NewConsoleSession(logger, client)
 	session.SetTheme(Theme())

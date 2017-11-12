@@ -9,19 +9,20 @@ package model
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 var lorem = strings.Split("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec bibendum consequat nibh vitae vestibulum. Praesent rutrum massa ac lorem bibendum, a facilisis est vehicula. Vivamus efficitur vehicula eros id mollis. In hac habitasse platea dictumst. Donec id est scelerisque, mollis nibh ut, tempus ligula. Donec interdum faucibus leo ac rutrum. Vestibulum gravida tempor dui, vitae vulputate arcu ullamcorper ac. Ut porttitor libero at ipsum mattis elementum. Nullam odio odio, lacinia non venenatis non, sagittis nec purus. Proin bibendum sollicitudin nibh at faucibus. Nunc ornare faucibus tortor. Praesent ut nibh vitae augue semper sodales. Praesent laoreet est eu posuere rhoncus. Suspendisse enim purus, tincidunt eu finibus sed, tristique sit amet diam. Integer nec euismod enim. Pellentesque bibendum arcu urna.", " ")
 
 // EventGenerator generates a sequence of events for the Channel.
-func EventGenerator(logger *log.Logger, c *MockChannel) {
+func EventGenerator(c *MockChannel) {
 	go func() {
-		logger.Print("[start] sending events")
-		defer logger.Print("[done] sending events")
+		glog.V(1).Info("[start] sending events")
+		defer glog.V(1).Info("[done] sending events")
 
 		connected := false
 
@@ -36,7 +37,7 @@ func EventGenerator(logger *log.Logger, c *MockChannel) {
 				n := (i / 5) % len(lorem)
 				topic := strings.Join(lorem[0:n], " ")
 
-				logger.Print("generating state update: topic: %s", topic)
+				glog.V(1).Infof("generating state update: topic: %s", topic)
 				c.updateState <- ChannelState{
 					Topic: topic,
 				}
@@ -44,7 +45,7 @@ func EventGenerator(logger *log.Logger, c *MockChannel) {
 			}
 			if i%7 == 1 {
 				newNick := strings.Join(nick, "")
-				logger.Print("generating state update: nick: %s", newNick)
+				glog.V(1).Infof("generating state update: nick: %s", newNick)
 				c.updateState <- ChannelState{
 					Nick: newNick,
 				}
@@ -55,7 +56,7 @@ func EventGenerator(logger *log.Logger, c *MockChannel) {
 			}
 			if i%13 == 2 {
 				connected = !connected
-				logger.Print("generating state update: connected: %v", connected)
+				glog.V(1).Infof("generating state update: connected: %v", connected)
 				c.connected <- connected
 				c.SendMessage("[system] connection state updated")
 			}
@@ -67,7 +68,7 @@ func EventGenerator(logger *log.Logger, c *MockChannel) {
 			}
 
 			msg := fmt.Sprintf("%d bottles of beer on the wall, %d bottles of beer...", i, i)
-			logger.Print("Chat/messages: [sending] : ", msg)
+			glog.V(1).Infof("Chat/messages: [sending] : ", msg)
 			c.SendMessage(msg)
 		}
 	}()

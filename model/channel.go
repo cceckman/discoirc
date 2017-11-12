@@ -3,7 +3,8 @@ package model
 
 import (
 	"context"
-	"log"
+
+	"github.com/golang/glog"
 )
 
 type Channel interface {
@@ -48,7 +49,6 @@ func (c *MockChannel) Network() string {
 type MockChannel struct {
 	name    string
 	network string
-	log     *log.Logger
 
 	request chan Events
 
@@ -79,7 +79,7 @@ func (c *MockChannel) SelectMinMax(min, max EventID) []Event {
 }
 
 func (c *MockChannel) Events(ctx context.Context) <-chan Event {
-	c.log.Printf("added listener for events in channel %s / %s", c.Network(), c.Name())
+	glog.V(1).Infof("added listener for events in channel %s / %s", c.Network(), c.Name())
 	result := make(chan Event)
 	go func() {
 		// Block on subscription request.
@@ -109,7 +109,7 @@ func (c *MockChannel) Events(ctx context.Context) <-chan Event {
 }
 
 func (c *MockChannel) SendMessage(msg string) {
-	c.log.Printf("awaiting send for message \"%s\"", msg)
+	glog.V(1).Infof("awaiting send for message \"%s\"", msg)
 	c.send <- msg
 }
 
@@ -127,7 +127,7 @@ func (c *MockChannel) eventLoop() {
 		case c.eventSubscribe <- next:
 			// handled subscribe request.
 		case msg := <-c.send:
-			c.log.Printf("sending new message: \"%s\"", msg)
+			glog.V(1).Infof("sending new message: \"%s\"", msg)
 			// Add to buffer
 			event := Event{
 				EventID: EventID{
@@ -218,9 +218,8 @@ func (c *MockChannel) stateLoop() {
 	}
 }
 
-func NewMockChannel(log *log.Logger, network, name string) *MockChannel {
+func NewMockChannel(network, name string) *MockChannel {
 	c := &MockChannel{
-		log:            log,
 		name:           name,
 		network:        network,
 		request:        make(chan Events),
