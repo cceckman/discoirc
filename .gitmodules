@@ -40,3 +40,6 @@
 [submodule "vendor/github.com/lucasb-eyer/go-colorful"]
 	path = vendor/github.com/lucasb-eyer/go-colorful
 	url = https://github.com/lucasb-eyer/go-colorful
+[submodule "glog"]
+	path = glog
+	url = https://github.com/golang/glog
