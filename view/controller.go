@@ -51,7 +51,7 @@ func (cs *ConsoleSession) handleViewChange() {
 			close(await)
 			cs.UI.SetWidget(newRoot)
 			// Ensure that exit is accounted for.
-			cs.UI.SetKeybinding("Esc", func() { cs.UI.Quit() })
+			cs.UI.SetKeybinding("Ctrl+C", func() { cs.UI.Quit() })
 		})
 		<-await
 	}
