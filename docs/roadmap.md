@@ -115,6 +115,7 @@ feedback.
 - [ ] Seek volunteers
   - [ ] Jennifer (coworker)
   - [ ] @danderson
+  - [ ] @aimeeble
 
 
 ### 0.8: Packaging and OSSing
