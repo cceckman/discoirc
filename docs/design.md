@@ -75,3 +75,48 @@ But this does suggest some things about the protocol used against the daemon.
 ### Debug logging
 I definitely want to have lots of logs for debugging.
 
+
+### Interfaces
+
+#### Channel
+```golang
+type ChannelModel interface {
+  // Includes nick, channelMode, connection state, topic
+  ConnectionState(ctx context.Context) <-ChannelState
+  // Returns up to N events starting at EpochId
+  EventsStartingAt(start EpochId, n int) []Event
+  // Returns up to N events ending at EpochId
+  EventsEndingAt(end EpochId, n int) []Event
+  // Streams events starting at EpochId
+  Follow(start EpochId) <-Event
+  Send(e Event) error
+}
+
+type ChannelView interface {
+  tui.Widget
+
+  SetTopic(string)
+  SetNick(string)
+  SetChannelMode(string)
+  SetConnected(string)
+  // Renders the messages.
+  SetMessages([]Event)
+
+  // Advanced / deferred: special rendering for widgets,
+  // e.g. a closure on a hilighter.
+  SetRenderer(func(Event) tui.Widget)
+}
+
+type ChannelController interface {
+  // Parse input string, do appropriate stuff to backend
+  Input(string)
+
+  // Resize indicates the number of lines now available for messages.
+  Resize(n int)
+
+  // (Asynchronous) scroll commands
+  ScrollUp()
+  ScrollDown()
+}
+
+```
