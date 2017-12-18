@@ -12,14 +12,14 @@ UI panels are in roughly working order, implemented against a stub backend.
 Allow switching between them, but not launching windows. Statically
 configure channels and connections on the stub server.
 
-- [X] Channel
-  - [X] New messages incoming
-  - [X] Send messages
-  - [X] List network + channel
-  - [X] Show nick
-  - [X] Show mode
-  - [X] Show connection state
-  - [X] Show topic
+- [ ] Channel
+  - [ ] New messages incoming
+  - [ ] Send messages
+  - [ ] List network + channel
+  - [ ] Show nick
+  - [ ] Show mode
+  - [ ] Show connection state
+  - [ ] Show topic
   - [ ] Jump to session view
 - [ ] Session
   - [ ] Networks
