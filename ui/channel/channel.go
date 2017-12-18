@@ -9,13 +9,13 @@ import (
 
 type Model interface {
   // Includes nick, channelMode, connection state, topic
-  ConnectionState(ctx context.Context) <-data.ChannelState
+  Channel(ctx context.Context) <-chan data.Channel
   // Returns up to N events starting at EpochId
-  EventsStartingAt(start data.EventID, n int) []Event
+  EventsStartingAt(start data.EventID, n int) []data.Event
   // Returns up to N events ending at EpochId
-  EventsEndingAt(end data.EventID, n int) []Event
+  EventsEndingAt(end data.EventID, n int) []data.Event
   // Streams events starting at EpochId
-  Follow(start data.EventID) <-data.Event
+  Follow(ctx context.Context, start data.EventID) <-chan data.Event
   Send(e data.Event) error
 }
 
@@ -25,13 +25,14 @@ type View interface {
   SetTopic(string)
   SetNick(string)
   SetChannelMode(string)
-  SetConnected(string)
+	SetConnection(string)
+  SetPresence(string)
   // Renders the messages.
-  SetMessages([]Event)
+  SetMessages([]data.Event)
 
   // Advanced / deferred: special rendering for widgets,
   // e.g. a closure on a hilighter.
-  SetRenderer(func(Event) tui.Widget)
+  SetRenderer(func(data.Event) tui.Widget)
 }
 
 type Controller interface {
@@ -44,6 +45,8 @@ type Controller interface {
   // (Asynchronous) scroll commands
   ScrollUp()
   ScrollDown()
+
+	// TODO: Deferred: Localization of connection / presence
 }
 
 
