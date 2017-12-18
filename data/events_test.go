@@ -1,5 +1,5 @@
 // 2017-10-28 cceckman <charles@cceckman.com>
-package model_test
+package data_test
 
 import (
 	"strings"
