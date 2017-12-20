@@ -24,9 +24,9 @@ type View interface {
 
   SetTopic(string)
   SetNick(string)
-  SetChannelMode(string)
 	SetConnection(string)
   SetPresence(string)
+  SetChannelMode(string)
   // Renders the messages.
   SetMessages([]data.Event)
 
