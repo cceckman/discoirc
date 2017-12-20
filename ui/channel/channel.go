@@ -30,8 +30,8 @@ type View interface {
   // Renders the messages.
   SetMessages([]data.Event)
 
-  // Advanced / deferred: special rendering for widgets,
-  // e.g. a closure on a hilighter.
+  // SetRenderer passes in the function used to render Events in
+	// the channel contents display.
   SetRenderer(func(data.Event) tui.Widget)
 }
 
