@@ -42,9 +42,8 @@ type Controller interface {
   // Resize indicates the number of lines now available for messages.
   Resize(n int)
 
-  // (Asynchronous) scroll commands
-  ScrollUp()
-  ScrollDown()
+  // (Asynchronous) scroll
+  Scroll(up bool)
 
 	// TODO: Deferred: Localization of connection / presence
 }
