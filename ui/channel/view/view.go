@@ -23,9 +23,6 @@ type V struct {
 	// root element
 	*tui.Box
 
-	// Top-level display elements:
-	ui tui.UI
-
 	// Second-level elements
 	topic  *tui.Label
 	events *EventsView
@@ -94,12 +91,10 @@ func (rb *reversedBox) Draw(p *tui.Painter) {
 	})
 }
 
-// New returns a new channel.View and assigns it to the current UI.
-func New(ui tui.UI) channel.View {
+// New returns a new channel.View.
+func New() channel.View {
 	// construct V
 	v := &V{
-		ui: ui,
-
 		topic: tui.NewLabel(""),
 		events: &EventsView{
 			TailBox:  widgets.NewTailBox(),
