@@ -120,6 +120,7 @@ func New(ui tui.UI) channel.View {
 	v.input.SetSizePolicy(tui.Expanding, tui.Minimum)
 
 	v.input.OnSubmit(v.handleInput)
+	v.input.SetFocused(true)
 
 	rspacer := tui.NewLabel(" ")
 	rspacer.SetSizePolicy(tui.Expanding, tui.Preferred)
