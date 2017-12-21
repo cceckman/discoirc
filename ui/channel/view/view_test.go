@@ -45,7 +45,7 @@ func testRenderer(e data.Event) tui.Widget {
 }
 
 func makeView() channel.View {
-	v := view.New(&mocks.UI{})
+	v := view.New()
 	v.SetTopic("topic")
 	v.SetNick("<nick>")
 	v.SetConnection("network: connected")
