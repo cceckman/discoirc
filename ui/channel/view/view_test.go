@@ -1,6 +1,8 @@
 package view_test
 
 import (
+	"fmt"
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	"github.com/cceckman/discoirc/ui/channel/view"
 	"github.com/marcusolsson/tui-go"
@@ -32,6 +34,13 @@ network: connected channel: joined +v
 <nick>                                  
 `
 
+func testRenderer(e data.Event) tui.Widget {
+	r := tui.NewLabel(fmt.Sprintf("%d,%d %s", e.Epoch, e.Seq, e.Contents))
+	r.SetWordWrap(true)
+	return r
+}
+
+
 func makeView() tui.Widget {
 	v := view.New(&mocks.UI{})
 	v.SetTopic("topic")
@@ -39,6 +48,7 @@ func makeView() tui.Widget {
 	v.SetConnection("network: connected")
 	v.SetPresence("channel: joined")
 	v.SetMode("+v")
+	v.SetRenderer(testRenderer)
 	v.SetEvents(mocks.Events)
 	return v
 }

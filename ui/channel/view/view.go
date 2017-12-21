@@ -1,7 +1,6 @@
 package view
 
 import (
-	"fmt"
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/widgets"
@@ -11,7 +10,7 @@ import (
 var _ channel.View = &V{}
 
 func DefaultRenderer(e data.Event) tui.Widget {
-	r := tui.NewLabel(fmt.Sprintf("%d,%d %s", e.Epoch, e.Seq, e.Contents))
+	r := tui.NewLabel(e.Contents)
 	r.SetWordWrap(true)
 	r.SetSizePolicy(tui.Expanding, tui.Minimum)
 	return r
