@@ -63,7 +63,7 @@ func TestView_SimpleRender(t *testing.T) {
 	}
 }
 
-func TestView_(t *testing.T) {
+func TestView_Resize(t *testing.T) {
 	// Render with a different size.
 	preSurface := tui.NewTestSurface(80, 20)
 	theme := tui.NewTheme()
