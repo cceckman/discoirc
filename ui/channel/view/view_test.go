@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
@@ -166,7 +165,6 @@ func TestView_Input(t *testing.T) {
 			}
 		}
 		v.OnKeyEvent(ev)
-		time.Sleep(10 *time.Millisecond)
 	}
 
 	if len(c.Received) != len(want) {
