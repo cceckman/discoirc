@@ -5,6 +5,7 @@ import (
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
+	"image"
 )
 
 var _ channel.View = &V{}
@@ -38,6 +39,13 @@ type V struct {
 	controller channel.Controller
 }
 
+func (v *V) handleInput(entry *tui.Entry) {
+	if v.controller != nil {
+		v.controller.Input(entry.Text())
+		entry.SetText("")
+	}
+}
+
 func (v *V) SetRenderer(e channel.EventRenderer) {
 	v.events.Renderer = e
 }
@@ -58,6 +66,19 @@ func (v *V) SetNick(s string) {
 }
 func (v *V) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
+}
+
+func (v *V) Attach(c channel.Controller) {
+	v.controller = c
+}
+
+func (v *V) Resize(size image.Point) {
+	eventsSize := v.events.Size()
+	v.Box.Resize(size)
+	if eventsSize.Y > v.events.Size().Y && v.controller != nil {
+		// events box got bigger. Request an update.
+		v.controller.Resize(v.events.Size().Y)
+	}
 }
 
 type reversedBox struct {
@@ -94,6 +115,8 @@ func New(ui tui.UI) channel.View {
 	v.mode.SetSizePolicy(tui.Minimum, tui.Minimum)
 	v.nick.SetSizePolicy(tui.Minimum, tui.Minimum)
 	v.input.SetSizePolicy(tui.Expanding, tui.Minimum)
+
+	v.input.OnSubmit(v.handleInput)
 
 	rspacer := tui.NewLabel(" ")
 	rspacer.SetSizePolicy(tui.Expanding, tui.Preferred)

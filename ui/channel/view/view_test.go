@@ -40,7 +40,6 @@ func testRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-
 func makeView() tui.Widget {
 	v := view.New(&mocks.UI{})
 	v.SetTopic("topic")
