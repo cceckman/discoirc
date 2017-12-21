@@ -4,10 +4,6 @@ Status](https://travis-ci.org/cceckman/discoirc.svg?branch=master)](https://trav
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/cceckman/discoirc)
 [![Go Report
 Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://goreportcard.com/report/github.com/cceckman/discoirc)
-[![License
-MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](LICENSE)
-
-
 
 `discoirc` is a terminal-based IRC client. It's similar in some ways to `irssi`,
 but with some specific [goals](docs/goals.md) in mind.
