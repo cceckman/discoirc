@@ -5,6 +5,7 @@ import (
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	"github.com/cceckman/discoirc/ui/channel/view"
+	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/marcusolsson/tui-go"
 	"testing"
 )
@@ -40,7 +41,7 @@ func testRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-func makeView() tui.Widget {
+func makeView() channel.View {
 	v := view.New(&mocks.UI{})
 	v.SetTopic("topic")
 	v.SetNick("<nick>")
@@ -95,4 +96,31 @@ func TestView_Resize(t *testing.T) {
 	if gotContents != wantContents40x10 {
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents40x10)
 	}
+}
+
+func TestView_Underfill(t *testing.T) {
+	v := makeView()
+	v.SetEvents(mocks.Events[len(mocks.Events)-2:])
+
+	surface := tui.NewTestSurface(40, 10)
+	p := tui.NewPainter(surface, tui.NewTheme())
+
+	p.Repaint(v)
+	wantContents := `
+topic                                   
+                                        
+                                        
+                                        
+                                        
+2,2 <gertrude> Good gentlemen, he hath  
+much talk'd of you;                     
+2,3 <rosencrantz> Both your majesties   
+network: connected channel: joined +v   
+<nick>                                  
+`
+		gotContents := surface.String()
+	if gotContents != wantContents {
+		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
+	}
+
 }
