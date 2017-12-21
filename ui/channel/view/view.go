@@ -1,11 +1,12 @@
 package view
 
 import (
+	"image"
+
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
-	"image"
 )
 
 var _ channel.View = &V{}
