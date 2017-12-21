@@ -7,23 +7,7 @@ import (
 	"testing"
 )
 
-func TestView_SimpleRender(t *testing.T) {
-	surface := tui.NewTestSurface(40, 10)
-	theme := tui.NewTheme()
-	theme.SetStyle("reversed", tui.Style{Reverse: tui.DecorationOn})
-	p := tui.NewPainter(surface, theme)
-
-	v := view.New(&mocks.UI{})
-	v.SetTopic("topic")
-	v.SetNick("<nick>")
-	v.SetConnection("network: connected")
-	v.SetPresence("channel: joined")
-	v.SetMode("+v")
-	v.SetEvents(mocks.Events)
-
-	p.Repaint(v)
-
-	wantDecorations := `
+const wantDecor40x10 = `
 1111111111111111111111111111111111111111
 0000000000000000000000000000000000000000
 0000000000000000000000000000000000000000
@@ -35,12 +19,7 @@ func TestView_SimpleRender(t *testing.T) {
 1111111111111111111111111111111111111111
 0000000000000000000000000000000000000000
 `
-	gotDecorations := surface.Decorations()
-	if gotDecorations != wantDecorations {
-		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecorations)
-	}
-
-	wantContents := `
+const wantContents40x10 = `
 topic                                   
 vnfold your selfe                       
 1,6 <barnardo> Long liue the King       
@@ -52,9 +31,35 @@ much talk'd of you;
 network: connected channel: joined +v   
 <nick>                                  
 `
+
+func makeView() tui.Widget {
+	v := view.New(&mocks.UI{})
+	v.SetTopic("topic")
+	v.SetNick("<nick>")
+	v.SetConnection("network: connected")
+	v.SetPresence("channel: joined")
+	v.SetMode("+v")
+	v.SetEvents(mocks.Events)
+	return v
+}
+
+func TestView_SimpleRender(t *testing.T) {
+	surface := tui.NewTestSurface(40, 10)
+	theme := tui.NewTheme()
+	theme.SetStyle("reversed", tui.Style{Reverse: tui.DecorationOn})
+	p := tui.NewPainter(surface, theme)
+
+	v := makeView()
+	p.Repaint(v)
+
+	gotDecorations := surface.Decorations()
+	if gotDecorations != wantDecor40x10 {
+		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecor40x10)
+	}
+
 	gotContents := surface.String()
-	if gotContents != wantContents {
-		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
+	if gotContents != wantContents40x10 {
+		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents40x10)
 	}
 }
 
@@ -68,48 +73,17 @@ func TestView_(t *testing.T) {
 	surface := tui.NewTestSurface(40, 10)
 	p := tui.NewPainter(surface, theme)
 
-	v := view.New(&mocks.UI{})
-	v.SetTopic("topic")
-	v.SetNick("<nick>")
-	v.SetConnection("network: connected")
-	v.SetPresence("channel: joined")
-	v.SetMode("+v")
-	v.SetEvents(mocks.Events)
-
+	v := makeView()
 	prePainter.Repaint(v)
 	p.Repaint(v)
 
-	wantDecorations := `
-1111111111111111111111111111111111111111
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-0000000000000000000000000000000000000000
-1111111111111111111111111111111111111111
-0000000000000000000000000000000000000000
-`
 	gotDecorations := surface.Decorations()
-	if gotDecorations != wantDecorations {
-		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecorations)
+	if gotDecorations != wantDecor40x10 {
+		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecor40x10)
 	}
 
-	wantContents := `
-topic                                   
-vnfold your selfe                       
-1,6 <barnardo> Long liue the King       
-2,1 <claudius> Welcome, dear Rosencrantz
-and Guildenstern!                       
-2,2 <gertrude> Good gentlemen, he hath  
-much talk'd of you;                     
-2,3 <rosencrantz> Both your majesties   
-network: connected channel: joined +v   
-<nick>                                  
-`
 	gotContents := surface.String()
-	if gotContents != wantContents {
-		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
+	if gotContents != wantContents40x10 {
+		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents40x10)
 	}
 }
