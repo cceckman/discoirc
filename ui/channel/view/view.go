@@ -71,6 +71,8 @@ func (v *V) SetEvents(events []data.Event) {
 
 func (v *V) Attach(c channel.Controller) {
 	v.controller = c
+	// Set initial size
+	v.controller.Resize(v.events.Size().Y)
 }
 
 func (v *V) Resize(size image.Point) {

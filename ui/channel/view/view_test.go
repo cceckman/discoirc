@@ -84,8 +84,25 @@ func TestView_Resize(t *testing.T) {
 	p := tui.NewPainter(surface, theme)
 
 	v := makeView()
+
+	// 1: Resize without controller set.
 	prePainter.Repaint(v)
+
+	// 2: Attach controller and assert size was set.
+	c := &mocks.Controller{}
+	v.Attach(c)
+	wantSize := 17 // 20 - topic, status, input
+	if c.Size != wantSize {
+		t.Errorf("unexpected size: got = %d want = %d", c.Size, wantSize)
+	}
+
+	// 3: Resize; check that output is good, and that controller saw resize.
+
 	p.Repaint(v)
+	wantSize = 7 // 10 - topic, status, input
+	if c.Size != wantSize {
+		t.Errorf("unexpected size: got = %d want = %d", c.Size, wantSize)
+	}
 
 	gotDecorations := surface.Decorations()
 	if gotDecorations != wantDecor40x10 {
