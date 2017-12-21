@@ -1,4 +1,10 @@
 # discoirc
+[![Build
+Status](https://travis-ci.org/cceckman/discoirc.svg?branch=master)](https://travis-ci.org/cceckman/discoirc)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/cceckman/discoirc)
+[![Go Report
+Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://goreportcard.com/report/github.com/cceckman/discoirc)
+
 `discoirc` is a terminal-based IRC client. It's similar in some ways to `irssi`,
 but with some specific [goals](docs/goals.md) in mind.
 
@@ -21,19 +27,17 @@ documented - I can never get my config file to actually do what's asked - and
 frankly I'd rather write my own IRC client than learn Perl in order to make it
 do what I want.
 
-I tried the [Komanda](https://github.com/mephux/comanda-cli) CLI. It doesn't
+I tried the [Komanda](https://github.com/mephux/komanda-cli) CLI. It doesn't
 adhere to the principles above, and has some fairly basic bugs - `/me` not
 working, for instance.
 
 ## Useful libraries
 
+* UI
+  * https://github.com/marcusolsson/tui-go is a widget-based UI for the
+    terminal.
 * IRC
   * https://github.com/fluffle/goirc for IRC connections.
-* UI
-  * https://github.com/jroimartin/gocui  is one terminal UI.
-  * https://github.com/marcusolsson/tui-go is an alternative that provides
-    higher-level interfaces.
-  * https://github.com/gizak/termui isn't particuarly useful, but it looks cool.
 * Config & scripting Interfaces
   * https://github.com/golang/protobuf for internal data structures & config.
   * Or maybe other things at https://github.com/avelino/awesome-go#configuration
