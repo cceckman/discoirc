@@ -5,37 +5,37 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cceckman/discoirc/model"
+	"github.com/cceckman/discoirc/data"
 )
 
-var testdata = []model.Event{
-	model.Event{
-		ID:       model.EventID{Epoch: 2, Seq: 2},
+var testdata = []data.Event{
+	data.Event{
+		EventID:  data.EventID{Epoch: 2, Seq: 2},
 		Contents: "worldY",
 	},
-	model.Event{
-		ID:       model.EventID{Epoch: 1, Seq: 1},
+	data.Event{
+		EventID:  data.EventID{Epoch: 1, Seq: 1},
 		Contents: "worldX",
 	},
-	model.Event{
-		ID:       model.EventID{Epoch: 2, Seq: 3},
+	data.Event{
+		EventID:  data.EventID{Epoch: 2, Seq: 3},
 		Contents: "helloZ",
 	},
-	model.Event{
-		ID:       model.EventID{Epoch: 3, Seq: 1},
+	data.Event{
+		EventID:  data.EventID{Epoch: 3, Seq: 1},
 		Contents: "worldZ",
 	},
-	model.Event{
-		ID:       model.EventID{Epoch: 2, Seq: 1},
+	data.Event{
+		EventID:  data.EventID{Epoch: 2, Seq: 1},
 		Contents: "helloY",
 	},
-	model.Event{
-		ID:       model.EventID{Epoch: -1, Seq: 1},
+	data.Event{
+		EventID:  data.EventID{Epoch: -1, Seq: 1},
 		Contents: "helloX",
 	},
 }
 
-func joinEvents(e []model.Event) string {
+func joinEvents(e []data.Event) string {
 	var evstr []string
 	for _, ev := range e {
 		evstr = append(evstr, ev.String())
@@ -44,7 +44,7 @@ func joinEvents(e []model.Event) string {
 }
 
 func TestSelectMinSize(t *testing.T) {
-	evs := model.NewEvents(testdata)
+	evs := data.NewEvents(testdata)
 	for i, c := range []struct {
 		N     uint
 		Epoch int
@@ -57,7 +57,7 @@ func TestSelectMinSize(t *testing.T) {
 		{N: 2, Epoch: 4, Seq: 1, Want: ""},
 		{N: 10, Epoch: 2, Seq: 1, Want: "helloY, worldY, helloZ, worldZ"},
 	} {
-		id := model.EventID{Epoch: c.Epoch, Seq: c.Seq}
+		id := data.EventID{Epoch: c.Epoch, Seq: c.Seq}
 		got := joinEvents(evs.SelectMinSize(id, c.N))
 		if c.Want != got {
 			t.Errorf("test case: %d want: '%s' got: '%s'", i, c.Want, got)
@@ -66,7 +66,7 @@ func TestSelectMinSize(t *testing.T) {
 }
 
 func TestSelectSizeMax(t *testing.T) {
-	evs := model.NewEvents(testdata)
+	evs := data.NewEvents(testdata)
 	for i, c := range []struct {
 		N     uint
 		Epoch int
@@ -79,7 +79,7 @@ func TestSelectSizeMax(t *testing.T) {
 		{N: 2, Epoch: 4, Seq: 1, Want: "helloZ, worldZ"},
 		{N: 10, Epoch: 2, Seq: 1, Want: "helloX, worldX, helloY"},
 	} {
-		id := model.EventID{Epoch: c.Epoch, Seq: c.Seq}
+		id := data.EventID{Epoch: c.Epoch, Seq: c.Seq}
 		got := joinEvents(evs.SelectSizeMax(c.N, id))
 		if c.Want != got {
 			t.Errorf("test case: %d want: '%s' got: '%s'", i, c.Want, got)
@@ -88,7 +88,7 @@ func TestSelectSizeMax(t *testing.T) {
 }
 
 func TestSelectSize(t *testing.T) {
-	evs := model.NewEvents(testdata)
+	evs := data.NewEvents(testdata)
 	for i, c := range []struct {
 		N    uint
 		Want string
@@ -106,7 +106,7 @@ func TestSelectSize(t *testing.T) {
 }
 
 func TestEventSort(t *testing.T) {
-	evs := model.NewEvents(testdata)
+	evs := data.NewEvents(testdata)
 	want := "helloX, worldX, helloY, worldY, helloZ, worldZ"
 	got := joinEvents(evs)
 	if want != got {
@@ -115,7 +115,7 @@ func TestEventSort(t *testing.T) {
 }
 
 func TestSelectMinMax(t *testing.T) {
-	evs := model.NewEvents(testdata)
+	evs := data.NewEvents(testdata)
 	for i, c := range []struct {
 		minE, maxE int
 		minS, maxS uint
@@ -126,8 +126,8 @@ func TestSelectMinMax(t *testing.T) {
 		{minE: 1, minS: 1, maxE: 2, maxS: 1, want: "worldX, helloY"},
 		{minE: 2, minS: 2, maxE: 4, maxS: 1, want: "worldY, helloZ, worldZ"},
 	} {
-		min := model.EventID{Epoch: c.minE, Seq: c.minS}
-		max := model.EventID{Epoch: c.maxE, Seq: c.maxS}
+		min := data.EventID{Epoch: c.minE, Seq: c.minS}
+		max := data.EventID{Epoch: c.maxE, Seq: c.maxS}
 
 		got := joinEvents(evs.SelectMinMax(min, max))
 		if c.want != got {

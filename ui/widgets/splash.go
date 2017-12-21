@@ -1,7 +1,6 @@
-package view
+package widgets
 
 import (
-	"context"
 	"github.com/marcusolsson/tui-go"
 )
 
@@ -22,12 +21,7 @@ github.com/cceckman/discoirc
 
 `
 
-type splashRequest int
-
-func (_ splashRequest) String() string {
-	return "splash screen view"
-}
-func (_ splashRequest) New(_ context.Context, _ *ConsoleSession) tui.Widget {
+func NewSplash() tui.Widget {
 	return tui.NewHBox(
 		tui.NewSpacer(),
 		tui.NewVBox(
