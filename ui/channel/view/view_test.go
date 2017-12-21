@@ -2,12 +2,15 @@ package view_test
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	"github.com/cceckman/discoirc/ui/channel/view"
 	"github.com/cceckman/discoirc/ui/channel"
+
 	"github.com/marcusolsson/tui-go"
-	"testing"
 )
 
 const wantDecor40x10 = `
@@ -140,4 +143,38 @@ network: connected channel: joined +v
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
 	}
 
+}
+
+func TestView_Input(t *testing.T) {
+	v := makeView()
+	c := &mocks.Controller{}
+	v.Attach(c)
+	want := []string{"message one", "/me sends a message"}
+	inputs := strings.Join(want, "\n")
+
+	for _, rn := range inputs {
+		var ev tui.KeyEvent
+		if rn != '\n' {
+			ev = tui.KeyEvent{
+				Key: tui.KeyRune,
+				Rune: rn,
+			}
+		} else {
+			ev = tui.KeyEvent{
+				Key: tui.KeyEnter,
+			}
+		}
+		v.OnKeyEvent(ev)
+	}
+
+	if len(c.Received) != len(want) {
+		t.Errorf("unexpected messages: got = %v want %v",  c.Received, want)
+	} else {
+		for i, msg := range want {
+			got := c.Received[i]
+			if got != msg {
+				t.Errorf("unexpected contents in message %d: got = %q want %q", i, got, msg)
+			}
+		}
+	}
 }
