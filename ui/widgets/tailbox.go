@@ -24,11 +24,6 @@ func NewTailBox(w ...tui.Widget) *TailBox {
 	}
 }
 
-func (t *TailBox) Append(w tui.Widget) {
-	t.contents = append(t.contents, w)
-	t.doLayout(t.Size())
-}
-
 func (t *TailBox) SetContents(w ...tui.Widget) {
 	t.contents = w
 	t.doLayout(t.Size())
