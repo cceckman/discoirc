@@ -149,10 +149,12 @@ func TestView_Input(t *testing.T) {
 	v := makeView()
 	c := &mocks.Controller{}
 	v.Attach(c)
-	want := []string{"message one", "/me sends a message"}
-	inputs := strings.Join(want, "\n")
+	inputs := []string{"message one", "/me sends a message", "this isn't sent"}
+	strInputs := strings.Join(inputs, "\n")
+	// Last message isn't sent; doesn't have an enter at the end
+	want := inputs[0:2]
 
-	for _, rn := range inputs {
+	for _, rn := range strInputs {
 		var ev tui.KeyEvent
 		if rn != '\n' {
 			ev = tui.KeyEvent{
@@ -167,7 +169,7 @@ func TestView_Input(t *testing.T) {
 		v.OnKeyEvent(ev)
 	}
 
-	if len(c.Received) != len(want) {
+	if len(c.Received) != len(want[0:2]) {
 		t.Errorf("unexpected messages: got = %v want %v",  c.Received, want)
 	} else {
 		for i, msg := range want {
