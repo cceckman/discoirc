@@ -1,3 +1,4 @@
+// Package view implemements a tui widget for the channel contents view.
 package view
 
 import (
@@ -11,6 +12,7 @@ import (
 
 var _ channel.View = &V{}
 
+// DefaultRenderer is the default way to render Widgets.
 func DefaultRenderer(e data.Event) tui.Widget {
 	r := tui.NewLabel(e.Contents)
 	r.SetWordWrap(true)
@@ -18,7 +20,7 @@ func DefaultRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-// V implements channel.View using tui-go.
+// V implements channel.View as a tui Widget.
 type V struct {
 	// root element
 	*tui.Box

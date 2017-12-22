@@ -7,6 +7,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
+// EventsView displays the last data.Event objects it contains.
 type EventsView struct {
 	*widgets.TailBox
 

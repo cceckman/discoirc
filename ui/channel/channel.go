@@ -38,22 +38,19 @@ type Controller interface {
 	// Resize indicates the number of lines now available for messages.
 	Resize(n int)
 
-	// (Asynchronous) scroll
-	Scroll(up bool)
-
+	// TODO: Deferred: Scrolling
 	// TODO: Deferred: Localization of connection / presence
 }
 
 type Model interface {
-	// Includes nick, channelMode, connection state, topic
+	// Channel reports metadata about the channel.
+	// It MUST return an initial value.
 	Channel(ctx context.Context) <-chan data.Channel
-	// Returns up to N events starting at EpochId
-	EventsStartingAt(start data.EventID, n int) []data.Event
-	// Returns up to N events ending at EpochId
+	// Returns up to N events ending at this ID
 	EventsEndingAt(end data.EventID, n int) []data.Event
-	// Streams events starting at EpochId
-	Follow(ctx context.Context, start data.EventID) <-chan data.Event
-	Send(e data.Event) error
+	// Receives new events as they come in.
+	// MUST return the most recent event, if any, when initialized.
+	Follow(ctx context.Context) <-chan data.Event
+	Send(string) error
 }
-
 

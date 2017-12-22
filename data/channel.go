@@ -10,6 +10,7 @@ const (
 
 // Channel represents the state of a user's presence in a channel.
 type Channel struct {
+	Name string
 	Connection Connection
 
 	Topic string
