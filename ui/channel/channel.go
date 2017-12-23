@@ -48,6 +48,8 @@ type Model interface {
 	Channel(ctx context.Context) <-chan data.Channel
 	// Returns up to N events ending at this ID
 	EventsEndingAt(end data.EventID, n int) []data.Event
+	// TODO: use EventsList instead
+
 	// Receives new events as they come in.
 	// MUST return the most recent event, if any, when initialized.
 	Follow(ctx context.Context) <-chan data.Event
