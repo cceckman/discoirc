@@ -10,22 +10,22 @@ import (
 type View struct {
 	tui.Widget
 
-	topic      string
-	nick       string
-	connection string
-	presence   string
-	mode       string
-	events     []data.Event
+	Topic      string
+	Nick       string
+	Connection string
+	Presence   string
+	Mode       string
+	Events     []data.Event
 
-	renderer   channel.EventRenderer
-	controller channel.Controller
+	Renderer   channel.EventRenderer
+	Controller channel.Controller
 }
 
-func (v *View) SetTopic(s string)                   { v.topic = s }
-func (v *View) SetNick(s string)                    { v.nick = s }
-func (v *View) SetConnection(s string)              { v.connection = s }
-func (v *View) SetPresence(s string)                { v.presence = s }
-func (v *View) SetMode(s string)                    { v.mode = s }
-func (v *View) SetEvents(s []data.Event)            { v.events = s }
-func (v *View) SetRenderer(s channel.EventRenderer) { v.renderer = s }
-func (v *View) Attach(s channel.Controller)         { v.controller = s }
+func (v *View) SetTopic(s string)                   { v.Topic = s }
+func (v *View) SetNick(s string)                    { v.Nick = s }
+func (v *View) SetConnection(s string)              { v.Connection = s }
+func (v *View) SetPresence(s string)                { v.Presence = s }
+func (v *View) SetMode(s string)                    { v.Mode = s }
+func (v *View) SetEvents(s []data.Event)            { v.Events = s }
+func (v *View) SetRenderer(s channel.EventRenderer) { v.Renderer = s }
+func (v *View) Attach(s channel.Controller)         { v.Controller = s }
