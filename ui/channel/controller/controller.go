@@ -4,10 +4,11 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	"github.com/marcusolsson/tui-go"
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
+	"github.com/marcusolsson/tui-go"
 )
 
 // UIUpdater is a subset of the tui.UI interface- just the bit that update a UI.
@@ -16,7 +17,6 @@ type UIUpdater interface {
 }
 
 var _ UIUpdater = tui.UI(nil)
-
 
 var _ channel.Controller = &C{}
 
@@ -29,6 +29,8 @@ type C struct {
 	// Async communication
 	sizeUpdate chan int
 	input      chan string
+	// Track pending operations, for tests.
+	pending sync.WaitGroup
 }
 
 // New returns a new Controller.
@@ -52,6 +54,7 @@ func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) cha
 }
 
 // TODO: Support localization
+// updateMeta updates a channel.View with channel metadata.
 func updateMeta(d data.Channel, v channel.View) {
 	v.SetTopic(d.Topic)
 
@@ -66,12 +69,13 @@ func updateMeta(d data.Channel, v channel.View) {
 
 	v.SetPresence(d.Name)
 	if d.Presence == data.NotPresent {
-		v.SetMode("[parted]")
+		v.SetMode("∅")
 	} else {
 		v.SetMode(d.Mode)
 	}
 }
 
+// updateChannelMeta is a thread that listens for Model updates.
 func (c *C) updateChannelMeta(ctx context.Context) {
 	metadata := c.model.Channel(ctx)
 
@@ -86,11 +90,12 @@ func (c *C) updateChannelMeta(ctx context.Context) {
 		case m := <-metadata:
 			select {
 			case <-newData:
-				// Updater thread was waiting on an update. Give it better data.
+				// Flushed existing data; give it better data.
 				newData <- m
+				// Don't launch a new updater thread, there's one waiting.
 			case newData <- m:
-				// can write to it; need to launch a new thread.
-				c.ui.Update(func() {
+				// No existing data; launch a new updater thread.
+				go c.ui.Update(func() {
 					updateMeta(<-newData, c.view)
 				})
 			}
@@ -138,6 +143,7 @@ func (c *C) handleInput(ctx context.Context) {
 	go func() {
 		for m := range nextMessage {
 			c.model.Send(m)
+			c.pending.Done()
 		}
 	}()
 
@@ -166,15 +172,19 @@ func (c *C) handleInput(ctx context.Context) {
 
 // Input accepts input from the user.
 func (c *C) Input(s string) {
+	c.pending.Add(1)
 	c.input <- s
 }
 
 // Resize notes a change in the number of events displayed.
 func (c *C) Resize(n int) {
+	c.pending.Add(1)
 	select {
 	case c.sizeUpdate <- n:
-		// pass
-	case <- c.sizeUpdate:
+		// Sent update.
+	case <-c.sizeUpdate:
 		c.sizeUpdate <- n
+		// Flushed an update to add this one; clear it.
+		c.pending.Done()
 	}
 }
