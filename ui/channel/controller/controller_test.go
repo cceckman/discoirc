@@ -2,7 +2,6 @@ package controller_test
 
 import (
 	"context"
-	"sync"
 
 	_ "github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/controller"
@@ -12,51 +11,8 @@ import (
 	"testing"
 )
 
-// UpdateCounter is a controller.UIUpdater that completes one task whenever an Update is completed.
-type UpdateCounter struct {
-	sync.WaitGroup
-
-	counting bool
-	incoming chan func()
-}
-
-func NewUpdateCounter() *UpdateCounter {
-	r := &UpdateCounter{
-		incoming: make(chan func()),
-	}
-	go func() {
-		for f := range r.incoming {
-			f()
-			if r.counting {
-				r.Done()
-			}
-		}
-	}()
-	return r
-}
-
-func (u *UpdateCounter) Add(delta int) {
-	u.Update(func() {
-		// Add one, to count off this operation.
-		u.counting = true
-		u.WaitGroup.Add(delta + 1)
-	})
-}
-
-func (u *UpdateCounter) Update(f func()) {
-	u.incoming <- f
-}
-
-// RunSync runs the enclosed method in the same thread as other updates, but waits until it completes.
-func (u *UpdateCounter) RunSync(f func()) {
-	u.Wait()
-	u.Add(1)
-	u.Update(f)
-	u.Wait()
-}
-
 func TestController_Resize(t *testing.T) {
-	ui := NewUpdateCounter()
+	ui := mocks.NewUpdateCounter()
 
 	m := &mocks.Model{}
 	v := &mocks.View{}
