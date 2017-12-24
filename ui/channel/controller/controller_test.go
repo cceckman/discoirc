@@ -29,7 +29,7 @@ func TestController_ResizeNoEvents(t *testing.T) {
 
 	// Resize when no events available; should trigger write of zero events.
 	ui.Add(1)
-	v.Controller.Resize(10)
+	v.Controller.Resize(8)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
 			t.Errorf("wrong number of events: got: %v want: none", v.Events)
@@ -58,10 +58,10 @@ func TestController_ResizeWithEvents(t *testing.T) {
 
 	// Resizing should pick up N events.
 	ui.Add(1)
-	v.Controller.Resize(9)
+	v.Controller.Resize(8)
 	ui.RunSync(func() {
-		if len(v.Events) != 9 {
-			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), 9)
+		if len(v.Events) != 8 {
+			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), 8)
 			return
 		}
 		gotLast := v.Events[len(v.Events)-1].EventID
@@ -72,7 +72,7 @@ func TestController_ResizeWithEvents(t *testing.T) {
 	})
 }
 
-/*
+
 func TestController_ReceiveEvent(t *testing.T) {
 	ui := mocks.NewUpdateCounter()
 
@@ -80,21 +80,26 @@ func TestController_ReceiveEvent(t *testing.T) {
 		Events: mocks.Events,
 	}
 	v := &mocks.View{}
-	_ = controller.New(context.Background(), ui, v, m)
 
-	v.Controller.Resize(10)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ui.Add(2)
+	_ = controller.New(ctx, ui, v, m)
+	ui.Add(1)
+	sz := 8
+	v.Controller.Resize(sz)
 	ui.RunSync(func() {
-		if len(v.Events) != 10 {
-			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), 9)
+		if len(v.Events) != sz {
+			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), sz)
 		}
 	})
 
-	ui.Add(2)
+	ui.Add(1)
 	message := "my message"
 	m.AddEvent(message)
 	ui.RunSync(func() {
-		if len(v.Events) != 10 {
-			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), 9)
+		if len(v.Events) != sz {
+			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), sz)
 		}
 		lastContents := v.Events[len(v.Events)-1].Contents
 		if lastContents != message {
@@ -102,4 +107,4 @@ func TestController_ReceiveEvent(t *testing.T) {
 		}
 	})
 }
-*/
+
