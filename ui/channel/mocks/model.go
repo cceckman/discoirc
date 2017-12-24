@@ -68,7 +68,6 @@ func (m *Model) Attach(c channel.ModelController) {
 	if len(m.Events) > 0 {
 		m.Controller.UpdateContents(m.Events[len(m.Events)-1])
 	}
-
 	m.Controller.UpdateMeta(m.Channel)
 }
 

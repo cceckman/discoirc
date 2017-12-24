@@ -106,7 +106,7 @@ func (c *C) awaitMetaUpdate(ctx context.Context) {
 }
 
 func (c *C) awaitEvents(ctx context.Context) {
-	size := 1             // desired N of events to display
+	size := 0             // desired N of events to display
 	var last data.EventID // last event in the display
 
 	for {

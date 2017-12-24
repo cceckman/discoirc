@@ -11,14 +11,16 @@ import (
 	"testing"
 )
 
-func TestController_Resize(t *testing.T) {
+func TestController_ResizeNoEvents(t *testing.T) {
 	ui := mocks.NewUpdateCounter()
 
 	m := &mocks.Model{}
 	v := &mocks.View{}
 
-	ui.Add(1) // Attach of Model updates metadata.
-	_ = controller.New(context.Background(), ui, v, m)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ui.Add(1) // Update of metadata on attachment.
+	_ = controller.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
 			t.Errorf("wrong number of events: got: %v want: none", v.Events)
@@ -33,19 +35,39 @@ func TestController_Resize(t *testing.T) {
 			t.Errorf("wrong number of events: got: %v want: none", v.Events)
 		}
 	})
+}
 
-	// Directly adding to Model won't trigger a resize.
-	func() {
-		m.Lock()
-		defer m.Unlock()
-		m.Events = mocks.Events
-	}()
-	// But resizing should.
+func TestController_ResizeWithEvents(t *testing.T) {
+	ui := mocks.NewUpdateCounter()
+
+	m := &mocks.Model{
+		Events: mocks.Events,
+	}
+	v := &mocks.View{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ui.Add(2) // Update of metadata, contents on attachment.
+	_ = controller.New(ctx, ui, v, m)
+	ui.RunSync(func() {
+		// Still should be zero events; size is zero.
+		if len(v.Events) > 0 {
+			t.Errorf("wrong number of events: got: %v want: none", v.Events)
+		}
+	})
+
+	// Resizing should pick up N events.
 	ui.Add(1)
 	v.Controller.Resize(9)
 	ui.RunSync(func() {
 		if len(v.Events) != 9 {
 			t.Errorf("wrong number of events: got: %d want: %d", len(v.Events), 9)
+			return
+		}
+		gotLast := v.Events[len(v.Events)-1].EventID
+		wantLast := m.Events[len(m.Events)-1].EventID
+		if gotLast != wantLast {
+			t.Errorf("wrong last event: got: %v want: %v", gotLast, wantLast)
 		}
 	})
 }
