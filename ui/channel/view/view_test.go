@@ -49,7 +49,7 @@ func makeView() channel.View {
 	v.SetTopic("topic")
 	v.SetNick("<nick>")
 	v.SetConnection("network: connected")
-	v.SetPresence("channel: joined")
+	v.SetName("channel: joined")
 	v.SetMode("+v")
 	v.SetRenderer(testRenderer)
 	v.SetEvents(mocks.Events)

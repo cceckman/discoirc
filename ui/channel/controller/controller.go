@@ -72,7 +72,7 @@ func updateMeta(d data.Channel, v channel.View) {
 	v.SetConnection(fmt.Sprintf("%s: %s", conn.Network, connStrings[conn.State]))
 	v.SetNick(conn.Nick)
 
-	v.SetPresence(d.Name)
+	v.SetName(d.Name)
 	if d.Presence == data.NotPresent {
 		v.SetMode("∅")
 	} else {

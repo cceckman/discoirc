@@ -17,7 +17,7 @@ type View interface {
 	SetTopic(string)
 	SetNick(string)
 	SetConnection(string)
-	SetPresence(string)
+	SetName(string)
 	SetMode(string)
 	SetEvents([]data.Event)
 

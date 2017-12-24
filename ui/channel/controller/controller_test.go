@@ -2,8 +2,9 @@ package controller_test
 
 import (
 	"context"
+	"strings"
 
-	_ "github.com/cceckman/discoirc/data"
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/controller"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	_ "github.com/marcusolsson/tui-go"
@@ -14,7 +15,7 @@ import (
 func TestController_ResizeNoEvents(t *testing.T) {
 	ui := mocks.NewUpdateCounter()
 
-	m := &mocks.Model{}
+	m := mocks.NewModel()
 	v := &mocks.View{}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,9 +41,8 @@ func TestController_ResizeNoEvents(t *testing.T) {
 func TestController_ResizeWithEvents(t *testing.T) {
 	ui := mocks.NewUpdateCounter()
 
-	m := &mocks.Model{
-		Events: mocks.Events,
-	}
+	m := mocks.NewModel()
+	m.Events = mocks.Events
 	v := &mocks.View{}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -72,13 +72,11 @@ func TestController_ResizeWithEvents(t *testing.T) {
 	})
 }
 
-
 func TestController_ReceiveEvent(t *testing.T) {
 	ui := mocks.NewUpdateCounter()
 
-	m := &mocks.Model{
-		Events: mocks.Events,
-	}
+	m := mocks.NewModel()
+	m.Events = mocks.Events
 	v := &mocks.View{}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -108,3 +106,63 @@ func TestController_ReceiveEvent(t *testing.T) {
 	})
 }
 
+func TestController_UpdateMeta(t *testing.T) {
+	ui := mocks.NewUpdateCounter()
+
+	m := mocks.NewModel()
+	m.Channel = data.Channel{
+		Name: "#discoirc",
+		Connection: data.Connection{
+			Network: "Foonetic",
+			Nick:    "discobot3k",
+			State:   data.Connecting,
+		},
+		Topic:    "the IRC client of the past",
+		Presence: data.Joined,
+		Mode:     "+pdq",
+	}
+	v := &mocks.View{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	compare := func(field, got, want string) {
+		t.Helper()
+		if got != want {
+			t.Errorf("unexpected value for %s: got: %q want: %q", field, got, want)
+		}
+	}
+
+	ui.Add(1) // Update channel metadata on attachment
+	_ = controller.New(ctx, ui, v, m)
+	ui.RunSync(func() {
+		compare("Topic", v.Topic, m.Channel.Topic)
+		compare("Name", v.Name, m.Channel.Name)
+		compare("Mode", v.Mode, m.Channel.Mode)
+		compare("Nick", v.Nick, m.Channel.Connection.Nick)
+
+		if !strings.Contains(v.Connection, m.Channel.Connection.Network) {
+			t.Errorf("missing connection name %q from contents %q", m.Channel.Connection.Network, v.Connection)
+		}
+		if !strings.Contains(v.Connection, "…") {
+			t.Errorf("missing connection state %q from contents %q", m.Channel.Connection.Network, "…")
+		}
+	})
+}
+
+func TestController_Send(t *testing.T) {
+	ui := mocks.NewUpdateCounter()
+
+	m := mocks.NewModel()
+	v := &mocks.View{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_ = controller.New(ctx, ui, v, m)
+
+	msg := "this message"
+	v.Controller.Input(msg)
+	got := <-m.Received
+	if got != msg {
+		t.Errorf("expected message to be passed along: got: %q want: %q", got, msg)
+	}
+}

@@ -12,12 +12,18 @@ var _ channel.Model = &Model{}
 // Model implements channel.Model for testing.
 // It has some restrictions - in particular, it can only support one reader for Follow or Channel.
 type Model struct {
-	Received []string
+	Received chan string
 
 	sync.RWMutex
 	Channel    data.Channel
 	Events     data.EventList
 	Controller channel.ModelController
+}
+
+func NewModel() *Model {
+	return &Model{
+		Received: make(chan string, 10),
+	}
 }
 
 // EventsEndingAt satisfies the channel.Model interface.
@@ -72,7 +78,7 @@ func (m *Model) Attach(c channel.ModelController) {
 }
 
 func (m *Model) Send(s string) error {
-	m.Received = append(m.Received, s)
+	m.Received <- s
 	// TODO support testing with an error returned
 	// TODO support reflecting back into events
 	return nil

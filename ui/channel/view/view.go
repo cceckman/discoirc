@@ -30,7 +30,7 @@ type V struct {
 	events *EventsView
 	// status bar
 	connection *tui.Label
-	presence   *tui.Label
+	name       *tui.Label
 	mode       *tui.Label
 	// input bar
 	nick  *tui.Label
@@ -55,8 +55,8 @@ func (v *V) SetTopic(t string) {
 func (v *V) SetConnection(s string) {
 	v.connection.SetText(s)
 }
-func (v *V) SetPresence(s string) {
-	v.presence.SetText(s)
+func (v *V) SetName(s string) {
+	v.name.SetText(s)
 }
 func (v *V) SetMode(s string) {
 	v.mode.SetText(s)
@@ -103,7 +103,7 @@ func New() channel.View {
 			Renderer: DefaultRenderer,
 		},
 		connection: tui.NewLabel(""),
-		presence:   tui.NewLabel(""),
+		name:       tui.NewLabel(""),
 		mode:       tui.NewLabel(""),
 		nick:       tui.NewLabel(""),
 		input:      tui.NewEntry(),
@@ -111,7 +111,7 @@ func New() channel.View {
 	v.topic.SetSizePolicy(tui.Expanding, tui.Minimum)
 	v.events.SetSizePolicy(tui.Expanding, tui.Expanding)
 	v.connection.SetSizePolicy(tui.Minimum, tui.Minimum)
-	v.presence.SetSizePolicy(tui.Minimum, tui.Minimum)
+	v.name.SetSizePolicy(tui.Minimum, tui.Minimum)
 	v.mode.SetSizePolicy(tui.Minimum, tui.Minimum)
 	v.nick.SetSizePolicy(tui.Minimum, tui.Minimum)
 	v.input.SetSizePolicy(tui.Expanding, tui.Minimum)
@@ -133,7 +133,7 @@ func New() channel.View {
 			Box: tui.NewHBox(
 				v.connection,
 				tui.NewLabel(" "),
-				v.presence,
+				v.name,
 				tui.NewLabel(" "),
 				v.mode,
 				rspacer,
