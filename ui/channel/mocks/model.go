@@ -29,11 +29,21 @@ func (m *Model) EventsEndingAt(end data.EventID, n int) []data.Event {
 
 // AddEvent adds an event to the history of this Model.
 // It triggers any Follow()ers.
-func (m *Model) AddEvent(e data.Event) {
+func (m *Model) AddEvent(s string) {
 	m.Lock()
 	defer m.Unlock()
+
+	var eid data.EventID
+	if len(m.Events) > 0 {
+		lastEid := m.Events[len(m.Events)-1]
+		eid.Epoch = lastEid.Epoch + 1
+	}
+
 	// keep sorted.
-	m.Events = data.NewEvents(append(m.Events, e))
+	m.Events = data.NewEvents(append(m.Events, data.Event{
+		EventID:  eid,
+		Contents: s,
+	}))
 
 	if m.Controller != nil {
 		m.Controller.UpdateContents(m.Events[len(m.Events)-1])

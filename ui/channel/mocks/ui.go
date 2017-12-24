@@ -8,20 +8,25 @@ import (
 type UpdateCounter struct {
 	sync.WaitGroup
 
-	counting bool
-	incoming chan func()
+	startCounting sync.Once
+	counting      chan struct{}
+	incoming      chan func()
 }
 
 // NewUpdateCounter returns a new UpdateCounter.
 func NewUpdateCounter() *UpdateCounter {
 	r := &UpdateCounter{
+		counting: make(chan struct{}),
 		incoming: make(chan func(), 1),
 	}
 	go func() {
 		for f := range r.incoming {
 			f()
-			if r.counting {
+			select {
+			case _ = <-r.counting:
 				r.Done()
+			default:
+				// do nothing
 			}
 		}
 	}()
@@ -31,11 +36,8 @@ func NewUpdateCounter() *UpdateCounter {
 // Add adds delta to the count of expected updates,
 // and enables tracking
 func (u *UpdateCounter) Add(delta int) {
-	u.Update(func() {
-		// Add one, to count off this operation.
-		u.counting = true
-		u.WaitGroup.Add(delta + 1)
-	})
+	u.startCounting.Do(func() { close(u.counting) })
+	u.WaitGroup.Add(delta)
 }
 
 // Update queues f to run at a later time.
