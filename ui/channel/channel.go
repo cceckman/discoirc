@@ -2,7 +2,6 @@
 package channel
 
 import (
-	"context"
 	"github.com/cceckman/discoirc/data"
 	"github.com/marcusolsson/tui-go"
 )
@@ -26,33 +25,46 @@ type View interface {
 	// the channel contents display.
 	SetRenderer(EventRenderer)
 
-	// Attach indicates the Controller should be used for responses to UI events.
-	Attach(Controller)
+	Attach(UIController)
 }
 
-// A Controller handles receiving inputs from a View and updating the View with new contents.
-type Controller interface {
-	// Accepts input from the user. Non-blocking; safe to run from UI thread.
+// UIController is a type which can receive updates from a view.
+type UIController interface {
+	// Accepts input from the user. Must be non-blocking.
 	Input(string)
 
-	// Resize indicates the number of lines now available for messages.
+	// Resize indicates a change in the number of lines available for display.
+	// Must be non-blocking.
 	Resize(n int)
 
 	// TODO: Deferred: Scrolling
 	// TODO: Deferred: Localization of connection / presence
 }
 
-type Model interface {
-	// Channel reports metadata about the channel.
-	// It MUST return an initial value.
-	Channel(ctx context.Context) <-chan data.Channel
-	// Returns up to N events ending at this ID
-	EventsEndingAt(end data.EventID, n int) []data.Event
-	// TODO: use EventsList instead
+// ModelController is a type which can receive updates from a Model.
+type ModelController interface {
+	// UpdateMeta indicates a change in the channel state.
+	UpdateMeta(data.Channel)
 
-	// Receives new events as they come in.
-	// MUST return the most recent event, if any, when initialized.
-	Follow(ctx context.Context) <-chan data.Event
+	// UpdateContents indicates a new Event has arrived.
+	UpdateContents(data.Event)
+}
+
+type Controller interface {
+	UIController
+	ModelController
+}
+
+// Model implements the Model of a channel.
+type Model interface {
+	// Returns up to N events ending at this ID.
+	EventsEndingAt(end data.EventID, n int) []data.Event
+	// TODO: maybe use EventsList instead
+
+	// Send sends the message to the channel.
 	Send(string) error
+
+	// Attach uses the ModelController for future updates.
+	Attach(ModelController)
 }
 

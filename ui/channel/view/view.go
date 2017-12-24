@@ -36,7 +36,7 @@ type V struct {
 	nick  *tui.Label
 	input *tui.Entry
 
-	controller channel.Controller
+	controller channel.UIController
 }
 
 func (v *V) handleInput(entry *tui.Entry) {
@@ -68,7 +68,7 @@ func (v *V) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
 }
 
-func (v *V) Attach(c channel.Controller) {
+func (v *V) Attach(c channel.UIController) {
 	v.controller = c
 	// Set initial size
 	v.controller.Resize(v.events.Size().Y)

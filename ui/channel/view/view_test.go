@@ -92,7 +92,7 @@ func TestView_Resize(t *testing.T) {
 	prePainter.Repaint(v)
 
 	// 2: Attach controller and assert size was set.
-	c := &mocks.Controller{}
+	c := &mocks.UIController{}
 	v.Attach(c)
 	wantSize := 17 // 20 - topic, status, input
 	if c.Size != wantSize {
@@ -147,7 +147,7 @@ network: connected channel: joined +v
 
 func TestView_Input(t *testing.T) {
 	v := makeView()
-	c := &mocks.Controller{}
+	c := &mocks.UIController{}
 	v.Attach(c)
 	inputs := []string{"message one", "/me sends a message", "this isn't sent"}
 	strInputs := strings.Join(inputs, "\n")

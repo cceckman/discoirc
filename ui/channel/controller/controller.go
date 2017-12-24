@@ -4,7 +4,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
@@ -29,8 +28,8 @@ type C struct {
 	// Async communication
 	sizeUpdate chan int
 	input      chan string
-	// Track pending operations, for tests.
-	pending sync.WaitGroup
+	metaUpdate chan data.Channel
+	newEvent   chan data.EventID
 }
 
 // New returns a new Controller.
@@ -40,16 +39,22 @@ func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) cha
 		view:       v,
 		model:      m,
 		sizeUpdate: make(chan int, 1),
-		input:      make(chan string, 1),
+		metaUpdate: make(chan data.Channel, 1),
+		input:      make(chan string),
+		newEvent:   make(chan data.EventID),
 	}
+
+	go c.awaitMetaUpdate(ctx)
+	go c.awaitInput(ctx)
+	go c.awaitEvents(ctx)
 
 	if v != nil {
 		v.Attach(c)
 	}
+	if m != nil {
+		m.Attach(c)
+	}
 
-	go c.updateEvents(ctx)
-	go c.updateChannelMeta(ctx)
-	go c.handleInput(ctx)
 	return c
 }
 
@@ -75,10 +80,7 @@ func updateMeta(d data.Channel, v channel.View) {
 	}
 }
 
-// updateChannelMeta is a thread that listens for Model updates.
-func (c *C) updateChannelMeta(ctx context.Context) {
-	metadata := c.model.Channel(ctx)
-
+func (c *C) awaitMetaUpdate(ctx context.Context) {
 	// newData allows any pending updates to always get the most up-to-date
 	// data.Channel.
 	newData := make(chan data.Channel, 1)
@@ -87,7 +89,7 @@ func (c *C) updateChannelMeta(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case m := <-metadata:
+		case m := <-c.metaUpdate:
 			select {
 			case <-newData:
 				// Flushed existing data; give it better data.
@@ -103,10 +105,7 @@ func (c *C) updateChannelMeta(ctx context.Context) {
 	}
 }
 
-// updateEvents is a thread that handles updating the events display.
-func (c *C) updateEvents(ctx context.Context) {
-	follow := c.model.Follow(ctx)
-
+func (c *C) awaitEvents(ctx context.Context) {
 	size := 1             // desired N of events to display
 	var last data.EventID // last event in the display
 
@@ -117,33 +116,34 @@ func (c *C) updateEvents(ctx context.Context) {
 			return
 		case size = <-c.sizeUpdate:
 			fetch = true
-		case ev := <-follow:
+		case last = <-c.newEvent:
 			// TODO: be more efficient; don't do a full-fetch if only an
 			// update is needed.
-			last = ev.EventID
+			// TODO: support scrolling
 			fetch = true
 		}
-
 		// TODO perform fetch asynchronously; assume it may take
 		// a relatively long time.
 		if fetch {
 			events := c.model.EventsEndingAt(last, size)
+			await := make(chan struct{})
 			// TODO perform update asynchronously
 			c.ui.Update(func() {
 				c.view.SetEvents(events)
+				await <- struct{}{}
 			})
+			<-await
 		}
 	}
 }
 
-// handleInput is a thread that handles queueing inputted messages for processing.
-func (c *C) handleInput(ctx context.Context) {
+// awaitInput is a thread that handles queueing inputted messages for processing.
+func (c *C) awaitInput(ctx context.Context) {
 	nextMessage := make(chan string)
 	defer close(nextMessage)
 	go func() {
 		for m := range nextMessage {
 			c.model.Send(m)
-			c.pending.Done()
 		}
 	}()
 
@@ -170,21 +170,32 @@ func (c *C) handleInput(ctx context.Context) {
 	}
 }
 
+// UpdateContents indicates a new Event has arrived.
+func (c *C) UpdateContents(d data.Event) {
+	c.newEvent <- d.EventID
+}
+
 // Input accepts input from the user.
 func (c *C) Input(s string) {
-	c.pending.Add(1)
 	c.input <- s
 }
 
 // Resize notes a change in the number of events displayed.
 func (c *C) Resize(n int) {
-	c.pending.Add(1)
 	select {
 	case c.sizeUpdate <- n:
 		// Sent update.
 	case <-c.sizeUpdate:
 		c.sizeUpdate <- n
-		// Flushed an update to add this one; clear it.
-		c.pending.Done()
+	}
+}
+
+// UpdateMeta receives an update about the channel's state.
+func (c *C) UpdateMeta(d data.Channel) {
+	select {
+	case c.metaUpdate <- d:
+		// Sent update.
+	case <-c.metaUpdate:
+		c.metaUpdate <- d
 	}
 }

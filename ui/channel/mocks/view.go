@@ -18,7 +18,7 @@ type View struct {
 	Events     []data.Event
 
 	Renderer   channel.EventRenderer
-	Controller channel.Controller
+	Controller channel.UIController
 }
 
 func (v *View) SetTopic(s string)                   { v.Topic = s }
@@ -28,4 +28,4 @@ func (v *View) SetPresence(s string)                { v.Presence = s }
 func (v *View) SetMode(s string)                    { v.Mode = s }
 func (v *View) SetEvents(s []data.Event)            { v.Events = s }
 func (v *View) SetRenderer(s channel.EventRenderer) { v.Renderer = s }
-func (v *View) Attach(s channel.Controller)         { v.Controller = s }
+func (v *View) Attach(s channel.UIController)         { v.Controller = s }
