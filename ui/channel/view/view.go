@@ -119,8 +119,7 @@ func New() channel.View {
 	v.input.OnSubmit(v.handleInput)
 	v.input.SetFocused(true)
 
-	rspacer := tui.NewLabel(" ")
-	rspacer.SetSizePolicy(tui.Expanding, tui.Preferred)
+	rspacer := tui.NewSpacer()
 
 	inputBar := tui.NewHBox(
 		tui.NewLabel("<"),
