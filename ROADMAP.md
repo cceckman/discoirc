@@ -13,13 +13,13 @@ Allow switching between them, but not launching windows. Statically
 configure channels and connections on the stub server.
 
 - [ ] Channel
-  - [ ] New messages incoming
-  - [ ] Send messages
-  - [ ] List network + channel
-  - [ ] Show nick
-  - [ ] Show mode
-  - [ ] Show connection state
-  - [ ] Show topic
+  - [x] New messages incoming
+  - [x] Send messages
+  - [x] List network + channel
+  - [x] Show nick
+  - [x] Show mode
+  - [x] Show connection state
+  - [x] Show topic
   - [ ] Jump to session view
 - [ ] Session
   - [ ] Networks
