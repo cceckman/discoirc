@@ -75,9 +75,9 @@ func (v *V) Attach(c channel.UIController) {
 }
 
 func (v *V) Resize(size image.Point) {
-	eventsSize := v.events.Size()
+	oldSize := v.events.Size()
 	v.Box.Resize(size)
-	if eventsSize.Y > v.events.Size().Y && v.controller != nil {
+	if v.events.Size().Y > oldSize.Y && v.controller != nil {
 		// events box got bigger. Request an update.
 		v.controller.Resize(v.events.Size().Y)
 	}

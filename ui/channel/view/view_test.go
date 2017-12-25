@@ -77,42 +77,48 @@ func TestView_SimpleRender(t *testing.T) {
 }
 
 func TestView_Resize(t *testing.T) {
-	// Render with a different size.
-	preSurface := tui.NewTestSurface(80, 20)
 	theme := tui.NewTheme()
 	theme.SetStyle("reversed", tui.Style{Reverse: tui.DecorationOn})
-	prePainter := tui.NewPainter(preSurface, theme)
 
-	surface := tui.NewTestSurface(40, 10)
-	p := tui.NewPainter(surface, theme)
+	smSurface := tui.NewTestSurface(40, 10)
+	smPainter := tui.NewPainter(smSurface, theme)
+
+	// Render with a different size.
+	lgSurface := tui.NewTestSurface(80, 20)
+	lgPainter := tui.NewPainter(lgSurface, theme)
 
 	v := makeView()
-
 	// 1: Resize without controller set.
-	prePainter.Repaint(v)
+	smPainter.Repaint(v)
 
 	// 2: Attach controller and assert size was set.
 	c := &mocks.UIController{}
 	v.Attach(c)
-	wantSize := 17 // 20 - topic, status, input
+	wantSize := 7 // 10 - topic, status, input
 	if c.Size != wantSize {
 		t.Errorf("unexpected size: got = %d want = %d", c.Size, wantSize)
 	}
 
-	// 3: Resize; check that output is good, and that controller saw resize.
+	// 3: Resize; check that output is good, and that controller saw increase insize
 
-	p.Repaint(v)
-	wantSize = 7 // 10 - topic, status, input
+	lgPainter.Repaint(v)
+	wantSize = 17 // 20 - topic, status, input
 	if c.Size != wantSize {
 		t.Errorf("unexpected size: got = %d want = %d", c.Size, wantSize)
 	}
 
-	gotDecorations := surface.Decorations()
+	// 4: Resize down again: check that output is good, controller didn't see decrease; it only sees increases, to cut down on spurious redraws.
+	smPainter.Repaint(v)
+	if c.Size != wantSize {
+		t.Errorf("unexpected size: got = %d want = %d", c.Size, wantSize)
+	}
+
+	gotDecorations := smSurface.Decorations()
 	if gotDecorations != wantDecor40x10 {
 		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecor40x10)
 	}
 
-	gotContents := surface.String()
+	gotContents := smSurface.String()
 	if gotContents != wantContents40x10 {
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents40x10)
 	}

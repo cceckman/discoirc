@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
 )
@@ -26,6 +27,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+	defer glog.Flush()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -43,8 +45,8 @@ func main() {
 
 		time.Sleep(2 * time.Second)
 		ui.Update(func() {
-			ui.SetKeybinding("Ctrl+Esc", func() { toggle.Messages(ctx) })
-			ui.SetKeybinding("Shift+Esc", func() { toggle.Messages(ctx) })
+			ui.SetKeybinding("Ctrl+Space", func() { toggle.Meta(ctx) })
+			ui.SetKeybinding("Shift+Space", func() { toggle.Messages(ctx) })
 			ui.SetWidget(newRoot)
 			toggle.Messages(ctx)
 			toggle.Messages(ctx)

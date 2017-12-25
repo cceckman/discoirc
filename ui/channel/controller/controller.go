@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/marcusolsson/tui-go"
@@ -125,6 +126,7 @@ func (c *C) awaitEvents(ctx context.Context) {
 		// TODO perform fetch asynchronously; assume it may take
 		// a relatively long time.
 		if fetch {
+			glog.V(1).Infof("Controller fetching new contents: %d after %v", size, last)
 			events := c.model.EventsEndingAt(last, size)
 			await := make(chan struct{})
 			// TODO perform update asynchronously
@@ -172,6 +174,7 @@ func (c *C) awaitInput(ctx context.Context) {
 
 // UpdateContents indicates a new Event has arrived.
 func (c *C) UpdateContents(d data.Event) {
+	glog.V(1).Infof("UpdateContents received message %v", d)
 	c.newEvent <- d.EventID
 }
 
@@ -182,6 +185,7 @@ func (c *C) Input(s string) {
 
 // Resize notes a change in the number of events displayed.
 func (c *C) Resize(n int) {
+	glog.V(1).Infof("Controller got resize: %d", n)
 	select {
 	case c.sizeUpdate <- n:
 		// Sent update.

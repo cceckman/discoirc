@@ -6,17 +6,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 )
 
 func NewChannel(ctx context.Context) *Channel {
 	r := &Channel{
-		received:   make(chan string, 1),
-		metaUpdate: make(chan struct{}, 1),
+		received: make(chan string, 1),
+		meta:     make(chan data.Channel, 1),
 	}
 	go r.awaitMessages(ctx)
-	go r.awaitMeta(ctx)
 	return r
 }
 
@@ -30,11 +30,10 @@ var quotes = []string{
 
 type Channel struct {
 	received   chan string
-	metaUpdate chan struct{}
+	meta       chan data.Channel
 
 	sync.RWMutex
 	controller channel.ModelController
-	meta       data.Channel
 	events     data.EventList
 }
 
@@ -42,7 +41,7 @@ type Channel struct {
 func (c *Channel) GenerateMeta(ctx context.Context, d time.Duration) {
 	ticker := time.NewTicker(d)
 	defer ticker.Stop()
-	for i, j := 0, 0; true; i, j = i+1%len(names), j+1%len(quotes) {
+	for i, j := 0, 0; true; i, j = (i+1)%len(names), (j+1)%len(quotes) {
 		select {
 		case <-ctx.Done():
 			return
@@ -74,7 +73,7 @@ func (c *Channel) GenerateMeta(ctx context.Context, d time.Duration) {
 func (c *Channel) GenerateMessages(ctx context.Context, d time.Duration) {
 	ticker := time.NewTicker(d)
 	defer ticker.Stop()
-	for i, j := 0, 0; true; i, j = i+1%len(names), j+1%len(quotes) {
+	for i, j := 0, 0; true; i, j = (i+1)%len(names), (j+1)%len(quotes) {
 		select {
 		case <-ctx.Done():
 			return
@@ -86,36 +85,36 @@ func (c *Channel) GenerateMessages(ctx context.Context, d time.Duration) {
 
 // SetMeta sets the channel's metadata.
 func (c *Channel) SetMeta(d data.Channel) {
-	c.Lock()
-	defer c.Unlock()
-	c.meta = d
 	select {
-	case c.metaUpdate <- struct{}{}:
-	case <-c.metaUpdate:
-		c.metaUpdate <- struct{}{}
+	case c.meta <- d:
+	case <-c.meta:
+		c.meta <- d
 	}
+	func() {
+		c.RLock()
+		defer c.RUnlock()
+		if c.controller != nil {
+			c.controller.UpdateMeta(d)
+		}
+	}()
+
 }
 
 // GetMeta gets the current metadata of the channel.
 func (c *Channel) GetMeta() data.Channel {
-	c.RLock()
-	defer c.RUnlock()
-	return c.meta
-}
-
-func (c *Channel) awaitMeta(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-c.metaUpdate:
-			func() {
-				c.RLock()
-				defer c.RUnlock()
-				c.controller.UpdateMeta(c.meta)
-			}()
-		}
+	var r data.Channel
+	select {
+	case r = <-c.meta:
+	default:
 	}
+	select {
+	case c.meta <- r:
+		// Put if back if that's an option.
+	default:
+		// SetMeta updated it in the mean time. OK.
+	}
+
+	return r
 }
 
 func (c *Channel) awaitMessages(ctx context.Context) {
@@ -130,11 +129,15 @@ func (c *Channel) awaitMessages(ctx context.Context) {
 				EventID:  data.EventID{Epoch: epoch, Seq: seq},
 				Contents: msg,
 			}
+			glog.V(1).Infof("constructed message %v", e)
 			func() {
 				c.Lock()
 				defer c.Unlock()
+
+					glog.V(1).Infof("saved message %v", e)
 				c.events = data.NewEvents(append(c.events, e))
 				if c.controller != nil {
+					glog.V(1).Infof("sending message %v", e)
 					c.controller.UpdateContents(e)
 				}
 			}()
@@ -154,14 +157,15 @@ func (c *Channel) Attach(m channel.ModelController) {
 	defer c.Unlock()
 	c.controller = m
 
-	c.controller.UpdateMeta(c.meta)
+	c.controller.UpdateMeta(c.GetMeta())
 	if len(c.events) > 0 {
 		c.controller.UpdateContents(c.events[len(c.events)-1])
 	}
 }
 
 func (c *Channel) Send(msg string) error {
-	return c.SendFor(c.meta.Connection.Nick, msg)
+	meta := c.GetMeta()
+	return c.SendFor(meta.Connection.Nick, msg)
 }
 
 func (c *Channel) SendFor(nick, msg string) error {
