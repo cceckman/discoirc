@@ -47,7 +47,7 @@ func testRenderer(e data.Event) tui.Widget {
 func makeView() channel.View {
 	v := view.New()
 	v.SetTopic("topic")
-	v.SetNick("<nick>")
+	v.SetNick("nick")
 	v.SetConnection("network: connected")
 	v.SetName("channel: joined")
 	v.SetMode("+v")

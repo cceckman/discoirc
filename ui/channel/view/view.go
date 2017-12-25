@@ -122,7 +122,12 @@ func New() channel.View {
 	rspacer := tui.NewLabel(" ")
 	rspacer.SetSizePolicy(tui.Expanding, tui.Preferred)
 
-	inputBar := tui.NewHBox(v.nick, v.input)
+	inputBar := tui.NewHBox(
+		tui.NewLabel("<"),
+		v.nick,
+		tui.NewLabel("> "),
+		v.input,
+	)
 
 	v.Box = tui.NewVBox(
 		&reversedBox{
