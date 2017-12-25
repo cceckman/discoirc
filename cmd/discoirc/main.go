@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/cceckman/discoirc/ui/widgets"
+	"github.com/golang/glog"
 	"github.com/marcusolsson/tui-go"
 )
 
@@ -45,8 +45,14 @@ func main() {
 
 		time.Sleep(2 * time.Second)
 		ui.Update(func() {
-			ui.SetKeybinding("Ctrl+Space", func() { toggle.Meta(ctx) })
-			ui.SetKeybinding("Shift+Space", func() { toggle.Messages(ctx) })
+			ui.SetKeybinding("Ctrl+Space", func() {
+				glog.V(1).Info("toggling metadata cycling")
+				toggle.Meta(ctx)
+			})
+			ui.SetKeybinding("Ctrl+A", func() {
+				glog.V(1).Info("toggling message cycling")
+				toggle.Messages(ctx)
+			})
 			ui.SetWidget(newRoot)
 			toggle.Messages(ctx)
 			toggle.Messages(ctx)
