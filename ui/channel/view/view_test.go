@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/cceckman/discoirc/data"
+	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	"github.com/cceckman/discoirc/ui/channel/view"
-	"github.com/cceckman/discoirc/ui/channel"
 
 	"github.com/marcusolsson/tui-go"
 )
@@ -73,6 +73,22 @@ func TestView_SimpleRender(t *testing.T) {
 	gotContents := surface.String()
 	if gotContents != wantContents40x10 {
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents40x10)
+	}
+}
+
+func TestView_UnicodeRender(t *testing.T) {
+	surface := tui.NewTestSurface(40, 10)
+	theme := tui.NewTheme()
+	theme.SetStyle("reversed", tui.Style{Reverse: tui.DecorationOn})
+	p := tui.NewPainter(surface, theme)
+
+	v := makeView()
+	v.SetConnection("Barnetic: ∅")
+	p.Repaint(v)
+
+	gotDecorations := surface.Decorations()
+	if gotDecorations != wantDecor40x10 {
+		t.Errorf("unexpected decorations: got = \n%s\nwant = \n%s", gotDecorations, wantDecor40x10)
 	}
 }
 
@@ -144,7 +160,7 @@ much talk'd of you;
 network: connected channel: joined +v   
 <nick>                                  
 `
-		gotContents := surface.String()
+	gotContents := surface.String()
 	if gotContents != wantContents {
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
 	}
@@ -164,7 +180,7 @@ func TestView_Input(t *testing.T) {
 		var ev tui.KeyEvent
 		if rn != '\n' {
 			ev = tui.KeyEvent{
-				Key: tui.KeyRune,
+				Key:  tui.KeyRune,
 				Rune: rn,
 			}
 		} else {
@@ -176,7 +192,7 @@ func TestView_Input(t *testing.T) {
 	}
 
 	if len(c.Received) != len(want[0:2]) {
-		t.Errorf("unexpected messages: got = %v want %v",  c.Received, want)
+		t.Errorf("unexpected messages: got = %v want %v", c.Received, want)
 	} else {
 		for i, msg := range want {
 			got := c.Received[i]
