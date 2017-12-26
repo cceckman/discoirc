@@ -104,6 +104,43 @@ Barnet:          barnacle
                          
 `,
 	},
+	{
+		test: "Removed first network",
+		setup: func() tui.Widget {
+			w := view.New()
+			w.GetNetwork("Charlienet").SetNick("charles")
+			w.GetNetwork("Barnet").SetNick("barnacle")
+			w.GetNetwork("AlphaNet").SetNick("edward")
+			w.RemoveNetwork("AlphaNet")
+			return w
+		},
+		want: `
+Barnet:          barnacle
+Charlienet:       charles
+                         
+                         
+                         
+`,
+	},
+	{
+		test: "Removed middle network",
+		setup: func() tui.Widget {
+			w := view.New()
+			w.GetNetwork("Charlienet").SetNick("charles")
+			w.GetNetwork("Barnet").SetNick("barnacle")
+			w.GetNetwork("AlphaNet").SetNick("edward")
+			w.RemoveNetwork("Barnet")
+			return w
+		},
+		want: `
+AlphaNet:          edward
+Charlienet:       charles
+                         
+                         
+                         
+`,
+	},
+
 
 }
 
