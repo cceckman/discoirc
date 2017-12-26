@@ -70,6 +70,41 @@ var clientTests = []struct {
                          
 `,
 	},
+	{
+		test: "ordered networks",
+		setup: func() tui.Widget {
+			w := view.New()
+			w.GetNetwork("Barnet").SetNick("barnacle")
+			w.GetNetwork("AlphaNet").SetNick("edward")
+			return w
+		},
+		want: `
+AlphaNet:          edward
+Barnet:          barnacle
+                         
+                         
+                         
+`,
+	},
+	{
+		test: "Removed last network",
+		setup: func() tui.Widget {
+			w := view.New()
+			w.GetNetwork("Charlienet").SetNick("charles")
+			w.GetNetwork("Barnet").SetNick("barnacle")
+			w.GetNetwork("AlphaNet").SetNick("edward")
+			w.RemoveNetwork("Charlienet")
+			return w
+		},
+		want: `
+AlphaNet:          edward
+Barnet:          barnacle
+                         
+                         
+                         
+`,
+	},
+
 }
 
 func TestClient(t *testing.T) {

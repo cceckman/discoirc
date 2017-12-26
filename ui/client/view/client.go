@@ -13,7 +13,7 @@ var _ client.ClientView = &Client{}
 
 func New() *Client {
 	return &Client{
-		Box: tui.NewVBox(),
+		Box: tui.NewVBox(tui.NewSpacer()),
 	}
 }
 
