@@ -51,7 +51,7 @@ Barnetic: …      discobot
 	}
 }
 
-var clientTests = []struct {
+var renderTests = []struct {
 	test  string
 	setup func() tui.Widget
 	want  string
@@ -63,6 +63,11 @@ var clientTests = []struct {
 			return w
 		},
 		want: `
+                         
+                         
+                         
+                         
+                         
                          
                          
                          
@@ -84,6 +89,11 @@ Barnet:          barnacle
                          
                          
                          
+                         
+                         
+                         
+                         
+                         
 `,
 	},
 	{
@@ -99,6 +109,11 @@ Barnet:          barnacle
 		want: `
 AlphaNet:          edward
 Barnet:          barnacle
+                         
+                         
+                         
+                         
+                         
                          
                          
                          
@@ -120,6 +135,11 @@ Charlienet:       charles
                          
                          
                          
+                         
+                         
+                         
+                         
+                         
 `,
 	},
 	{
@@ -138,16 +158,137 @@ Charlienet:       charles
                          
                          
                          
+                         
+                         
+                         
+                         
+                         
 `,
 	},
+	{
+		test: "empty channel",
+		setup: func() tui.Widget {
+			return tui.NewVBox(
+				view.NewChannel("#discoirc"),
+				tui.NewSpacer(),
+			)
+		},
+		want: `
+#discoirc                
+✉ ?                   ? ☺
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+`,
+	},
+	{
+		test: "populated channel",
+		setup: func() tui.Widget {
+			c := view.NewChannel("#discoirc")
+			c.SetMode("+foobar")
+			c.SetUnread(99)
+			c.SetMembers(48)
+			return tui.NewVBox(c, tui.NewSpacer())
+		},
+		want: `
+#discoirc         +foobar
+✉ 99                 48 ☺
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+`,
+	},
+	{
+		test: "networks with channels",
+		setup: func() tui.Widget {
+			c := view.New()
 
+			alpha := c.GetNetwork("AlphaNet")
+			alpha.SetNick("edward")
 
+			discoirc := alpha.GetChannel("#discoirc")
+			discoirc.SetMode("+foobar")
+			discoirc.SetUnread(99)
+			discoirc.SetMembers(48)
+
+			tuigo := alpha.GetChannel("#tui-go")
+			tuigo.SetMode("+v")
+			tuigo.SetUnread(0)
+			tuigo.SetMembers(3)
+
+			charlie := c.GetNetwork("Charlienet")
+			charlie.SetNick("charles")
+			charlie.SetConnection("✓")
+
+			badpuns := charlie.GetChannel("#badpuns")
+			badpuns.SetMode("+v")
+
+			return c
+		},
+		want: `
+AlphaNet:          edward
+#discoirc         +foobar
+✉ 99                 48 ☺
+#tui-go                +v
+✉ 0                   3 ☺
+Charlienet: ✓     charles
+#badpuns               +v
+✉ ?                   ? ☺
+                         
+                         
+`,
+	},
+{
+		test: "channel removal",
+		setup: func() tui.Widget {
+			c := view.New()
+
+			alpha := c.GetNetwork("AlphaNet")
+			alpha.SetNick("edward")
+
+			discoirc := alpha.GetChannel("#discoirc")
+			discoirc.SetMode("+foobar")
+			discoirc.SetUnread(99)
+			discoirc.SetMembers(48)
+
+			tuigo := alpha.GetChannel("#tui-go")
+			tuigo.SetMode("+v")
+			tuigo.SetUnread(0)
+			tuigo.SetMembers(3)
+
+			alpha.RemoveChannel("#tui-go")
+
+			return c
+		},
+		want: `
+AlphaNet:          edward
+#discoirc         +foobar
+✉ 99                 48 ☺
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+`,
+	},
 }
 
-func TestClient(t *testing.T) {
-	for _, tt := range clientTests {
+func TestRender(t *testing.T) {
+	for _, tt := range renderTests {
 		t.Run(tt.test, func(t *testing.T) {
-			surface := tui.NewTestSurface(25, 5)
+			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
 
@@ -156,7 +297,7 @@ func TestClient(t *testing.T) {
 
 			got := surface.String()
 			if got != tt.want {
-				t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", got, tt.want)
+				t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, tt.want)
 			}
 		})
 	}

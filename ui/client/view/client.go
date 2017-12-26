@@ -2,7 +2,6 @@ package view
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/marcusolsson/tui-go"
 
@@ -18,14 +17,11 @@ func New() *Client {
 }
 
 type Client struct {
-	sync.Mutex
 	*tui.Box
 	networks []*Network
 }
 
 func (c *Client) GetNetwork(name string) client.NetworkView {
-	c.Lock()
-	defer c.Unlock()
 	for _, v := range c.networks {
 		if v.name == name {
 			return v
@@ -34,7 +30,7 @@ func (c *Client) GetNetwork(name string) client.NetworkView {
 	// Add new network; insert into widget
 	n := NewNetwork(name)
 	c.networks = append(c.networks, n)
-	sort.Sort(byName(c.networks))
+	sort.Sort(netByName(c.networks))
 	for i, v := range c.networks {
 		if v.name == name {
 			c.Box.Insert(i, v)
@@ -45,8 +41,6 @@ func (c *Client) GetNetwork(name string) client.NetworkView {
 }
 
 func (c *Client) RemoveNetwork(name string) {
-	c.Lock()
-	defer c.Unlock()
 	for i, v := range c.networks {
 		if v.name == name {
 			c.networks = append(c.networks[0:i], c.networks[i+1:]...)
@@ -57,8 +51,8 @@ func (c *Client) RemoveNetwork(name string) {
 	return
 }
 
-type byName []*Network
+type netByName []*Network
 
-func (n byName) Len() int           { return len(n) }
-func (n byName) Less(i, j int) bool { return n[i].name < n[j].name }
-func (n byName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n netByName) Len() int           { return len(n) }
+func (n netByName) Less(i, j int) bool { return n[i].name < n[j].name }
+func (n netByName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }

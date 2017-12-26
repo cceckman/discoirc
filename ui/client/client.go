@@ -2,7 +2,6 @@
 package client
 
 import (
-
 	"github.com/marcusolsson/tui-go"
 )
 
@@ -26,17 +25,15 @@ type NetworkView interface {
 
 	// GetChannel gets the ChannelView of the channel with the given name.
 	// It creates a view if one does not already exist.
-	/*
-	   	GetChannel(string) ChannelView
-	   	 RemoveChannel(string)
-	   }
+	GetChannel(string) ChannelView
+	RemoveChannel(string)
+}
 
-	   // ChannelView is the view of a particular channel-in-network's state.
-	   type ChannelView interface {
-	   	Name() string
+// ChannelView is the view of a particular channel-in-network's state.
+type ChannelView interface {
+	Name() string
 
-	   	SetMode(string)
-	   	SetUnreadCount(string)
-	   	SetMembers(string)
-	*/
+	SetMode(string)
+	SetUnread(int)
+	SetMembers(int)
 }
