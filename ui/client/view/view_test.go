@@ -50,3 +50,42 @@ Barnetic: …      discobot
 		t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", gotContents, wantContents)
 	}
 }
+
+var clientTests = []struct {
+	test  string
+	setup func() tui.Widget
+	want  string
+}{
+	{
+		test: "blank client",
+		setup: func() tui.Widget {
+			w := view.New()
+			return w
+		},
+		want: `
+                         
+                         
+                         
+                         
+                         
+`,
+	},
+}
+
+func TestClient(t *testing.T) {
+	for _, tt := range clientTests {
+		t.Run(tt.test, func(t *testing.T) {
+			surface := tui.NewTestSurface(25, 5)
+			theme := tui.NewTheme()
+			p := tui.NewPainter(surface, theme)
+
+			w := tt.setup()
+			p.Repaint(w)
+
+			got := surface.String()
+			if got != tt.want {
+				t.Errorf("unexpected contents: got = \n%s\nwant = \n%s", got, tt.want)
+			}
+		})
+	}
+}

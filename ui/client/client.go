@@ -3,10 +3,13 @@ package client
 
 import (
 
+	"github.com/marcusolsson/tui-go"
 )
 
 // ClientView is a top-level view of the client state.
 type ClientView interface {
+	tui.Widget
+
 	// GetNetwork gets the NetworkView of the network with the given name.
 	// It creates the view if one does not already exist.
 	GetNetwork(string) NetworkView
