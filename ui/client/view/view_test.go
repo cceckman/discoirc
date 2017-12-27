@@ -388,12 +388,19 @@ type namedWidget interface {
 	Name() string
 }
 
+func TestNetwork_FocusNoNetworks(t *testing.T) {
+	c := view.New()
+	if c.FocusNext(c) != c {
+		t.Errorf("unexpected next element for root: got: %v want: %v", c.FocusNext(c), c)
+	}
+	// TODO Test FocusPrev
+}
+
 var FocusTests = []struct {
 	Test string
 	Case func() (*view.Client, []namedWidget)
 }{
 	// TODO:
-	// - no networks
 	// - channel wraparound
 	// - channel -> network
 	// - channel -> channel
@@ -405,6 +412,36 @@ var FocusTests = []struct {
 			kubernet := c.GetNetwork("kubernet")
 
 			return c, []namedWidget{gophernet, kubernet}
+		},
+	},
+	{
+		Test: "channel wraparound",
+		Case: func() (*view.Client, []namedWidget) {
+			c := view.New()
+			gophernet := c.GetNetwork("gophernet")
+			kubernet := c.GetNetwork("kubernet")
+			metallb := kubernet.GetChannel("#metallb")
+
+			return c, []namedWidget{gophernet, kubernet, metallb}
+		},
+	},
+	{
+		Test: "channel network traversal",
+		Case: func() (*view.Client, []namedWidget) {
+			c := view.New()
+			gophernet := c.GetNetwork("gophernet")
+			tuigo := gophernet.GetChannel("#tuigo")
+			discoirc := gophernet.GetChannel("#discoirc")
+			kubernet := c.GetNetwork("kubernet")
+			metallb := kubernet.GetChannel("#metallb")
+
+			return c, []namedWidget{
+				gophernet,
+				discoirc,
+				tuigo,
+				kubernet,
+				metallb,
+			}
 		},
 	},
 }
