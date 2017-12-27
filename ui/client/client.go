@@ -41,4 +41,3 @@ type ChannelView interface {
 
 	SetFocused(bool)
 }
-

@@ -13,17 +13,17 @@ var _ client.NetworkView = &Network{}
 // NewNetwork gives a new Network view.
 func NewNetwork(name string) *Network {
 	r := &Network{
-		name:           name,
-		selectorWidget: newSelector(),
-		nameWidget:     tui.NewLabel(name),
-		nickWidget:     tui.NewLabel(""),
-		connWidget:     tui.NewLabel(""),
-		chanWidget:     tui.NewVBox(),
+		name:            name,
+		indicatorWidget: newIndicator(),
+		nameWidget:      tui.NewLabel(name),
+		nickWidget:      tui.NewLabel(""),
+		connWidget:      tui.NewLabel(""),
+		chanWidget:      tui.NewVBox(),
 	}
 
 	r.Box = tui.NewVBox(
 		tui.NewHBox(
-			r.selectorWidget,
+			r.indicatorWidget,
 			r.nameWidget,
 			tui.NewLabel(": "),
 			r.connWidget,
@@ -44,19 +44,19 @@ type Network struct {
 
 	channels []*Channel
 
-	selectorWidget *selector
-	nameWidget     *tui.Label
-	nickWidget     *tui.Label
-	connWidget     *tui.Label
-	chanWidget     *tui.Box
+	indicatorWidget *indicator
+	nameWidget      *tui.Label
+	nickWidget      *tui.Label
+	connWidget      *tui.Label
+	chanWidget      *tui.Box
 }
 
 func (n *Network) SetFocused(focus bool) {
 	n.Box.SetFocused(true)
 	if focus {
-		n.selectorWidget.SetFill('>')
+		n.indicatorWidget.SetFill('>')
 	} else {
-		n.selectorWidget.SetFill(' ')
+		n.indicatorWidget.SetFill(' ')
 	}
 }
 

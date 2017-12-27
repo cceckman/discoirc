@@ -12,10 +12,10 @@ var _ client.ChannelView = &Channel{}
 
 func NewChannel(name string) *Channel {
 	r := &Channel{
-		name:           name,
-		selectorWidget: newSelector(),
-		nameWidget:     tui.NewLabel(name),
-		modeWidget:     tui.NewLabel(""),
+		name:            name,
+		nameWidget:      tui.NewLabel(name),
+		modeWidget:      tui.NewLabel(""),
+		indicatorWidget: newIndicator(),
 		// TODO: replace these with a "localized-compressed" widget,
 		// which shrinks e.g. "messages" / "msgs" / "✉" as space is needed,
 		// in an appropriately localized fashion.
@@ -24,7 +24,7 @@ func NewChannel(name string) *Channel {
 	}
 
 	r.Widget = tui.NewHBox(
-		r.selectorWidget,
+		r.indicatorWidget,
 		tui.NewVBox(
 			tui.NewHBox(r.nameWidget, tui.NewSpacer(), r.modeWidget),
 			tui.NewHBox(r.unreadWidget, tui.NewSpacer(), r.membersWidget),
@@ -38,18 +38,18 @@ type Channel struct {
 	tui.Widget
 	name string
 
-	selectorWidget *selector
-	nameWidget     *tui.Label
-	modeWidget     *tui.Label
-	unreadWidget   *tui.Label
-	membersWidget  *tui.Label
+	nameWidget      *tui.Label
+	modeWidget      *tui.Label
+	unreadWidget    *tui.Label
+	membersWidget   *tui.Label
+	indicatorWidget *indicator
 }
 
 func (c *Channel) SetFocused(focus bool) {
 	if focus {
-		c.selectorWidget.SetFill('|')
+		c.indicatorWidget.SetFill('|')
 	} else {
-		c.selectorWidget.SetFill(' ')
+		c.indicatorWidget.SetFill(' ')
 	}
 	c.Widget.SetFocused(true)
 }

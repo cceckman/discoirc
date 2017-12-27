@@ -6,20 +6,20 @@ import (
 	"image"
 )
 
-func newSelector() *selector {
-	r := &selector{}
+func newIndicator() *indicator {
+	r := &indicator{}
 	r.SetFill(' ')
 	return r
 }
 
-type selector struct {
+type indicator struct {
 	widgets.Filler
 }
 
-func (f *selector) SizeHint() image.Point {
+func (f *indicator) SizeHint() image.Point {
 	return image.Pt(1, 0)
 }
 
-func (f *selector) SizePolicy() (tui.SizePolicy, tui.SizePolicy) {
+func (f *indicator) SizePolicy() (tui.SizePolicy, tui.SizePolicy) {
 	return tui.Maximum, tui.Preferred
 }
