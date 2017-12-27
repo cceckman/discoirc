@@ -381,3 +381,64 @@ func TestRender(t *testing.T) {
 		})
 	}
 }
+
+// namedWidget is a widget with a name.
+type namedWidget interface {
+	tui.Widget
+	Name() string
+}
+
+var FocusTests = []struct {
+	Test string
+	Case func() (*view.Client, []namedWidget)
+}{
+	// TODO:
+	// - no networks
+	// - channel wraparound
+	// - channel -> network
+	// - channel -> channel
+	{
+		Test: "no channels",
+		Case: func() (*view.Client, []namedWidget) {
+			c := view.New()
+			gophernet := c.GetNetwork("gophernet")
+			kubernet := c.GetNetwork("kubernet")
+
+			return c, []namedWidget{gophernet, kubernet}
+		},
+	},
+}
+
+func TestNetwork_Focus(t *testing.T) {
+	for _, tt := range FocusTests {
+		tt := tt
+		t.Run(tt.Test, func(t *testing.T) {
+			c, want := tt.Case()
+
+			// Test root
+			rootNext := c.FocusNext(c)
+			if len(want) != 0 && rootNext != want[0] {
+				t.Errorf("unexpected next element for root: got: %v want: %q", rootNext, want[0].Name())
+			}
+			// TODO test FocusPrev on root
+
+			// Test ordering by walking through
+			for i := 0; i < len(want)-1; i++ {
+				got := c.FocusNext(want[i]).(namedWidget)
+				if got != want[i+1] {
+					t.Errorf("unexpected next element for %q: got: %q want: %q", want[i].Name(), got.Name(), want[i+1].Name())
+				}
+			}
+			// Test wrap-around
+			if len(want) > 0 {
+				last := want[len(want)-1]
+				got := c.FocusNext(last).(namedWidget)
+				if got != want[0] {
+					t.Errorf("unexpected next element for %q: got: %q want: %q", last.Name(), got.Name(), want[0].Name())
+				}
+			}
+
+			// TODO test FocusPrev on list
+		})
+	}
+}

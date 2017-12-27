@@ -57,6 +57,59 @@ func (c *Client) RemoveNetwork(name string) {
 	return
 }
 
+func (c *Client) FocusDefault() tui.Widget {
+	return c
+}
+
+func (c *Client) FocusNext(w tui.Widget) tui.Widget {
+	switch w := w.(type) {
+	case *Client:
+		// If we're the current selection, and we have networks to select,
+		// select the first network.
+		if w == c && len(c.networks) > 0 {
+			return c.networks[0]
+		}
+	case *Network:
+		n := w
+		// If the network knows what's next, use it.
+		if next := n.FocusNext(w); next != nil {
+			return next
+		}
+		// Otherwise, select the next network in the chain.
+		if next := c.nextNetwork(w); next != nil {
+			return next
+		}
+	case *Channel:
+		ch := w
+		// If the network knows what the next thing is, use it.
+		if next := ch.network.FocusNext(w); next != nil {
+			return next
+		}
+		// Otherwise, move on to the network after the channel's.
+		if next := c.nextNetwork(ch.network); next != nil {
+			return next
+		}
+	}
+	// Final default: the Client itself.
+	return c.FocusDefault()
+}
+
+// nextNetwork picks the next network in the list, wrapping around to the top.
+func (c *Client) nextNetwork(w *Network) *Network {
+	for i, n := range c.networks {
+		if n == w {
+			if i+1 < len(c.networks) {
+				return c.networks[i+1]
+			}
+		}
+	}
+	// Roll around to top network.
+	if len(c.networks) > 0 {
+		return c.networks[0]
+	}
+	return nil
+}
+
 type netByName []*Network
 
 func (n netByName) Len() int           { return len(n) }

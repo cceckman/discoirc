@@ -102,6 +102,57 @@ func (n *Network) RemoveChannel(name string) {
 	return
 }
 
+func (n *Network) FocusDefault() tui.Widget {
+	return nil
+}
+
+func (n *Network) FocusNext(w tui.Widget) tui.Widget {
+	switch w := w.(type) {
+	case *Network:
+		// If this Network is selected, and we have a *Channel,
+		// return the first *Channel.
+		if w == n && len(n.channels) > 0 {
+			return n.channels[0]
+		}
+	case *Channel:
+		// If one of these Channels is selected,
+		// return the next one.
+		for i, c := range n.channels {
+			if w == c && i+1 < len(n.channels) {
+				return n.channels[i+1]
+			}
+		}
+	}
+	// We don't know what to do.
+	return nil
+}
+
+func (n *Network) FocusPrev(w tui.Widget) tui.Widget {
+	switch w := w.(type) {
+	case *Network:
+		// Coming from another network; return our last channel.
+		if w != n {
+			if len(n.channels) > 0 {
+				return n.channels[len(n.channels)-1]
+			}
+			return n
+		}
+	case *Channel:
+		// Coming from our first channel; return network.
+		if w == n.channels[0] {
+			return n
+		}
+		// Coming from another of our channels;
+		for i := len(n.channels) - 1; i > 0; i-- {
+			if n.channels[i] == w {
+				return n.channels[i-1]
+			}
+		}
+	}
+	// We don't know what to do.
+	return nil
+}
+
 type chanByName []*Channel
 
 func (n chanByName) Len() int           { return len(n) }
