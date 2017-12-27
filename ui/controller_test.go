@@ -6,11 +6,12 @@ import (
 
 	"github.com/cceckman/discoirc/ui"
 	"github.com/cceckman/discoirc/ui/channel"
+	"github.com/cceckman/discoirc/ui/client"
 	"github.com/cceckman/discoirc/ui/widgets"
 	discomocks "github.com/cceckman/discoirc/ui/mocks"
 )
 
-func TestActivation(t *testing.T) {
+func TestActivateChannel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -26,6 +27,26 @@ func TestActivation(t *testing.T) {
 	u.RunSync(func() {
 		if _, ok := u.Root.(channel.View); !ok {
 			t.Errorf("unexpected view at UI root: got: %+v want: controller.View", u.Root)
+		}
+	})
+}
+
+func TestActivateClient(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	u := discomocks.NewUI()
+	u.Update(func() {
+		u.SetWidget(widgets.NewSplash())
+	})
+
+	ctl := ui.New(ctx, u)
+
+	u.Add(1) // Expect one update to change root, keybindings, etc.
+	ctl.ActivateClient()
+	u.RunSync(func() {
+		if _, ok := u.Root.(client.View); !ok {
+			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
 		}
 	})
 }
