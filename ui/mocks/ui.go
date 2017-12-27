@@ -2,7 +2,29 @@ package mocks
 
 import (
 	"sync"
+
+	"github.com/marcusolsson/tui-go"
 )
+
+// UI implements a subset of the tui.UI functionality for use in tests.
+type UI struct {
+	UpdateCounter
+
+	root tui.Widget
+}
+
+func (ui *UI) SetWidget(w tui.Widget) {
+	ui.root = w
+}
+
+// GetWidget safely gets the root Widget, after all pending updates have run.
+func (ui *UI) GetWidget() tui.Widget {
+	r := make(chan tui.Widget)
+	ui.RunSync(func() {
+		r <-ui.root
+	})
+	return <-r
+}
 
 // UpdateCounter is a controller.UIUpdater that can queues, and can synchronize against, outstanding requests.
 type UpdateCounter struct {
