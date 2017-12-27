@@ -16,7 +16,7 @@ func TestNetwork_NoContents(t *testing.T) {
 	p.Repaint(w)
 
 	wantContents := `
-Barnetic:           
+ Barnetic:          
                     
                     
                     
@@ -39,7 +39,7 @@ func TestNetwork_NoChannels(t *testing.T) {
 	p.Repaint(w)
 
 	wantContents := `
-Barnetic: …      discobot
+ Barnetic: …     discobot
                          
                          
                          
@@ -84,8 +84,8 @@ var renderTests = []struct {
 			return w
 		},
 		want: `
-AlphaNet:          edward
-Barnet:          barnacle
+ AlphaNet:         edward
+ Barnet:         barnacle
                          
                          
                          
@@ -107,8 +107,8 @@ Barnet:          barnacle
 			return w
 		},
 		want: `
-AlphaNet:          edward
-Barnet:          barnacle
+ AlphaNet:         edward
+ Barnet:         barnacle
                          
                          
                          
@@ -130,8 +130,8 @@ Barnet:          barnacle
 			return w
 		},
 		want: `
-Barnet:          barnacle
-Charlienet:       charles
+ Barnet:         barnacle
+ Charlienet:      charles
                          
                          
                          
@@ -153,8 +153,8 @@ Charlienet:       charles
 			return w
 		},
 		want: `
-AlphaNet:          edward
-Charlienet:       charles
+ AlphaNet:         edward
+ Charlienet:      charles
                          
                          
                          
@@ -174,8 +174,8 @@ Charlienet:       charles
 			)
 		},
 		want: `
-#discoirc                
-✉ ?                   ? ☺
+ #discoirc               
+ ✉ ?                  ? ☺
                          
                          
                          
@@ -196,8 +196,8 @@ Charlienet:       charles
 			return tui.NewVBox(c, tui.NewSpacer())
 		},
 		want: `
-#discoirc         +foobar
-✉ 99                 48 ☺
+ #discoirc        +foobar
+ ✉ 99                48 ☺
                          
                          
                          
@@ -236,19 +236,19 @@ Charlienet:       charles
 			return c
 		},
 		want: `
-AlphaNet:          edward
-#discoirc         +foobar
-✉ 99                 48 ☺
-#tui-go                +v
-✉ 0                   3 ☺
-Charlienet: ✓     charles
-#badpuns               +v
-✉ ?                   ? ☺
+ AlphaNet:         edward
+ #discoirc        +foobar
+ ✉ 99                48 ☺
+ #tui-go               +v
+ ✉ 0                  3 ☺
+ Charlienet: ✓    charles
+ #badpuns              +v
+ ✉ ?                  ? ☺
                          
                          
 `,
 	},
-{
+	{
 		test: "channel removal",
 		setup: func() tui.Widget {
 			c := view.New()
@@ -271,12 +271,91 @@ Charlienet: ✓     charles
 			return c
 		},
 		want: `
-AlphaNet:          edward
-#discoirc         +foobar
-✉ 99                 48 ☺
+ AlphaNet:         edward
+ #discoirc        +foobar
+ ✉ 99                48 ☺
                          
                          
                          
+                         
+                         
+                         
+                         
+`,
+	},
+	{
+		test: "selected channel, deselected channel",
+		setup: func() tui.Widget {
+			c := view.New()
+
+			alpha := c.GetNetwork("AlphaNet")
+			alpha.SetNick("edward")
+
+			discoirc := alpha.GetChannel("#discoirc")
+			discoirc.SetMode("+foobar")
+			discoirc.SetUnread(99)
+			discoirc.SetMembers(48)
+
+			charlie := c.GetNetwork("Charlienet")
+			charlie.SetNick("charles")
+			charlie.SetConnection("✓")
+
+			badpuns := charlie.GetChannel("#badpuns")
+			badpuns.SetMode("+v")
+
+			badpuns.SetFocused(true)
+			discoirc.SetFocused(true)
+			discoirc.SetFocused(false)
+
+			return c
+		},
+		want: `
+ AlphaNet:         edward
+ #discoirc        +foobar
+ ✉ 99                48 ☺
+ Charlienet: ✓    charles
+|#badpuns              +v
+|✉ ?                  ? ☺
+                         
+                         
+                         
+                         
+`,
+	},
+
+	{
+		test: "selected network, deselected network",
+		setup: func() tui.Widget {
+			c := view.New()
+
+			alpha := c.GetNetwork("AlphaNet")
+			alpha.SetNick("edward")
+
+			discoirc := alpha.GetChannel("#discoirc")
+			discoirc.SetMode("+foobar")
+			discoirc.SetUnread(99)
+			discoirc.SetMembers(48)
+
+			charlie := c.GetNetwork("Charlienet")
+			charlie.SetNick("charles")
+			charlie.SetConnection("✓")
+
+			badpuns := charlie.GetChannel("#badpuns")
+			badpuns.SetMode("+v")
+
+			alpha.SetFocused(true)
+			charlie.SetFocused(true)
+			charlie.SetFocused(false)
+
+			return c
+		},
+		want: `
+>AlphaNet:         edward
+ #discoirc        +foobar
+ ✉ 99                48 ☺
+ Charlienet: ✓    charles
+ #badpuns              +v
+ ✉ ?                  ? ☺
                          
                          
                          

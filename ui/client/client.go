@@ -27,6 +27,8 @@ type NetworkView interface {
 	// It creates a view if one does not already exist.
 	GetChannel(string) ChannelView
 	RemoveChannel(string)
+
+	SetFocused(bool)
 }
 
 // ChannelView is the view of a particular channel-in-network's state.
@@ -36,5 +38,7 @@ type ChannelView interface {
 	SetMode(string)
 	SetUnread(int)
 	SetMembers(int)
+
+	SetFocused(bool)
 }
 
