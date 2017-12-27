@@ -1,14 +1,9 @@
 package mocks
 
 
-// ControllerUI is the functionality that a Controller
-type ControllerUI interface {
-	Update(func())
-}
-
-func NewController(ui ControllerUI) *Controller {
+func NewController() *Controller {
 	return &Controller{
-		UI: ui,
+		UI: NewUI(),
 	}
 }
 
@@ -25,7 +20,7 @@ const (
 // Controller is mock global-level controller.
 // Operations on it should be run within its UI.
 type Controller struct {
-	UI ControllerUI
+	*UI
 
 	V ActiveView
 	Network string

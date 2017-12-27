@@ -6,23 +6,29 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
+	"github.com/marcusolsson/tui-go"
+
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
-	"github.com/marcusolsson/tui-go"
 )
 
-// UIUpdater is a subset of the tui.UI interface- just the bit that update a UI.
-type UIUpdater interface {
+// UIControl is the interface that a higher-level controller must provide.
+type UIControl interface {
+	// Update runs the provided closure in the UI event loop.
 	Update(func())
-}
 
-var _ UIUpdater = tui.UI(nil)
+	// SetWidget sets the provided widget as the root of the UI.
+	SetWidget(tui.Widget)
+
+	// ActivateClient switches the global view to the Client view.
+	ActivateClient()
+}
 
 var _ channel.Controller = &C{}
 
 // C implements a channel Controller.
 type C struct {
-	ui    UIUpdater
+	ui    UIControl
 	view  channel.View
 	model channel.Model
 
@@ -34,7 +40,7 @@ type C struct {
 }
 
 // New returns a new Controller.
-func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) channel.Controller {
+func New(ctx context.Context, ui UIControl, v channel.View, m channel.Model) channel.Controller {
 	c := &C{
 		ui:         ui,
 		view:       v,
@@ -55,6 +61,8 @@ func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) cha
 	if m != nil {
 		m.Attach(c)
 	}
+
+	c.ui.SetWidget(c.view)
 
 	return c
 }
