@@ -8,6 +8,7 @@ import (
 // View is a top-level view of the client state.
 type View interface {
 	tui.Widget
+	tui.FocusChain
 
 	// GetNetwork gets the NetworkView of the network with the given name.
 	// It creates the view if one does not already exist.

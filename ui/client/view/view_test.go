@@ -451,13 +451,20 @@ func TestNetwork_Focus(t *testing.T) {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
 			c, want := tt.Case()
+			if len(want) == 0 {
+				t.Fatalf("test needs at least one element in wanted list")
+			}
+			last := want[len(want)-1]
 
 			// Test root
 			rootNext := c.FocusNext(c)
-			if len(want) != 0 && rootNext != want[0] {
+			rootPrev := c.FocusPrev(c)
+			if rootNext != want[0] {
 				t.Errorf("unexpected next element for root: got: %v want: %q", rootNext, want[0].Name())
 			}
-			// TODO test FocusPrev on root
+			if rootPrev != last {
+				t.Errorf("unexpected previous element for root: got: %v want: %q", rootPrev, last.Name())
+			}
 
 			// Test ordering by walking through
 			for i := 0; i < len(want)-1; i++ {
@@ -467,15 +474,21 @@ func TestNetwork_Focus(t *testing.T) {
 				}
 			}
 			// Test wrap-around
-			if len(want) > 0 {
-				last := want[len(want)-1]
-				got := c.FocusNext(last).(namedWidget)
-				if got != want[0] {
-					t.Errorf("unexpected next element for %q: got: %q want: %q", last.Name(), got.Name(), want[0].Name())
+			got := c.FocusNext(last).(namedWidget)
+			if got != want[0] {
+				t.Errorf("unexpected next element for %q: got: %q want: %q", last.Name(), got.Name(), want[0].Name())
+				}
+
+			for i := len(want)-1; i > 0; i-- {
+				got := c.FocusPrev(want[i]).(namedWidget)
+				if got != want[i-1] {
+					t.Errorf("unexpected next element for %q: got: %q want: %q", want[i].Name(), got.Name(), want[i-1].Name())
 				}
 			}
-
-			// TODO test FocusPrev on list
+			got = c.FocusPrev(want[0]).(namedWidget)
+			if got != last {
+				t.Errorf("unexpected next element for %q: got: %q want: %q", want[0].Name(), got.Name(), last.Name())
+			}
 		})
 	}
 }

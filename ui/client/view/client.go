@@ -72,7 +72,7 @@ func (c *Client) FocusNext(w tui.Widget) tui.Widget {
 	case *Network:
 		n := w
 		// If the network knows what's next, use it.
-		if next := n.FocusNext(w); next != nil {
+		if next := n.focusNext(w); next != nil {
 			return next
 		}
 		// Otherwise, select the next network in the chain.
@@ -82,7 +82,7 @@ func (c *Client) FocusNext(w tui.Widget) tui.Widget {
 	case *Channel:
 		ch := w
 		// If the network knows what the next thing is, use it.
-		if next := ch.network.FocusNext(w); next != nil {
+		if next := ch.network.focusNext(w); next != nil {
 			return next
 		}
 		// Otherwise, move on to the network after the channel's.
@@ -92,6 +92,47 @@ func (c *Client) FocusNext(w tui.Widget) tui.Widget {
 	}
 	// Final default: the Client itself.
 	return c.FocusDefault()
+}
+
+func (c *Client) FocusPrev(w tui.Widget) tui.Widget {
+	switch w := w.(type) {
+	case *Client:
+		// Select the last network.
+		if len(c.networks) > 0 {
+			next := c.networks[len(c.networks)-1].focusPrev(w)
+			if next != nil {
+				return next
+			}
+		}
+	case *Network:
+		// The network won't know what's previous to it;
+		// it's either another channel, or another network.
+		for i, n := range c.networks {
+			if n == w  && i-1 >= 0{
+				next := c.networks[i-1].focusPrev(w)
+				if next != nil {
+					return next
+				}
+			}
+		}
+		// No match? Wrap around to last network.
+		if len(c.networks) > 0 {
+			next := c.networks[len(c.networks)-1].focusPrev(w)
+			if next != nil {
+				return next
+			}
+		}
+	case *Channel:
+		ch := w
+		// The network should know what to do here - either another
+		// channel, or the network itself.
+		if next := ch.network.focusPrev(w); next != nil {
+			return next
+		}
+	}
+	// Final default: the Client itself.
+	return c.FocusDefault()
+
 }
 
 // nextNetwork picks the next network in the list, wrapping around to the top.

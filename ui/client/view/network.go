@@ -102,11 +102,12 @@ func (n *Network) RemoveChannel(name string) {
 	return
 }
 
-func (n *Network) FocusDefault() tui.Widget {
-	return nil
-}
-
-func (n *Network) FocusNext(w tui.Widget) tui.Widget {
+// focusNext returns the next Widget to focus on, or nil if the next Widget
+// is not part of this Network.
+//
+// It is intentionally a package-private API; Client implements FocusChain,
+// but a Network itself isn't sufficient to.
+func (n *Network) focusNext(w tui.Widget) tui.Widget {
 	switch w := w.(type) {
 	case *Network:
 		// If this Network is selected, and we have a *Channel,
@@ -127,29 +128,35 @@ func (n *Network) FocusNext(w tui.Widget) tui.Widget {
 	return nil
 }
 
-func (n *Network) FocusPrev(w tui.Widget) tui.Widget {
+// focusPrev returns the previous Widget to focus on, or nil if the previous
+// Widget is not part of this Network.
+//
+// It is intentionally a package-private API; Client implements FocusChain,
+// but a Network itself isn't sufficient to.
+func (n *Network) focusPrev(w tui.Widget) tui.Widget {
 	switch w := w.(type) {
-	case *Network:
-		// Coming from another network; return our last channel.
-		if w != n {
-			if len(n.channels) > 0 {
-				return n.channels[len(n.channels)-1]
-			}
-			return n
-		}
 	case *Channel:
 		// Coming from our first channel; return network.
 		if w == n.channels[0] {
 			return n
 		}
 		// Coming from another of our channels;
+		// return the prior channel.
 		for i := len(n.channels) - 1; i > 0; i-- {
 			if n.channels[i] == w {
 				return n.channels[i-1]
 			}
 		}
+		// Hrm, shouldn't arrive here.
+	default:
+		// Return our last channel, if any, or the network itself.
+		if len(n.channels) > 0 {
+			return n.channels[len(n.channels)-1]
+		}
+		return n
 	}
-	// We don't know what to do.
+
+	// We don't know what to do. Defer to upper level.
 	return nil
 }
 
