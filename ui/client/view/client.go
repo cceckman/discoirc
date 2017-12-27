@@ -8,16 +8,22 @@ import (
 	"github.com/cceckman/discoirc/ui/client"
 )
 
-var _ client.ClientView = &Client{}
+var _ client.View = &Client{}
 
 func New() *Client {
-	return &Client{
-		Box: tui.NewVBox(tui.NewSpacer()),
+	c := &Client{
+		networksBox: tui.NewVBox(tui.NewSpacer()),
 	}
+
+	c.Widget = c.networksBox
+
+	return c
 }
 
 type Client struct {
-	*tui.Box
+	tui.Widget
+	networksBox *tui.Box
+
 	networks []*Network
 }
 
@@ -33,7 +39,7 @@ func (c *Client) GetNetwork(name string) client.NetworkView {
 	sort.Sort(netByName(c.networks))
 	for i, v := range c.networks {
 		if v.name == name {
-			c.Box.Insert(i, v)
+			c.networksBox.Insert(i, v)
 			return v
 		}
 	}
@@ -44,7 +50,7 @@ func (c *Client) RemoveNetwork(name string) {
 	for i, v := range c.networks {
 		if v.name == name {
 			c.networks = append(c.networks[0:i], c.networks[i+1:]...)
-			c.Box.Remove(i)
+			c.networksBox.Remove(i)
 			return
 		}
 	}

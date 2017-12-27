@@ -5,8 +5,8 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-// ClientView is a top-level view of the client state.
-type ClientView interface {
+// View is a top-level view of the client state.
+type View interface {
 	tui.Widget
 
 	// GetNetwork gets the NetworkView of the network with the given name.
@@ -37,3 +37,4 @@ type ChannelView interface {
 	SetUnread(int)
 	SetMembers(int)
 }
+
