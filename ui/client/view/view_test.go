@@ -169,7 +169,7 @@ var renderTests = []struct {
 		test: "empty channel",
 		setup: func() tui.Widget {
 			return tui.NewVBox(
-				view.NewChannel("#discoirc"),
+				view.NewChannel(nil, "#discoirc"),
 				tui.NewSpacer(),
 			)
 		},
@@ -189,7 +189,7 @@ var renderTests = []struct {
 	{
 		test: "populated channel",
 		setup: func() tui.Widget {
-			c := view.NewChannel("#discoirc")
+			c := view.NewChannel(nil, "#discoirc")
 			c.SetMode("+foobar")
 			c.SetUnread(99)
 			c.SetMembers(48)

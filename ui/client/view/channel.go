@@ -10,12 +10,13 @@ import (
 
 var _ client.ChannelView = &Channel{}
 
-func NewChannel(name string) *Channel {
+func NewChannel(network *Network, name string) *Channel {
 	r := &Channel{
+		network:         network,
 		name:            name,
+		indicatorWidget: newIndicator(),
 		nameWidget:      tui.NewLabel(name),
 		modeWidget:      tui.NewLabel(""),
-		indicatorWidget: newIndicator(),
 		// TODO: replace these with a "localized-compressed" widget,
 		// which shrinks e.g. "messages" / "msgs" / "✉" as space is needed,
 		// in an appropriately localized fashion.
@@ -36,13 +37,14 @@ func NewChannel(name string) *Channel {
 
 type Channel struct {
 	tui.Widget
-	name string
+	network *Network
+	name    string
 
+	indicatorWidget *indicator
 	nameWidget      *tui.Label
 	modeWidget      *tui.Label
 	unreadWidget    *tui.Label
 	membersWidget   *tui.Label
-	indicatorWidget *indicator
 }
 
 func (c *Channel) SetFocused(focus bool) {

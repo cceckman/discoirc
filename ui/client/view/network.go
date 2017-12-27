@@ -79,7 +79,7 @@ func (n *Network) GetChannel(name string) client.ChannelView {
 		}
 	}
 	// Add new network; insert into widget
-	c := NewChannel(name)
+	c := NewChannel(n, name)
 	n.channels = append(n.channels, c)
 	sort.Sort(chanByName(n.channels))
 	for i, v := range n.channels {
