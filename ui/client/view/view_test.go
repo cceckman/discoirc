@@ -3,10 +3,11 @@ package view_test
 import (
 	"testing"
 
-	"github.com/cceckman/discoirc/ui/client"
-	"github.com/cceckman/discoirc/ui/client/mocks"
-	"github.com/cceckman/discoirc/ui/client/view"
 	"github.com/marcusolsson/tui-go"
+
+	"github.com/cceckman/discoirc/ui/client"
+	"github.com/cceckman/discoirc/ui/client/view"
+	discomocks "github.com/cceckman/discoirc/ui/mocks"
 )
 
 func TestNetwork_NoContents(t *testing.T) {
@@ -493,10 +494,11 @@ func TestNetwork_Focus(t *testing.T) {
 
 // ActivationTests test response to keypress events.
 var ActivationTests = []struct {
-	Test        string
-	Setup       func() client.View
-	Input       []tui.KeyEvent
-	Activations []mocks.Activation
+	Test              string
+	Setup             func() client.View
+	Input             []tui.KeyEvent
+	WantView          discomocks.ActiveView
+	WantNet, WantChan string
 }{
 	{
 		Test: "hit Down, activate",
@@ -512,9 +514,8 @@ var ActivationTests = []struct {
 			tui.KeyEvent{Key: tui.KeyDown},
 			tui.KeyEvent{Key: tui.KeyEnter},
 		},
-		Activations: []mocks.Activation{
-			mocks.Activation{Network: "gonet", Channel: "#discoirc"},
-		},
+		WantView: discomocks.ChannelView,
+		WantNet:  "gonet", WantChan: "#discoirc",
 	},
 	{
 		Test: "hit J, activate",
@@ -530,9 +531,8 @@ var ActivationTests = []struct {
 			tui.KeyEvent{Key: tui.KeyRune, Rune: 'j'},
 			tui.KeyEvent{Key: tui.KeyEnter},
 		},
-		Activations: []mocks.Activation{
-			mocks.Activation{Network: "gonet", Channel: "#discoirc"},
-		},
+		WantView: discomocks.ChannelView,
+		WantNet:  "gonet", WantChan: "#discoirc",
 	},
 	{
 		Test: "hit K, activate",
@@ -547,9 +547,8 @@ var ActivationTests = []struct {
 			tui.KeyEvent{Key: tui.KeyRune, Rune: 'k'},
 			tui.KeyEvent{Key: tui.KeyEnter},
 		},
-		Activations: []mocks.Activation{
-			mocks.Activation{Network: "zetanet", Channel: "#bar"},
-		},
+		WantView: discomocks.ChannelView,
+		WantNet:  "zetanet", WantChan: "#bar",
 	},
 	{
 		Test: "hit Up, activate",
@@ -564,13 +563,12 @@ var ActivationTests = []struct {
 			tui.KeyEvent{Key: tui.KeyUp},
 			tui.KeyEvent{Key: tui.KeyEnter},
 		},
-		Activations: []mocks.Activation{
-			mocks.Activation{Network: "zetanet", Channel: "#bar"},
-		},
+		WantView: discomocks.ChannelView,
+		WantNet:  "zetanet", WantChan: "#bar",
 	},
 
 	{
-		Test: "no activation on root or network",
+		Test: "no activation on root",
 		Setup: func() client.View {
 			root := view.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
@@ -580,10 +578,24 @@ var ActivationTests = []struct {
 		},
 		Input: []tui.KeyEvent{
 			tui.KeyEvent{Key: tui.KeyEnter},
-			tui.KeyEvent{Key: tui.KeyDown },
+		},
+		WantView: discomocks.ClientView,
+	},
+
+	{
+		Test: "no activation on network",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyDown},
 			tui.KeyEvent{Key: tui.KeyEnter},
 		},
-		Activations: []mocks.Activation{},
+		WantView: discomocks.ClientView,
 	},
 }
 
@@ -591,20 +603,34 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 	for _, tt := range ActivationTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
-			ctl := &mocks.Controller{}
+			ui := discomocks.NewController()
+			ui.V = discomocks.ClientView
+
 			root := tt.Setup()
-			root.Attach(ctl)
+			root.Attach(ui)
+			ui.SetWidget(root)
+
+			if tt.WantView != discomocks.ClientView {
+				// Expect an Update
+				ui.Add(1)
+			}
 			for _, ev := range tt.Input {
 				root.OnKeyEvent(ev)
 			}
-			if len(ctl.Activations) != len(tt.Activations) {
-				t.Fatalf("unexpected activations: got: %v want: %v", ctl.Activations, tt.Activations)
-			}
-			for i, _ := range tt.Activations {
-				if ctl.Activations[i] != tt.Activations[i] {
-					t.Errorf("unexpected activations: got: %v want: %v", ctl.Activations[i], tt.Activations[i])
+
+			ui.RunSync(func(){
+				if ui.V != tt.WantView {
+					t.Errorf("unexpected active view: got: %v want: %v", ui.V, tt.WantView)
 				}
-			}
+
+				if tt.WantNet != "" && ui.Network != tt.WantNet {
+					t.Errorf("unexpected active network: got: %q want: %q", ui.Network, tt.WantNet)
+				}
+
+				if tt.WantChan != "" && ui.Channel != tt.WantChan {
+					t.Errorf("unexpected active channel: got: %q want: %q", ui.Channel, tt.WantChan)
+				}
+			})
 
 		})
 	}
