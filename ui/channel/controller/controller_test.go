@@ -7,13 +7,13 @@ import (
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/controller"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
-	_ "github.com/marcusolsson/tui-go"
+	discomocks "github.com/cceckman/discoirc/ui/mocks"
 
 	"testing"
 )
 
 func TestController_ResizeNoEvents(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewUpdateCounter()
 
 	m := mocks.NewModel()
 	v := &mocks.View{}
@@ -39,7 +39,7 @@ func TestController_ResizeNoEvents(t *testing.T) {
 }
 
 func TestController_ResizeWithEvents(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewUpdateCounter()
 
 	m := mocks.NewModel()
 	m.Events = mocks.Events
@@ -73,7 +73,7 @@ func TestController_ResizeWithEvents(t *testing.T) {
 }
 
 func TestController_ReceiveEvent(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewUpdateCounter()
 
 	m := mocks.NewModel()
 	m.Events = mocks.Events
@@ -107,7 +107,7 @@ func TestController_ReceiveEvent(t *testing.T) {
 }
 
 func TestController_UpdateMeta(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewUpdateCounter()
 
 	m := mocks.NewModel()
 	m.Channel = data.Channel{
@@ -151,7 +151,7 @@ func TestController_UpdateMeta(t *testing.T) {
 }
 
 func TestController_Send(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewUpdateCounter()
 
 	m := mocks.NewModel()
 	v := &mocks.View{}
