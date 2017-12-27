@@ -22,6 +22,11 @@ type Filler struct {
 	fill rune
 }
 
+// SetFill sets the character used for filling.
+func (f *Filler) SetFill(fill rune) {
+	f.fill = fill
+}
+
 func (f *Filler) Draw(p *tui.Painter) {
 	sz := f.Size()
 	for j := 0; j < sz.Y; j++ {

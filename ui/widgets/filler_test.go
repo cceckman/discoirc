@@ -58,6 +58,21 @@ text
           
 `,
 	},
+	{ Test: "Change fill rune",
+		Setup: func() tui.Widget {
+			f := widgets.NewFiller('?')
+			f.SetFill('!')
+			return f
+		},
+		WantContents: `
+!!!!!!!!!!
+!!!!!!!!!!
+!!!!!!!!!!
+!!!!!!!!!!
+!!!!!!!!!!
+`,
+
+	},
 }
 
 func TestFoo(t *testing.T) {
