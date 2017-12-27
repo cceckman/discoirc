@@ -40,6 +40,7 @@ type Channel struct {
 	network *Network
 	name    string
 
+	focus           bool
 	indicatorWidget *indicator
 	nameWidget      *tui.Label
 	modeWidget      *tui.Label
@@ -48,12 +49,16 @@ type Channel struct {
 }
 
 func (c *Channel) SetFocused(focus bool) {
+	c.focus = focus
 	if focus {
 		c.indicatorWidget.SetFill('|')
 	} else {
 		c.indicatorWidget.SetFill(' ')
 	}
-	c.Widget.SetFocused(true)
+}
+
+func (c *Channel) IsFocused() bool {
+	return c.focus
 }
 
 func (c *Channel) SetMode(m string) {
@@ -70,4 +75,15 @@ func (c *Channel) SetMembers(n int) {
 
 func (c *Channel) Name() string {
 	return c.name
+}
+
+func (c *Channel) OnKeyEvent(ev tui.KeyEvent) {
+	if !c.focus {
+		return
+	}
+
+	ctl := c.network.client.controller
+	if ev.Key == tui.KeyEnter && ctl != nil {
+		ctl.ActivateChannel(c.network.name, c.name)
+	}
 }

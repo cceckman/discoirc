@@ -16,6 +16,7 @@ func New() *Client {
 	}
 
 	c.Widget = c.networksBox
+	c.focused = c
 
 	return c
 }
@@ -25,6 +26,48 @@ type Client struct {
 	networksBox *tui.Box
 
 	networks []*Network
+	controller client.UIController
+	focused tui.Widget
+}
+
+func (c *Client) Attach(ctl client.UIController) {
+	c.controller = ctl
+}
+
+func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
+	switch ev.Key {
+	case tui.KeyDown:
+		c.moveFocus(true)
+		return
+	case tui.KeyUp:
+		c.moveFocus(false)
+	case tui.KeyRune:
+		switch ev.Rune{
+		case 'j':
+			c.moveFocus(true)
+		case 'k':
+			c.moveFocus(false)
+		default:
+			c.Widget.OnKeyEvent(ev)
+		}
+	default:
+		c.Widget.OnKeyEvent(ev)
+	}
+}
+
+func (c *Client) moveFocus(fwd bool) {
+	c.focused.SetFocused(false)
+	var next tui.Widget
+	if fwd {
+		next = c.FocusNext(c.focused)
+	} else {
+		next = c.FocusPrev(c.focused)
+	}
+	if next == nil {
+		next = c.FocusDefault()
+	}
+	c.focused = next
+	c.focused.SetFocused(true)
 }
 
 func (c *Client) GetNetwork(name string) client.NetworkView {
@@ -34,7 +77,7 @@ func (c *Client) GetNetwork(name string) client.NetworkView {
 		}
 	}
 	// Add new network; insert into widget
-	n := NewNetwork(name)
+	n := NewNetwork(c, name)
 	c.networks = append(c.networks, n)
 	sort.Sort(netByName(c.networks))
 	for i, v := range c.networks {

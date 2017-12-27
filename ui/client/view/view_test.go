@@ -3,12 +3,14 @@ package view_test
 import (
 	"testing"
 
+	"github.com/cceckman/discoirc/ui/client"
+	"github.com/cceckman/discoirc/ui/client/mocks"
 	"github.com/cceckman/discoirc/ui/client/view"
 	"github.com/marcusolsson/tui-go"
 )
 
 func TestNetwork_NoContents(t *testing.T) {
-	w := view.NewNetwork("Barnetic")
+	w := view.NewNetwork(nil, "Barnetic")
 
 	surface := tui.NewTestSurface(20, 5)
 	theme := tui.NewTheme()
@@ -29,7 +31,7 @@ func TestNetwork_NoContents(t *testing.T) {
 }
 
 func TestNetwork_NoChannels(t *testing.T) {
-	w := view.NewNetwork("Barnetic")
+	w := view.NewNetwork(nil, "Barnetic")
 	w.SetNick("discobot")
 	w.SetConnection("…")
 
@@ -400,10 +402,6 @@ var FocusTests = []struct {
 	Test string
 	Case func() (*view.Client, []namedWidget)
 }{
-	// TODO:
-	// - channel wraparound
-	// - channel -> network
-	// - channel -> channel
 	{
 		Test: "no channels",
 		Case: func() (*view.Client, []namedWidget) {
@@ -477,9 +475,9 @@ func TestNetwork_Focus(t *testing.T) {
 			got := c.FocusNext(last).(namedWidget)
 			if got != want[0] {
 				t.Errorf("unexpected next element for %q: got: %q want: %q", last.Name(), got.Name(), want[0].Name())
-				}
+			}
 
-			for i := len(want)-1; i > 0; i-- {
+			for i := len(want) - 1; i > 0; i-- {
 				got := c.FocusPrev(want[i]).(namedWidget)
 				if got != want[i-1] {
 					t.Errorf("unexpected next element for %q: got: %q want: %q", want[i].Name(), got.Name(), want[i-1].Name())
@@ -491,4 +489,124 @@ func TestNetwork_Focus(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ActivationTests test response to keypress events.
+var ActivationTests = []struct {
+	Test        string
+	Setup       func() client.View
+	Input       []tui.KeyEvent
+	Activations []mocks.Activation
+}{
+	{
+		Test: "hit Down, activate",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyDown},
+			tui.KeyEvent{Key: tui.KeyDown},
+			tui.KeyEvent{Key: tui.KeyEnter},
+		},
+		Activations: []mocks.Activation{
+			mocks.Activation{Network: "gonet", Channel: "#discoirc"},
+		},
+	},
+	{
+		Test: "hit J, activate",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyRune, Rune: 'j'},
+			tui.KeyEvent{Key: tui.KeyRune, Rune: 'j'},
+			tui.KeyEvent{Key: tui.KeyEnter},
+		},
+		Activations: []mocks.Activation{
+			mocks.Activation{Network: "gonet", Channel: "#discoirc"},
+		},
+	},
+	{
+		Test: "hit K, activate",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyRune, Rune: 'k'},
+			tui.KeyEvent{Key: tui.KeyEnter},
+		},
+		Activations: []mocks.Activation{
+			mocks.Activation{Network: "zetanet", Channel: "#bar"},
+		},
+	},
+	{
+		Test: "hit Up, activate",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyUp},
+			tui.KeyEvent{Key: tui.KeyEnter},
+		},
+		Activations: []mocks.Activation{
+			mocks.Activation{Network: "zetanet", Channel: "#bar"},
+		},
+	},
+
+	{
+		Test: "no activation on root or network",
+		Setup: func() client.View {
+			root := view.New()
+			root.GetNetwork("gonet").GetChannel("#discoirc")
+			root.GetNetwork("zetanet").GetChannel("#bar")
+			return root
+
+		},
+		Input: []tui.KeyEvent{
+			tui.KeyEvent{Key: tui.KeyEnter},
+			tui.KeyEvent{Key: tui.KeyDown },
+			tui.KeyEvent{Key: tui.KeyEnter},
+		},
+		Activations: []mocks.Activation{},
+	},
+}
+
+func TestNetwork_ActivateChannel(t *testing.T) {
+	for _, tt := range ActivationTests {
+		tt := tt
+		t.Run(tt.Test, func(t *testing.T) {
+			ctl := &mocks.Controller{}
+			root := tt.Setup()
+			root.Attach(ctl)
+			for _, ev := range tt.Input {
+				root.OnKeyEvent(ev)
+			}
+			if len(ctl.Activations) != len(tt.Activations) {
+				t.Fatalf("unexpected activations: got: %v want: %v", ctl.Activations, tt.Activations)
+			}
+			for i, _ := range tt.Activations {
+				if ctl.Activations[i] != tt.Activations[i] {
+					t.Errorf("unexpected activations: got: %v want: %v", ctl.Activations[i], tt.Activations[i])
+				}
+			}
+
+		})
+	}
+
 }

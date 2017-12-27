@@ -11,9 +11,10 @@ import (
 var _ client.NetworkView = &Network{}
 
 // NewNetwork gives a new Network view.
-func NewNetwork(name string) *Network {
+func NewNetwork(client *Client, name string) *Network {
 	r := &Network{
 		name:            name,
+		client:          client,
 		indicatorWidget: newIndicator(),
 		nameWidget:      tui.NewLabel(name),
 		nickWidget:      tui.NewLabel(""),
@@ -41,6 +42,7 @@ func NewNetwork(name string) *Network {
 type Network struct {
 	name string
 	*tui.Box
+	client *Client
 
 	channels []*Channel
 

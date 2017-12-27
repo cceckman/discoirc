@@ -15,6 +15,8 @@ type View interface {
 	GetNetwork(string) NetworkView
 	// RemoveNetwork removes the NetworkView with the given name.
 	RemoveNetwork(string)
+
+	Attach(UIController)
 }
 
 // NetworkView is a view of a particular network's state.
@@ -39,4 +41,9 @@ type ChannelView interface {
 	SetMode(string)
 	SetUnread(int)
 	SetMembers(int)
+}
+
+// UIController handles UI events from a client View.
+type UIController interface {
+	ActivateChannel(network, channel string)
 }
