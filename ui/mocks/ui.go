@@ -6,24 +6,22 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
+func NewUI() *UI {
+	return &UI{
+		UpdateCounter: NewUpdateCounter(),
+	}
+
+}
+
 // UI implements a subset of the tui.UI functionality for use in tests.
 type UI struct {
-	UpdateCounter
+	*UpdateCounter
 
-	root tui.Widget
+	Root tui.Widget
 }
 
 func (ui *UI) SetWidget(w tui.Widget) {
-	ui.root = w
-}
-
-// GetWidget safely gets the root Widget, after all pending updates have run.
-func (ui *UI) GetWidget() tui.Widget {
-	r := make(chan tui.Widget)
-	ui.RunSync(func() {
-		r <-ui.root
-	})
-	return <-r
+	ui.Root = w
 }
 
 // UpdateCounter is a controller.UIUpdater that can queues, and can synchronize against, outstanding requests.
