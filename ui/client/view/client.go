@@ -36,6 +36,9 @@ func (c *Client) Attach(ctl client.UIController) {
 
 func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	switch ev.Key {
+	case tui.KeyCtrlC:
+		c.controller.Quit()
+		return
 	case tui.KeyDown:
 		c.moveFocus(true)
 		return
