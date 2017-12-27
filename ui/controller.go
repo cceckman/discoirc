@@ -6,10 +6,11 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-// UI is the subset of the tui.UI interface that a Controller uses.
+// UI is the subset of the tui.UI interface that the Controller uses directly or passes through
 type UI interface {
 	Update(func())
 	SetWidget(tui.Widget)
+	Quit()
 }
 
 func New(_ context.Context, ui UI) *Controller {

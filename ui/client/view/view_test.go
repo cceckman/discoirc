@@ -636,3 +636,24 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 	}
 
 }
+
+func TestNetwork_Quit(t *testing.T) {
+	root := view.New()
+	ui := discomocks.NewController()
+	root.Attach(ui)
+
+	ui.Add(1)
+	// The below update itself.
+	// It's ok for handlers to run in the main loop.
+	ui.Update(func() {
+		root.OnKeyEvent(tui.KeyEvent{
+			Key: tui.KeyCtrlC,
+		})
+	})
+
+	ui.RunSync(func() {
+		if ! ui.HasQuit {
+			t.Errorf("client hasn't quit")
+		}
+	})
+}

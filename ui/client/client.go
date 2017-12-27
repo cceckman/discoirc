@@ -46,4 +46,5 @@ type ChannelView interface {
 // UIController handles UI events from a client View.
 type UIController interface {
 	ActivateChannel(network, channel string)
+	Quit()
 }

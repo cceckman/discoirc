@@ -1,6 +1,8 @@
 package mocks
 
-
+// TODO:
+// - Unify on a single Controller, rather than having Controller, UI, UpdateCounter
+// - Add Context to constructor to clean up old threads when test is done
 func NewController() *Controller {
 	return &Controller{
 		UI: NewUI(),

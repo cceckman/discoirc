@@ -18,10 +18,16 @@ type UI struct {
 	*UpdateCounter
 
 	Root tui.Widget
+
+	HasQuit bool
 }
 
 func (ui *UI) SetWidget(w tui.Widget) {
 	ui.Root = w
+}
+
+func (ui *UI) Quit() {
+	ui.HasQuit = true
 }
 
 // UpdateCounter is a controller.UIUpdater that can queues, and can synchronize against, outstanding requests.
