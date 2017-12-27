@@ -176,11 +176,18 @@ func TestController_Client(t *testing.T) {
 	v := &mocks.View{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_ = controller.New(ctx, ui, v, m)
 
-	// TODO: use a keybinding rather than command
+	ui.Add(1) // initial set-root
+	_ = controller.New(ctx, ui, v, m)
+	ui.RunSync(func() {
+		if ui.Root != v {
+			t.Errorf("unexpected root: got: %v want: %v", ui.Root, v)
+		}
+	})
+
+	// TODO: support a keybinding rather than command
 	ui.Add(1)
-	v.Controller.Input("/client")
+	v.Controller.Input("/Client please?")
 	var got discomocks.ActiveView
 	ui.RunSync(func() {
 		got = ui.V

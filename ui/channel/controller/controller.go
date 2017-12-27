@@ -4,6 +4,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/marcusolsson/tui-go"
@@ -159,20 +160,33 @@ func (c *C) awaitInput(ctx context.Context) {
 
 	queue := []string{}
 
+	// TODO: Don't do this with an inline function.
+	// Has to be at the moment because it closes over queue,
+	// but there's surely a better way to handle.
+	handleMessage := func(m string) {
+		lower := strings.ToLower(m)
+
+		if strings.HasPrefix(lower, "/client ") {
+			c.ui.ActivateClient()
+			return
+		}
+
+		queue = append(queue, m)
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case m := <-c.input:
-			// TODO: Parse for non-sending operations before sending to model.
-			queue = append(queue, m)
+			handleMessage(m)
 		}
 		if len(queue) > 0 {
 			select {
 			case <-ctx.Done():
 				return
 			case m := <-c.input:
-				queue = append(queue, m)
+				handleMessage(m)
 			case nextMessage <- queue[0]:
 				queue = queue[1:]
 			}
