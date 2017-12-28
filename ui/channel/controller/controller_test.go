@@ -167,6 +167,25 @@ func TestController_Send(t *testing.T) {
 	}
 }
 
+func TestController_Quit(t *testing.T) {
+	ui := discomocks.NewController()
+
+	m := mocks.NewModel()
+	v := &mocks.View{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_ = controller.New(ctx, ui, v, m)
+
+	ui.Add(1)
+	v.Controller.Input("/quit")
+	ui.RunSync(func() {
+		if !ui.HasQuit {
+			t.Errorf("unexpected state: UI has not quit")
+		}
+	})
+
+}
+
 // TestController_Client tests jumping to the client view.
 func TestController_Client(t *testing.T) {
 	ui := discomocks.NewController()

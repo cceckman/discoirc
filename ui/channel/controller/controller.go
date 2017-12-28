@@ -23,6 +23,8 @@ type UIControl interface {
 
 	// ActivateClient switches the global view to the Client view.
 	ActivateClient()
+
+	Quit()
 }
 
 var _ channel.Controller = &C{}
@@ -66,6 +68,10 @@ func New(ctx context.Context, ui UIControl, v channel.View, m channel.Model) cha
 	c.ui.SetWidget(c.view)
 
 	return c
+}
+
+func (c *C) Quit() {
+	c.ui.Quit()
 }
 
 // TODO: Support localization
