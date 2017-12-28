@@ -55,6 +55,8 @@ func main() {
 			})
 			ctl.SetWidget(newRoot)
 		})
+		toggle.Messages(ctx)
+		toggle.Meta(ctx)
 	}()
 
 	if err := ui.Run(); err != nil {
