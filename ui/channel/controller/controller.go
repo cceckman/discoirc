@@ -172,9 +172,12 @@ func (c *C) awaitInput(ctx context.Context) {
 	handleMessage := func(m string) {
 		lower := strings.ToLower(m)
 
-		if strings.HasPrefix(lower, "/client ") {
+		if strings.HasPrefix(lower, "/client") {
 			c.ui.ActivateClient()
 			return
+		}
+		if strings.HasPrefix(lower, "/quit") {
+			c.Quit()
 		}
 
 		queue = append(queue, m)
