@@ -39,6 +39,8 @@ type UIController interface {
 
 	// TODO: Deferred: Scrolling
 	// TODO: Deferred: Localization of connection / presence
+
+	Quit()
 }
 
 // ModelController is a type which can receive updates from a Model.
@@ -67,4 +69,3 @@ type Model interface {
 	// Attach uses the ModelController for future updates.
 	Attach(ModelController)
 }
-

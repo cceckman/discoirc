@@ -167,16 +167,9 @@ network: connected channel: joined +v
 
 }
 
-func TestView_Input(t *testing.T) {
-	v := makeView()
-	c := &mocks.UIController{}
-	v.Attach(c)
-	inputs := []string{"message one", "/me sends a message", "this isn't sent"}
-	strInputs := strings.Join(inputs, "\n")
-	// Last message isn't sent; doesn't have an enter at the end
-	want := inputs[0:2]
-
-	for _, rn := range strInputs {
+// typeString issues KeyEvents to the Widget as if the provided string had been typed.
+func typeString(w tui.Widget, s string) {
+	for _, rn := range s {
 		var ev tui.KeyEvent
 		if rn != '\n' {
 			ev = tui.KeyEvent{
@@ -188,8 +181,20 @@ func TestView_Input(t *testing.T) {
 				Key: tui.KeyEnter,
 			}
 		}
-		v.OnKeyEvent(ev)
+		w.OnKeyEvent(ev)
 	}
+}
+
+func TestView_Input(t *testing.T) {
+	v := makeView()
+	c := &mocks.UIController{}
+	v.Attach(c)
+	inputs := []string{"message one", "/me sends a message", "this isn't sent"}
+	strInputs := strings.Join(inputs, "\n")
+	// Last message isn't sent; doesn't have an enter at the end
+	want := inputs[0:2]
+
+	typeString(v, strInputs)
 
 	if len(c.Received) != len(want[0:2]) {
 		t.Errorf("unexpected messages: got = %v want %v", c.Received, want)
@@ -200,5 +205,31 @@ func TestView_Input(t *testing.T) {
 				t.Errorf("unexpected contents in message %d: got = %q want %q", i, got, msg)
 			}
 		}
+	}
+}
+
+func TestView_QuitKey(t *testing.T) {
+	v := makeView()
+	c := &mocks.UIController{}
+	v.Attach(c)
+
+	v.OnKeyEvent(tui.KeyEvent{
+		Key: tui.KeyCtrlC,
+	})
+
+	if !c.HasQuit {
+		t.Errorf("unexpected state: should have quit")
+	}
+}
+
+func TestView_QuitCmd(t *testing.T) {
+	v := makeView()
+	c := &mocks.UIController{}
+	v.Attach(c)
+
+	typeString(v, "/quit\n")
+
+	if !c.HasQuit {
+		t.Errorf("unexpected state: should have quit")
 	}
 }
