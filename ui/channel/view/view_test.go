@@ -221,15 +221,3 @@ func TestView_QuitKey(t *testing.T) {
 		t.Errorf("unexpected state: should have quit")
 	}
 }
-
-func TestView_QuitCmd(t *testing.T) {
-	v := makeView()
-	c := &mocks.UIController{}
-	v.Attach(c)
-
-	typeString(v, "/quit\n")
-
-	if !c.HasQuit {
-		t.Errorf("unexpected state: should have quit")
-	}
-}

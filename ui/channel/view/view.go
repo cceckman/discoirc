@@ -39,6 +39,13 @@ type V struct {
 	controller channel.UIController
 }
 
+func (v *V) OnKeyEvent(ev tui.KeyEvent) {
+	if ev.Key == tui.KeyCtrlC && v.controller != nil {
+		v.controller.Quit()
+	}
+	v.Box.OnKeyEvent(ev)
+}
+
 func (v *V) handleInput(entry *tui.Entry) {
 	if v.controller != nil {
 		v.controller.Input(entry.Text())
