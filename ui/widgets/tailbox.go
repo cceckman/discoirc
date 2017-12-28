@@ -1,8 +1,8 @@
 package widgets
 
 import (
-	"image"
 	"github.com/marcusolsson/tui-go"
+	"image"
 )
 
 // TailBox is a container Widget that may not show all its Widgets.
@@ -12,7 +12,7 @@ import (
 // It is vertically-aligned, i.e. all the contained Widgets have the same width.
 type TailBox struct {
 	tui.WidgetBase
-	sz image.Point
+	sz       image.Point
 	contents []tui.Widget
 }
 

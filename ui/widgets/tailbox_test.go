@@ -7,10 +7,10 @@ import (
 )
 
 var TailBoxTests = []struct {
-	Test string
+	Test  string
 	Setup func() tui.Widget
-	Want string
-} {
+	Want  string
+}{
 	{
 		Test: "draw small labels",
 		Setup: func() tui.Widget {
@@ -57,8 +57,6 @@ hello
 faddah    
 `,
 	},
-
-
 }
 
 func TestTailBox(t *testing.T) {
