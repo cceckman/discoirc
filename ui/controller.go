@@ -51,7 +51,7 @@ func (c *Controller) ActivateClient() {
 // lifecycle of background threads (via Context).
 func (c *Controller) mainLoop(ctx context.Context) {
 	join(c.UI, func() {
-		c.UI.SetWidget(widgets.NewSplash())
+		c.UI.SetWidget(widgets.NewSplash(c))
 	})
 	for {
 		select {
