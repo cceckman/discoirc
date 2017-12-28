@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cceckman/discoirc/ui/widgets"
+	gctl "github.com/cceckman/discoirc/ui"
 	"github.com/golang/glog"
 	"github.com/marcusolsson/tui-go"
 )
@@ -32,19 +32,19 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ui := tui.New(widgets.NewSplash())
+	ui := tui.New(nil)
 	ui.SetTheme(GetTheme())
-	ui.SetKeybinding("Esc", func() { ui.Quit() })
+	ctl := gctl.New(ctx, ui)
 
 	go func() {
-		ctl, newRoot := GetStubChannel(ctx, ui, "Barnetic", "discobot", "#discoirc")
+		chanCtl, newRoot := GetStubChannel(ctx, ctl, "Barnetic", "discobot", "#discoirc")
 		toggle := &Toggle{
-			Channel:  ctl,
+			Channel:  chanCtl,
 			Duration: 2 * time.Second,
 		}
 
 		time.Sleep(2 * time.Second)
-		ui.Update(func() {
+		ctl.Update(func() {
 			ui.SetKeybinding("Ctrl+Space", func() {
 				glog.V(1).Info("toggling metadata cycling")
 				toggle.Meta(ctx)
@@ -53,9 +53,7 @@ func main() {
 				glog.V(1).Info("toggling message cycling")
 				toggle.Messages(ctx)
 			})
-			ui.SetWidget(newRoot)
-			toggle.Messages(ctx)
-			toggle.Messages(ctx)
+			ctl.SetWidget(newRoot)
 		})
 	}()
 

@@ -11,7 +11,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-func GetStubChannel(ctx context.Context, ui controller.UIUpdater, network, nick, channel string) (*stub.Channel, tui.Widget) {
+func GetStubChannel(ctx context.Context, ui controller.UIControl, network, nick, channel string) (*stub.Channel, tui.Widget) {
 	m := stub.NewChannel(ctx)
 	m.SetMeta(data.Channel{
 		Name: channel,

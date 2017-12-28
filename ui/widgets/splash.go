@@ -4,7 +4,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-const splash string = `
+const splashImg string = `
              ||
              ||
            <><><>
@@ -21,14 +21,37 @@ github.com/cceckman/discoirc
 
 `
 
-func NewSplash() tui.Widget {
-	return tui.NewHBox(
-		tui.NewSpacer(),
-		tui.NewVBox(
+// Quitter is a type that supports the ui.Quit() operation.
+type Quitter interface {
+	Quit()
+}
+
+type splash struct {
+	tui.Widget
+
+	ui Quitter
+}
+
+func (s *splash) OnKeyEvent(ev tui.KeyEvent) {
+	// TODO: put all of these into a single "isQuitEvent" utility funcion.
+	if ev.Key == tui.KeyCtrlC {
+		s.ui.Quit()
+		return
+	}
+	s.Widget.OnKeyEvent(ev)
+}
+
+func NewSplash(ui Quitter) tui.Widget {
+	return &splash{
+		ui: ui,
+		Widget: tui.NewHBox(
 			tui.NewSpacer(),
-			tui.NewLabel(splash),
+			tui.NewVBox(
+				tui.NewSpacer(),
+				tui.NewLabel(splashImg),
+				tui.NewSpacer(),
+			),
 			tui.NewSpacer(),
 		),
-		tui.NewSpacer(),
-	)
+	}
 }

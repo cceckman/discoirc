@@ -7,13 +7,13 @@ import (
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel/controller"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
-	_ "github.com/marcusolsson/tui-go"
+	discomocks "github.com/cceckman/discoirc/ui/mocks"
 
 	"testing"
 )
 
 func TestController_ResizeNoEvents(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewController()
 
 	m := mocks.NewModel()
 	v := &mocks.View{}
@@ -39,7 +39,7 @@ func TestController_ResizeNoEvents(t *testing.T) {
 }
 
 func TestController_ResizeWithEvents(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewController()
 
 	m := mocks.NewModel()
 	m.Events = mocks.Events
@@ -73,7 +73,7 @@ func TestController_ResizeWithEvents(t *testing.T) {
 }
 
 func TestController_ReceiveEvent(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewController()
 
 	m := mocks.NewModel()
 	m.Events = mocks.Events
@@ -107,7 +107,7 @@ func TestController_ReceiveEvent(t *testing.T) {
 }
 
 func TestController_UpdateMeta(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewController()
 
 	m := mocks.NewModel()
 	m.Channel = data.Channel{
@@ -151,7 +151,7 @@ func TestController_UpdateMeta(t *testing.T) {
 }
 
 func TestController_Send(t *testing.T) {
-	ui := mocks.NewUpdateCounter()
+	ui := discomocks.NewController()
 
 	m := mocks.NewModel()
 	v := &mocks.View{}
@@ -165,4 +165,55 @@ func TestController_Send(t *testing.T) {
 	if got != msg {
 		t.Errorf("expected message to be passed along: got: %q want: %q", got, msg)
 	}
+}
+
+func TestController_Quit(t *testing.T) {
+	ui := discomocks.NewController()
+
+	m := mocks.NewModel()
+	v := &mocks.View{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	_ = controller.New(ctx, ui, v, m)
+
+	ui.Add(1)
+	v.Controller.Input("/quit")
+	ui.RunSync(func() {
+		if !ui.HasQuit {
+			t.Errorf("unexpected state: UI has not quit")
+		}
+	})
+
+}
+
+// TestController_Client tests jumping to the client view.
+func TestController_Client(t *testing.T) {
+	ui := discomocks.NewController()
+	ui.V = discomocks.ChannelView
+
+	m := mocks.NewModel()
+	v := &mocks.View{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ui.Add(1) // initial set-root
+	_ = controller.New(ctx, ui, v, m)
+	ui.RunSync(func() {
+		if ui.Root != v {
+			t.Errorf("unexpected root: got: %v want: %v", ui.Root, v)
+		}
+	})
+
+	// TODO: support a keybinding rather than command
+	ui.Add(1)
+	v.Controller.Input("/Client please?")
+	var got discomocks.ActiveView
+	ui.RunSync(func() {
+		got = ui.V
+	})
+	want := discomocks.ClientView
+	if got != discomocks.ClientView {
+		t.Errorf("unexpected active view: got: %v want: %d", got, want)
+	}
+
 }

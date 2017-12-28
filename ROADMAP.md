@@ -21,7 +21,7 @@ configure channels and connections on the stub server.
   - [x] Show connection state
   - [x] Show topic
   - [ ] Jump to session view
-- [ ] Session
+- [ ] Client
   - [ ] Networks
   - [ ] Channels on networks
   - [ ] Connection status on networks

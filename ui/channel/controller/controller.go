@@ -4,25 +4,34 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
+	"github.com/marcusolsson/tui-go"
+
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
-	"github.com/marcusolsson/tui-go"
 )
 
-// UIUpdater is a subset of the tui.UI interface- just the bit that update a UI.
-type UIUpdater interface {
+// UIControl is the interface that a higher-level controller must provide.
+type UIControl interface {
+	// Update runs the provided closure in the UI event loop.
 	Update(func())
-}
 
-var _ UIUpdater = tui.UI(nil)
+	// SetWidget sets the provided widget as the root of the UI.
+	SetWidget(tui.Widget)
+
+	// ActivateClient switches the global view to the Client view.
+	ActivateClient()
+
+	Quit()
+}
 
 var _ channel.Controller = &C{}
 
 // C implements a channel Controller.
 type C struct {
-	ui    UIUpdater
+	ui    UIControl
 	view  channel.View
 	model channel.Model
 
@@ -34,7 +43,7 @@ type C struct {
 }
 
 // New returns a new Controller.
-func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) channel.Controller {
+func New(ctx context.Context, ui UIControl, v channel.View, m channel.Model) channel.Controller {
 	c := &C{
 		ui:         ui,
 		view:       v,
@@ -56,7 +65,13 @@ func New(ctx context.Context, ui UIUpdater, v channel.View, m channel.Model) cha
 		m.Attach(c)
 	}
 
+	c.ui.SetWidget(c.view)
+
 	return c
+}
+
+func (c *C) Quit() {
+	c.ui.Quit()
 }
 
 // TODO: Support localization
@@ -151,20 +166,36 @@ func (c *C) awaitInput(ctx context.Context) {
 
 	queue := []string{}
 
+	// TODO: Don't do this with an inline function.
+	// Has to be at the moment because it closes over queue,
+	// but there's surely a better way to handle.
+	handleMessage := func(m string) {
+		lower := strings.ToLower(m)
+
+		if strings.HasPrefix(lower, "/client") {
+			c.ui.ActivateClient()
+			return
+		}
+		if strings.HasPrefix(lower, "/quit") {
+			c.Quit()
+		}
+
+		queue = append(queue, m)
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case m := <-c.input:
-			// TODO: Parse for non-sending operations before sending to model.
-			queue = append(queue, m)
+			handleMessage(m)
 		}
 		if len(queue) > 0 {
 			select {
 			case <-ctx.Done():
 				return
 			case m := <-c.input:
-				queue = append(queue, m)
+				handleMessage(m)
 			case nextMessage <- queue[0]:
 				queue = queue[1:]
 			}
