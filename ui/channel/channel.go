@@ -1,4 +1,4 @@
-// Package channel includes top-level types and interfaces for the channel cnotents UI.
+// Package channel provides the channel contents UI.
 package channel
 
 import (
