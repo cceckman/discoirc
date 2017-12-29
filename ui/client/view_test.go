@@ -55,13 +55,13 @@ func TestNetwork_NoChannels(t *testing.T) {
 
 var renderTests = []struct {
 	test  string
-	setup func() tui.Widget
+	setup func(client.UIController) tui.Widget
 	want  string
 }{
 	{
 		test: "blank client",
-		setup: func() tui.Widget {
-			w := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			w := client.New(ui)
 			return w
 		},
 		want: `
@@ -79,8 +79,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "ordered networks",
-		setup: func() tui.Widget {
-			w := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			w := client.New(ui)
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
 			return w
@@ -100,8 +100,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "Removed last network",
-		setup: func() tui.Widget {
-			w := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			w := client.New(ui)
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -123,8 +123,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "Removed first network",
-		setup: func() tui.Widget {
-			w := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			w := client.New(ui)
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -146,8 +146,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "Removed middle network",
-		setup: func() tui.Widget {
-			w := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			w := client.New(ui)
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -169,7 +169,7 @@ var renderTests = []struct {
 	},
 	{
 		test: "empty channel",
-		setup: func() tui.Widget {
+		setup: func(_ client.UIController) tui.Widget {
 			return tui.NewVBox(
 				client.NewChannel(nil, "#discoirc"),
 				tui.NewSpacer(),
@@ -190,7 +190,7 @@ var renderTests = []struct {
 	},
 	{
 		test: "populated channel",
-		setup: func() tui.Widget {
+		setup: func(_ client.UIController) tui.Widget {
 			c := client.NewChannel(nil, "#discoirc")
 			c.SetMode("+foobar")
 			c.SetUnread(99)
@@ -212,8 +212,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "networks with channels",
-		setup: func() tui.Widget {
-			c := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			c := client.New(ui)
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -252,8 +252,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "channel removal",
-		setup: func() tui.Widget {
-			c := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			c := client.New(ui)
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -287,8 +287,8 @@ var renderTests = []struct {
 	},
 	{
 		test: "selected channel, deselected channel",
-		setup: func() tui.Widget {
-			c := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			c := client.New(ui)
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -327,8 +327,8 @@ var renderTests = []struct {
 
 	{
 		test: "selected network, deselected network",
-		setup: func() tui.Widget {
-			c := client.New()
+		setup: func(ui client.UIController) tui.Widget {
+			c := client.New(ui)
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -373,7 +373,7 @@ func TestRender(t *testing.T) {
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
 
-			w := tt.setup()
+			w := tt.setup(nil)
 			p.Repaint(w)
 
 			got := surface.String()
@@ -391,7 +391,7 @@ type namedWidget interface {
 }
 
 func TestNetwork_FocusNoNetworks(t *testing.T) {
-	c := client.New()
+	c := client.New(nil)
 	if c.FocusNext(c) != c {
 		t.Errorf("unexpected next element for root: got: %v want: %v", c.FocusNext(c), c)
 	}
@@ -405,7 +405,7 @@ var FocusTests = []struct {
 	{
 		Test: "no channels",
 		Case: func() (*client.Client, []namedWidget) {
-			c := client.New()
+			c := client.New(nil)
 			gophernet := c.GetNetwork("gophernet")
 			kubernet := c.GetNetwork("kubernet")
 
@@ -415,7 +415,7 @@ var FocusTests = []struct {
 	{
 		Test: "channel wraparound",
 		Case: func() (*client.Client, []namedWidget) {
-			c := client.New()
+			c := client.New(nil)
 			gophernet := c.GetNetwork("gophernet")
 			kubernet := c.GetNetwork("kubernet")
 			metallb := kubernet.GetChannel("#metallb")
@@ -426,7 +426,7 @@ var FocusTests = []struct {
 	{
 		Test: "channel network traversal",
 		Case: func() (*client.Client, []namedWidget) {
-			c := client.New()
+			c := client.New(nil)
 			gophernet := c.GetNetwork("gophernet")
 			tuigo := gophernet.GetChannel("#tuigo")
 			discoirc := gophernet.GetChannel("#discoirc")
@@ -494,15 +494,15 @@ func TestNetwork_Focus(t *testing.T) {
 // ActivationTests test response to keypress events.
 var ActivationTests = []struct {
 	Test              string
-	Setup             func() client.View
+	Setup             func(client.UIController) client.View
 	Input             []tui.KeyEvent
 	WantView          discomocks.ActiveView
 	WantNet, WantChan string
 }{
 	{
 		Test: "hit Down, activate",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -518,8 +518,8 @@ var ActivationTests = []struct {
 	},
 	{
 		Test: "hit J, activate",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -535,8 +535,8 @@ var ActivationTests = []struct {
 	},
 	{
 		Test: "hit K, activate",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -551,8 +551,8 @@ var ActivationTests = []struct {
 	},
 	{
 		Test: "hit Up, activate",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -568,8 +568,8 @@ var ActivationTests = []struct {
 
 	{
 		Test: "no activation on root",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -583,8 +583,8 @@ var ActivationTests = []struct {
 
 	{
 		Test: "no activation on network",
-		Setup: func() client.View {
-			root := client.New()
+		Setup: func(ui client.UIController) client.View {
+			root := client.New(ui)
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -606,11 +606,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 			ui.V = discomocks.ClientView
 
 			ui.Add(1)
-			root := tt.Setup()
-			root.Attach(ui)
-			ui.Update(func() {
-				ui.SetWidget(root)
-			})
+			root := tt.Setup(ui)
 
 			if tt.WantView != discomocks.ClientView {
 				// Expect an Update to change the root as keys as pressed.
@@ -640,9 +636,9 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 }
 
 func TestNetwork_Quit(t *testing.T) {
-	root := client.New()
 	ui := discomocks.NewController()
-	root.Attach(ui)
+	ui.Add(1) // Sets root
+	root := client.New(ui)
 
 	ui.Add(1)
 	// The below update itself.

@@ -8,13 +8,24 @@ import (
 
 var _ View = &Client{}
 
-func New() *Client {
+func New(ctl UIController) *Client {
 	c := &Client{
 		networksBox: tui.NewVBox(tui.NewSpacer()),
+		controller:  ctl,
 	}
 
 	c.Widget = c.networksBox
 	c.focused = c
+
+	// Allow nil for tests.
+	if c.controller != nil {
+		blk := make(chan struct{})
+		c.controller.Update(func() {
+			c.controller.SetWidget(c)
+			close(blk)
+		})
+		<-blk
+	}
 
 	return c
 }
@@ -23,19 +34,15 @@ type Client struct {
 	tui.Widget
 	networksBox *tui.Box
 
-	networks []*Network
+	networks   []*Network
 	controller UIController
-	focused tui.Widget
-}
-
-func (c *Client) Attach(ctl UIController) {
-	c.controller = ctl
+	focused    tui.Widget
 }
 
 func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	switch ev.Key {
 	case tui.KeyCtrlC:
-		c.controller.Update(func(){
+		c.controller.Update(func() {
 			c.controller.Quit()
 		})
 		return
@@ -45,7 +52,7 @@ func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	case tui.KeyUp:
 		c.moveFocus(false)
 	case tui.KeyRune:
-		switch ev.Rune{
+		switch ev.Rune {
 		case 'j':
 			c.moveFocus(true)
 		case 'k':
@@ -154,7 +161,7 @@ func (c *Client) FocusPrev(w tui.Widget) tui.Widget {
 		// The network won't know what's previous to it;
 		// it's either another channel, or another network.
 		for i, n := range c.networks {
-			if n == w  && i-1 >= 0{
+			if n == w && i-1 >= 0 {
 				next := c.networks[i-1].focusPrev(w)
 				if next != nil {
 					return next
