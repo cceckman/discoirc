@@ -1,11 +1,11 @@
-package controller_test
+package channel_test
 
 import (
 	"context"
 	"strings"
 
 	"github.com/cceckman/discoirc/data"
-	"github.com/cceckman/discoirc/ui/channel/controller"
+	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
 	discomocks "github.com/cceckman/discoirc/ui/mocks"
 
@@ -21,7 +21,7 @@ func TestController_ResizeNoEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ui.Add(1) // Update of metadata on attachment.
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
 			t.Errorf("wrong number of events: got: %v want: none", v.Events)
@@ -48,7 +48,7 @@ func TestController_ResizeWithEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ui.Add(2) // Update of metadata, contents on attachment.
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		// Still should be zero events; size is zero.
 		if len(v.Events) > 0 {
@@ -82,7 +82,7 @@ func TestController_ReceiveEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ui.Add(2)
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 	ui.Add(1)
 	sz := 8
 	v.Controller.Resize(sz)
@@ -134,7 +134,7 @@ func TestController_UpdateMeta(t *testing.T) {
 	}
 
 	ui.Add(1) // Update channel metadata on attachment
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		compare("Topic", v.Topic, m.Channel.Topic)
 		compare("Name", v.Name, m.Channel.Name)
@@ -157,7 +157,7 @@ func TestController_Send(t *testing.T) {
 	v := &mocks.View{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 
 	msg := "this message"
 	v.Controller.Input(msg)
@@ -174,7 +174,7 @@ func TestController_Quit(t *testing.T) {
 	v := &mocks.View{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 
 	ui.Add(1)
 	v.Controller.Input("/quit")
@@ -197,7 +197,7 @@ func TestController_Client(t *testing.T) {
 	defer cancel()
 
 	ui.Add(1) // initial set-root
-	_ = controller.New(ctx, ui, v, m)
+	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if ui.Root != v {
 			t.Errorf("unexpected root: got: %v want: %v", ui.Root, v)

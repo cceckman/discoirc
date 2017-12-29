@@ -1,16 +1,14 @@
-// Package view implemements a tui widget for the channel contents view.
-package view
+package channel
 
 import (
 	"image"
 
 	"github.com/cceckman/discoirc/data"
-	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
 )
 
-var _ channel.View = &V{}
+var _ View = &V{}
 
 // DefaultRenderer is the default way to render Widgets.
 func DefaultRenderer(e data.Event) tui.Widget {
@@ -20,7 +18,7 @@ func DefaultRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-// V implements channel.View as a tui Widget.
+// V implements View as a tui Widget.
 type V struct {
 	// root element
 	*tui.Box
@@ -36,7 +34,7 @@ type V struct {
 	nick  *tui.Label
 	input *tui.Entry
 
-	controller channel.UIController
+	controller UIController
 }
 
 func (v *V) OnKeyEvent(ev tui.KeyEvent) {
@@ -53,7 +51,7 @@ func (v *V) handleInput(entry *tui.Entry) {
 	}
 }
 
-func (v *V) SetRenderer(e channel.EventRenderer) {
+func (v *V) SetRenderer(e EventRenderer) {
 	v.events.Renderer = e
 }
 func (v *V) SetTopic(t string) {
@@ -75,7 +73,7 @@ func (v *V) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
 }
 
-func (v *V) Attach(c channel.UIController) {
+func (v *V) Attach(c UIController) {
 	v.controller = c
 	// Set initial size
 	v.controller.Resize(v.events.Size().Y)
@@ -100,8 +98,8 @@ func (rb *reversedBox) Draw(p *tui.Painter) {
 	})
 }
 
-// New returns a new channel.View.
-func New() channel.View {
+// New returns a new View.
+func NewView() View {
 	// construct V
 	v := &V{
 		topic: tui.NewLabel(""),

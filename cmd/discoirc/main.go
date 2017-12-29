@@ -32,18 +32,19 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ui := tui.New(nil)
+	ui := tui.New(tui.NewHBox())
 	ui.SetTheme(GetTheme())
 	ctl := gctl.New(ctx, ui)
 
 	go func() {
-		chanCtl, newRoot := GetStubChannel(ctx, ctl, "Barnetic", "discobot", "#discoirc")
+		time.Sleep(2 * time.Second)
+
+		chanCtl := GetStubChannel(ctx, ctl, "Barnetic", "#discoirc", "discobot")
 		toggle := &Toggle{
 			Channel:  chanCtl,
 			Duration: 2 * time.Second,
 		}
 
-		time.Sleep(2 * time.Second)
 		ctl.Update(func() {
 			ui.SetKeybinding("Ctrl+Space", func() {
 				glog.V(1).Info("toggling metadata cycling")
@@ -53,7 +54,6 @@ func main() {
 				glog.V(1).Info("toggling message cycling")
 				toggle.Messages(ctx)
 			})
-			ctl.SetWidget(newRoot)
 		})
 		toggle.Messages(ctx)
 		toggle.Meta(ctx)

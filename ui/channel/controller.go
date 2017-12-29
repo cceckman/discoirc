@@ -1,5 +1,4 @@
-// Package controller provides the channel Controller.
-package controller
+package channel
 
 import (
 	"context"
@@ -10,7 +9,6 @@ import (
 	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/data"
-	"github.com/cceckman/discoirc/ui/channel"
 )
 
 // UIControl is the interface that a higher-level controller must provide.
@@ -27,13 +25,13 @@ type UIControl interface {
 	Quit()
 }
 
-var _ channel.Controller = &C{}
+var _ Controller = &C{}
 
 // C implements a channel Controller.
 type C struct {
 	ui    UIControl
-	view  channel.View
-	model channel.Model
+	view  View
+	model Model
 
 	// Async communication
 	sizeUpdate chan int
@@ -43,7 +41,7 @@ type C struct {
 }
 
 // New returns a new Controller.
-func New(ctx context.Context, ui UIControl, v channel.View, m channel.Model) channel.Controller {
+func New(ctx context.Context, ui UIControl, v View, m Model) Controller {
 	c := &C{
 		ui:         ui,
 		view:       v,
@@ -65,7 +63,9 @@ func New(ctx context.Context, ui UIControl, v channel.View, m channel.Model) cha
 		m.Attach(c)
 	}
 
-	c.ui.SetWidget(c.view)
+	c.ui.Update(func() {
+		c.ui.SetWidget(c.view)
+	})
 
 	return c
 }
@@ -75,8 +75,8 @@ func (c *C) Quit() {
 }
 
 // TODO: Support localization
-// updateMeta updates a channel.View with channel metadata.
-func updateMeta(d data.Channel, v channel.View) {
+// updateMeta updates a View with channel metadata.
+func updateMeta(d data.Channel, v View) {
 	v.SetTopic(d.Topic)
 
 	connStrings := map[data.ConnectionState]string{
