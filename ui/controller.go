@@ -58,7 +58,7 @@ func (c *Controller) mainLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-c.toClient:
-			join(c.UI, c.activateClient)
+			client.New(c)
 		}
 		// TODO: Clean up previous threads (context)
 	}
@@ -73,11 +73,4 @@ func join(ui UI, f func()) {
 		close(blk)
 	})
 	<-blk
-}
-
-func (c *Controller) activateClient() {
-	// TODO: Reset any global keybindings
-	client := client.New()
-	client.Attach(c)
-	c.SetWidget(client)
 }
