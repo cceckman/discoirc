@@ -26,6 +26,24 @@ type UIControl interface {
 	Quit()
 }
 
+// View is a user-facing display of an IRC channel.
+type View interface {
+	tui.Widget
+
+	SetTopic(string)
+	SetNick(string)
+	SetConnection(string)
+	SetName(string)
+	SetMode(string)
+	SetEvents([]data.Event)
+
+	// SetRenderer passes in the function used to render Events in
+	// the channel contents display.
+	SetRenderer(EventRenderer)
+
+	Attach(UIController)
+}
+
 var _ Controller = &C{}
 
 // C implements a channel Controller.

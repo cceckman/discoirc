@@ -10,24 +10,6 @@ import (
 // (e.g. message) into an tui.Widget suitable for display.
 type EventRenderer func(data.Event) tui.Widget
 
-// View is a user-facing display of an IRC channel.
-type View interface {
-	tui.Widget
-
-	SetTopic(string)
-	SetNick(string)
-	SetConnection(string)
-	SetName(string)
-	SetMode(string)
-	SetEvents([]data.Event)
-
-	// SetRenderer passes in the function used to render Events in
-	// the channel contents display.
-	SetRenderer(EventRenderer)
-
-	Attach(UIController)
-}
-
 // UIController is a type which can receive updates from a view.
 type UIController interface {
 	// Accepts input from the user. Must be non-blocking.
