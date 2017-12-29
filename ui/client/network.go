@@ -1,14 +1,12 @@
-package view
+package client
 
 import (
 	"sort"
 
 	"github.com/marcusolsson/tui-go"
-
-	"github.com/cceckman/discoirc/ui/client"
 )
 
-var _ client.NetworkView = &Network{}
+var _ NetworkView = &Network{}
 
 // NewNetwork gives a new Network view.
 func NewNetwork(client *Client, name string) *Network {
@@ -74,7 +72,7 @@ func (n *Network) SetConnection(s string) {
 	n.connWidget.SetText(s)
 }
 
-func (n *Network) GetChannel(name string) client.ChannelView {
+func (n *Network) GetChannel(name string) ChannelView {
 	for _, v := range n.channels {
 		if v.name == name {
 			return v

@@ -1,14 +1,12 @@
-package view
+package client
 
 import (
 	"sort"
 
 	"github.com/marcusolsson/tui-go"
-
-	"github.com/cceckman/discoirc/ui/client"
 )
 
-var _ client.View = &Client{}
+var _ View = &Client{}
 
 func New() *Client {
 	c := &Client{
@@ -26,11 +24,11 @@ type Client struct {
 	networksBox *tui.Box
 
 	networks []*Network
-	controller client.UIController
+	controller UIController
 	focused tui.Widget
 }
 
-func (c *Client) Attach(ctl client.UIController) {
+func (c *Client) Attach(ctl UIController) {
 	c.controller = ctl
 }
 
@@ -75,7 +73,7 @@ func (c *Client) moveFocus(fwd bool) {
 	c.focused.SetFocused(true)
 }
 
-func (c *Client) GetNetwork(name string) client.NetworkView {
+func (c *Client) GetNetwork(name string) NetworkView {
 	for _, v := range c.networks {
 		if v.name == name {
 			return v

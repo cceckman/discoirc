@@ -1,4 +1,4 @@
-package view
+package client
 
 import (
 	"github.com/cceckman/discoirc/ui/widgets"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/marcusolsson/tui-go"
 
-	clientView "github.com/cceckman/discoirc/ui/client/view"
+	"github.com/cceckman/discoirc/ui/client"
 	"github.com/cceckman/discoirc/ui/widgets"
 )
 
@@ -77,7 +77,7 @@ func join(ui UI, f func()) {
 
 func (c *Controller) activateClient() {
 	// TODO: Reset any global keybindings
-	client := clientView.New()
+	client := client.New()
 	client.Attach(c)
 	c.SetWidget(client)
 }
