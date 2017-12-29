@@ -1,8 +1,7 @@
-package view
+package channel
 
 import (
 	"github.com/cceckman/discoirc/data"
-	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
 )
@@ -11,7 +10,7 @@ import (
 type EventsView struct {
 	*widgets.TailBox
 
-	Renderer channel.EventRenderer
+	Renderer EventRenderer
 }
 
 func (v *EventsView) SetEvents(evs []data.Event) {

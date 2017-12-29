@@ -1,4 +1,4 @@
-package view_test
+package channel_test
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/channel/mocks"
-	"github.com/cceckman/discoirc/ui/channel/view"
 
 	"github.com/marcusolsson/tui-go"
 )
@@ -45,7 +44,7 @@ func testRenderer(e data.Event) tui.Widget {
 }
 
 func makeView() channel.View {
-	v := view.New()
+	v := channel.NewView()
 	v.SetTopic("topic")
 	v.SetNick("nick")
 	v.SetConnection("network: connected")

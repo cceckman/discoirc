@@ -6,24 +6,22 @@ import (
 
 	"github.com/cceckman/discoirc/backend/stub"
 	"github.com/cceckman/discoirc/data"
-	"github.com/cceckman/discoirc/ui/channel/controller"
-	"github.com/cceckman/discoirc/ui/channel/view"
+	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/marcusolsson/tui-go"
 )
 
-func GetStubChannel(ctx context.Context, ui controller.UIControl, network, nick, channel string) (*stub.Channel, tui.Widget) {
+func GetStubChannel(ctx context.Context, ui channel.UIControl, network, chanName, nick string) *stub.Channel {
 	m := stub.NewChannel(ctx)
 	m.SetMeta(data.Channel{
-		Name: channel,
+		Name: chanName,
 		Connection: data.Connection{
 			Network: network,
 			Nick:    nick,
 		},
 	})
 
-	v := view.New()
-	_ = controller.New(ctx, ui, v, m)
-	return m, v
+	_ = channel.New(ctx, ui, channel.NewView(), m)
+	return m
 }
 
 func GetTheme() *tui.Theme {
