@@ -8,7 +8,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
-var _ View = &V{}
+var _ View = &view{}
 
 // DefaultRenderer is the default way to render Widgets.
 func DefaultRenderer(e data.Event) tui.Widget {
@@ -18,8 +18,8 @@ func DefaultRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-// V implements View as a tui Widget.
-type V struct {
+// view implements View as a tui Widget.
+type view struct {
 	// root element
 	*tui.Box
 
@@ -37,49 +37,49 @@ type V struct {
 	controller Controller
 }
 
-func (v *V) OnKeyEvent(ev tui.KeyEvent) {
+func (v *view) OnKeyEvent(ev tui.KeyEvent) {
 	if ev.Key == tui.KeyCtrlC && v.controller != nil {
 		v.controller.Quit()
 	}
 	v.Box.OnKeyEvent(ev)
 }
 
-func (v *V) handleInput(entry *tui.Entry) {
+func (v *view) handleInput(entry *tui.Entry) {
 	if v.controller != nil {
 		v.controller.Input(entry.Text())
 		entry.SetText("")
 	}
 }
 
-func (v *V) SetRenderer(e EventRenderer) {
+func (v *view) SetRenderer(e EventRenderer) {
 	v.events.Renderer = e
 }
-func (v *V) SetTopic(t string) {
+func (v *view) SetTopic(t string) {
 	v.topic.SetText(t)
 }
-func (v *V) SetConnection(s string) {
+func (v *view) SetConnection(s string) {
 	v.connection.SetText(s)
 }
-func (v *V) SetName(s string) {
+func (v *view) SetName(s string) {
 	v.name.SetText(s)
 }
-func (v *V) SetMode(s string) {
+func (v *view) SetMode(s string) {
 	v.mode.SetText(s)
 }
-func (v *V) SetNick(s string) {
+func (v *view) SetNick(s string) {
 	v.nick.SetText(s)
 }
-func (v *V) SetEvents(events []data.Event) {
+func (v *view) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
 }
 
-func (v *V) Attach(c Controller) {
+func (v *view) Attach(c Controller) {
 	v.controller = c
 	// Set initial size
 	v.controller.Resize(v.events.Size().Y)
 }
 
-func (v *V) Resize(size image.Point) {
+func (v *view) Resize(size image.Point) {
 	oldSize := v.events.Size()
 	v.Box.Resize(size)
 	if v.events.Size().Y > oldSize.Y && v.controller != nil {
@@ -101,7 +101,7 @@ func (rb *reversedBox) Draw(p *tui.Painter) {
 // New returns a new View.
 func NewView() View {
 	// construct V
-	v := &V{
+	v := &view{
 		topic: tui.NewLabel(""),
 		events: &EventsView{
 			TailBox:  widgets.NewTailBox(),
@@ -152,7 +152,6 @@ func NewView() View {
 	)
 	return v
 }
-
 
 // EventsView displays the last data.Event objects it contains.
 type EventsView struct {

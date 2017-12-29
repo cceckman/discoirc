@@ -57,10 +57,10 @@ type Model interface {
 	Attach(Controller)
 }
 
-var _ Controller = &C{}
+var _ Controller = &controller{}
 
-// C implements a channel Controller.
-type C struct {
+// controller implements a channel Controller.
+type controller struct {
 	ui    UIController
 	view  View
 	model Model
@@ -74,7 +74,7 @@ type C struct {
 
 // New returns a new Controller.
 func New(ctx context.Context, ui UIController, v View, m Model) Controller {
-	c := &C{
+	c := &controller{
 		ui:         ui,
 		view:       v,
 		model:      m,
@@ -102,7 +102,7 @@ func New(ctx context.Context, ui UIController, v View, m Model) Controller {
 	return c
 }
 
-func (c *C) Quit() {
+func (c *controller) Quit() {
 	c.ui.Update(func() {
 		c.ui.Quit()
 	})
@@ -130,7 +130,7 @@ func updateMeta(d data.Channel, v View) {
 	}
 }
 
-func (c *C) awaitMetaUpdate(ctx context.Context) {
+func (c *controller) awaitMetaUpdate(ctx context.Context) {
 	// newData allows any pending updates to always get the most up-to-date
 	// data.Channel.
 	newData := make(chan data.Channel, 1)
@@ -155,7 +155,7 @@ func (c *C) awaitMetaUpdate(ctx context.Context) {
 	}
 }
 
-func (c *C) awaitEvents(ctx context.Context) {
+func (c *controller) awaitEvents(ctx context.Context) {
 	size := 0             // desired N of events to display
 	var last data.EventID // last event in the display
 
@@ -189,7 +189,7 @@ func (c *C) awaitEvents(ctx context.Context) {
 }
 
 // awaitInput is a thread that handles queueing inputted messages for processing.
-func (c *C) awaitInput(ctx context.Context) {
+func (c *controller) awaitInput(ctx context.Context) {
 	nextMessage := make(chan string)
 	defer close(nextMessage)
 	go func() {
@@ -240,18 +240,18 @@ func (c *C) awaitInput(ctx context.Context) {
 }
 
 // UpdateContents indicates a new Event has arrived.
-func (c *C) UpdateContents(d data.Event) {
+func (c *controller) UpdateContents(d data.Event) {
 	glog.V(1).Infof("UpdateContents received message %v", d)
 	c.newEvent <- d.EventID
 }
 
 // Input accepts input from the user.
-func (c *C) Input(s string) {
+func (c *controller) Input(s string) {
 	c.input <- s
 }
 
 // Resize notes a change in the number of events displayed.
-func (c *C) Resize(n int) {
+func (c *controller) Resize(n int) {
 	glog.V(1).Infof("Controller got resize: %d", n)
 	select {
 	case c.sizeUpdate <- n:
@@ -262,7 +262,7 @@ func (c *C) Resize(n int) {
 }
 
 // UpdateMeta receives an update about the channel's state.
-func (c *C) UpdateMeta(d data.Channel) {
+func (c *controller) UpdateMeta(d data.Channel) {
 	select {
 	case c.metaUpdate <- d:
 		// Sent update.
