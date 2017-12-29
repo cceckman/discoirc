@@ -25,7 +25,7 @@ type view struct {
 
 	// Second-level elements
 	topic  *tui.Label
-	events *EventsView
+	events *eventsWidget
 	// status bar
 	connection *tui.Label
 	name       *tui.Label
@@ -103,7 +103,7 @@ func NewView() View {
 	// construct V
 	v := &view{
 		topic: tui.NewLabel(""),
-		events: &EventsView{
+		events: &eventsWidget{
 			TailBox:  widgets.NewTailBox(),
 			Renderer: DefaultRenderer,
 		},
@@ -153,14 +153,14 @@ func NewView() View {
 	return v
 }
 
-// EventsView displays the last data.Event objects it contains.
-type EventsView struct {
+// eventsWidget displays the last data.Event objects it contains.
+type eventsWidget struct {
 	*widgets.TailBox
 
 	Renderer EventRenderer
 }
 
-func (v *EventsView) SetEvents(evs []data.Event) {
+func (v *eventsWidget) SetEvents(evs []data.Event) {
 	w := make([]tui.Widget, len(evs))
 	for i, e := range evs {
 		w[i] = v.Renderer(e)
