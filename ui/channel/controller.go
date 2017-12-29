@@ -11,9 +11,9 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-// UIControl is the interface that a higher-level controller must provide.
+// UIController is the interface that a higher-level controller must provide.
 // All of its methods should be accessed via Update.
-type UIControl interface {
+type UIController interface {
 	// Update runs the provided closure in the UI event loop.
 	Update(func())
 
@@ -26,11 +26,42 @@ type UIControl interface {
 	Quit()
 }
 
+// View is a user-facing display of an IRC channel.
+type View interface {
+	tui.Widget
+
+	SetTopic(string)
+	SetNick(string)
+	SetConnection(string)
+	SetName(string)
+	SetMode(string)
+	SetEvents([]data.Event)
+
+	// SetRenderer passes in the function used to render Events in
+	// the channel contents display.
+	SetRenderer(EventRenderer)
+
+	Attach(Controller)
+}
+
+// Model implements the Model of a channel.
+type Model interface {
+	// Returns up to N events ending at this ID.
+	EventsEndingAt(end data.EventID, n int) []data.Event
+	// TODO: maybe use EventsList instead
+
+	// Send sends the message to the channel.
+	Send(string) error
+
+	// Attach uses the ModelController for future updates.
+	Attach(Controller)
+}
+
 var _ Controller = &C{}
 
 // C implements a channel Controller.
 type C struct {
-	ui    UIControl
+	ui    UIController
 	view  View
 	model Model
 
@@ -42,7 +73,7 @@ type C struct {
 }
 
 // New returns a new Controller.
-func New(ctx context.Context, ui UIControl, v View, m Model) Controller {
+func New(ctx context.Context, ui UIController, v View, m Model) Controller {
 	c := &C{
 		ui:         ui,
 		view:       v,

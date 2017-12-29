@@ -1,4 +1,4 @@
-package view_test
+package client_test
 
 import (
 	"testing"
@@ -6,12 +6,11 @@ import (
 	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/ui/client"
-	"github.com/cceckman/discoirc/ui/client/view"
 	discomocks "github.com/cceckman/discoirc/ui/mocks"
 )
 
 func TestNetwork_NoContents(t *testing.T) {
-	w := view.NewNetwork(nil, "Barnetic")
+	w := client.NewNetwork(nil, "Barnetic")
 
 	surface := tui.NewTestSurface(20, 5)
 	theme := tui.NewTheme()
@@ -32,7 +31,7 @@ func TestNetwork_NoContents(t *testing.T) {
 }
 
 func TestNetwork_NoChannels(t *testing.T) {
-	w := view.NewNetwork(nil, "Barnetic")
+	w := client.NewNetwork(nil, "Barnetic")
 	w.SetNick("discobot")
 	w.SetConnection("…")
 
@@ -62,7 +61,7 @@ var renderTests = []struct {
 	{
 		test: "blank client",
 		setup: func() tui.Widget {
-			w := view.New()
+			w := client.New()
 			return w
 		},
 		want: `
@@ -81,7 +80,7 @@ var renderTests = []struct {
 	{
 		test: "ordered networks",
 		setup: func() tui.Widget {
-			w := view.New()
+			w := client.New()
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
 			return w
@@ -102,7 +101,7 @@ var renderTests = []struct {
 	{
 		test: "Removed last network",
 		setup: func() tui.Widget {
-			w := view.New()
+			w := client.New()
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -125,7 +124,7 @@ var renderTests = []struct {
 	{
 		test: "Removed first network",
 		setup: func() tui.Widget {
-			w := view.New()
+			w := client.New()
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -148,7 +147,7 @@ var renderTests = []struct {
 	{
 		test: "Removed middle network",
 		setup: func() tui.Widget {
-			w := view.New()
+			w := client.New()
 			w.GetNetwork("Charlienet").SetNick("charles")
 			w.GetNetwork("Barnet").SetNick("barnacle")
 			w.GetNetwork("AlphaNet").SetNick("edward")
@@ -172,7 +171,7 @@ var renderTests = []struct {
 		test: "empty channel",
 		setup: func() tui.Widget {
 			return tui.NewVBox(
-				view.NewChannel(nil, "#discoirc"),
+				client.NewChannel(nil, "#discoirc"),
 				tui.NewSpacer(),
 			)
 		},
@@ -192,7 +191,7 @@ var renderTests = []struct {
 	{
 		test: "populated channel",
 		setup: func() tui.Widget {
-			c := view.NewChannel(nil, "#discoirc")
+			c := client.NewChannel(nil, "#discoirc")
 			c.SetMode("+foobar")
 			c.SetUnread(99)
 			c.SetMembers(48)
@@ -214,7 +213,7 @@ var renderTests = []struct {
 	{
 		test: "networks with channels",
 		setup: func() tui.Widget {
-			c := view.New()
+			c := client.New()
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -254,7 +253,7 @@ var renderTests = []struct {
 	{
 		test: "channel removal",
 		setup: func() tui.Widget {
-			c := view.New()
+			c := client.New()
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -289,7 +288,7 @@ var renderTests = []struct {
 	{
 		test: "selected channel, deselected channel",
 		setup: func() tui.Widget {
-			c := view.New()
+			c := client.New()
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -329,7 +328,7 @@ var renderTests = []struct {
 	{
 		test: "selected network, deselected network",
 		setup: func() tui.Widget {
-			c := view.New()
+			c := client.New()
 
 			alpha := c.GetNetwork("AlphaNet")
 			alpha.SetNick("edward")
@@ -392,7 +391,7 @@ type namedWidget interface {
 }
 
 func TestNetwork_FocusNoNetworks(t *testing.T) {
-	c := view.New()
+	c := client.New()
 	if c.FocusNext(c) != c {
 		t.Errorf("unexpected next element for root: got: %v want: %v", c.FocusNext(c), c)
 	}
@@ -401,12 +400,12 @@ func TestNetwork_FocusNoNetworks(t *testing.T) {
 
 var FocusTests = []struct {
 	Test string
-	Case func() (*view.Client, []namedWidget)
+	Case func() (*client.Client, []namedWidget)
 }{
 	{
 		Test: "no channels",
-		Case: func() (*view.Client, []namedWidget) {
-			c := view.New()
+		Case: func() (*client.Client, []namedWidget) {
+			c := client.New()
 			gophernet := c.GetNetwork("gophernet")
 			kubernet := c.GetNetwork("kubernet")
 
@@ -415,8 +414,8 @@ var FocusTests = []struct {
 	},
 	{
 		Test: "channel wraparound",
-		Case: func() (*view.Client, []namedWidget) {
-			c := view.New()
+		Case: func() (*client.Client, []namedWidget) {
+			c := client.New()
 			gophernet := c.GetNetwork("gophernet")
 			kubernet := c.GetNetwork("kubernet")
 			metallb := kubernet.GetChannel("#metallb")
@@ -426,8 +425,8 @@ var FocusTests = []struct {
 	},
 	{
 		Test: "channel network traversal",
-		Case: func() (*view.Client, []namedWidget) {
-			c := view.New()
+		Case: func() (*client.Client, []namedWidget) {
+			c := client.New()
 			gophernet := c.GetNetwork("gophernet")
 			tuigo := gophernet.GetChannel("#tuigo")
 			discoirc := gophernet.GetChannel("#discoirc")
@@ -503,7 +502,7 @@ var ActivationTests = []struct {
 	{
 		Test: "hit Down, activate",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -520,7 +519,7 @@ var ActivationTests = []struct {
 	{
 		Test: "hit J, activate",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -537,7 +536,7 @@ var ActivationTests = []struct {
 	{
 		Test: "hit K, activate",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -553,7 +552,7 @@ var ActivationTests = []struct {
 	{
 		Test: "hit Up, activate",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -570,7 +569,7 @@ var ActivationTests = []struct {
 	{
 		Test: "no activation on root",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -585,7 +584,7 @@ var ActivationTests = []struct {
 	{
 		Test: "no activation on network",
 		Setup: func() client.View {
-			root := view.New()
+			root := client.New()
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 			return root
@@ -641,7 +640,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 }
 
 func TestNetwork_Quit(t *testing.T) {
-	root := view.New()
+	root := client.New()
 	ui := discomocks.NewController()
 	root.Attach(ui)
 

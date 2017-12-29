@@ -17,7 +17,7 @@ type Model struct {
 	sync.RWMutex
 	Channel    data.Channel
 	Events     data.EventList
-	Controller channel.ModelController
+	Controller channel.Controller
 }
 
 func NewModel() *Model {
@@ -66,7 +66,7 @@ func (m *Model) UpdateChannel(d data.Channel) {
 	}
 }
 
-func (m *Model) Attach(c channel.ModelController) {
+func (m *Model) Attach(c channel.Controller) {
 	m.Lock()
 	defer m.Unlock()
 	m.Controller = c

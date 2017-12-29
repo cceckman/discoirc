@@ -1,14 +1,12 @@
-package view
+package client
 
 import (
 	"fmt"
 
 	"github.com/marcusolsson/tui-go"
-
-	"github.com/cceckman/discoirc/ui/client"
 )
 
-var _ client.ChannelView = &Channel{}
+var _ ChannelView = &Channel{}
 
 func NewChannel(network *Network, name string) *Channel {
 	r := &Channel{

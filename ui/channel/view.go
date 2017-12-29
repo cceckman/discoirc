@@ -34,7 +34,7 @@ type V struct {
 	nick  *tui.Label
 	input *tui.Entry
 
-	controller UIController
+	controller Controller
 }
 
 func (v *V) OnKeyEvent(ev tui.KeyEvent) {
@@ -73,7 +73,7 @@ func (v *V) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
 }
 
-func (v *V) Attach(c UIController) {
+func (v *V) Attach(c Controller) {
 	v.controller = c
 	// Set initial size
 	v.controller.Resize(v.events.Size().Y)
@@ -151,4 +151,20 @@ func NewView() View {
 		inputBar,
 	)
 	return v
+}
+
+
+// EventsView displays the last data.Event objects it contains.
+type EventsView struct {
+	*widgets.TailBox
+
+	Renderer EventRenderer
+}
+
+func (v *EventsView) SetEvents(evs []data.Event) {
+	w := make([]tui.Widget, len(evs))
+	for i, e := range evs {
+		w[i] = v.Renderer(e)
+	}
+	v.SetContents(w...)
 }

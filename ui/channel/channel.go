@@ -10,26 +10,9 @@ import (
 // (e.g. message) into an tui.Widget suitable for display.
 type EventRenderer func(data.Event) tui.Widget
 
-// View is a user-facing display of an IRC channel.
-type View interface {
-	tui.Widget
 
-	SetTopic(string)
-	SetNick(string)
-	SetConnection(string)
-	SetName(string)
-	SetMode(string)
-	SetEvents([]data.Event)
-
-	// SetRenderer passes in the function used to render Events in
-	// the channel contents display.
-	SetRenderer(EventRenderer)
-
-	Attach(UIController)
-}
-
-// UIController is a type which can receive updates from a view.
-type UIController interface {
+// Controller is a type which can receive updates from the UI and a backing model.
+type Controller interface {
 	// Accepts input from the user. Must be non-blocking.
 	Input(string)
 
@@ -39,12 +22,8 @@ type UIController interface {
 
 	// TODO: Deferred: Scrolling
 	// TODO: Deferred: Localization of connection / presence
-
 	Quit()
-}
 
-// ModelController is a type which can receive updates from a Model.
-type ModelController interface {
 	// UpdateMeta indicates a change in the channel state.
 	UpdateMeta(data.Channel)
 
@@ -52,20 +31,3 @@ type ModelController interface {
 	UpdateContents(data.Event)
 }
 
-type Controller interface {
-	UIController
-	ModelController
-}
-
-// Model implements the Model of a channel.
-type Model interface {
-	// Returns up to N events ending at this ID.
-	EventsEndingAt(end data.EventID, n int) []data.Event
-	// TODO: maybe use EventsList instead
-
-	// Send sends the message to the channel.
-	Send(string) error
-
-	// Attach uses the ModelController for future updates.
-	Attach(ModelController)
-}
