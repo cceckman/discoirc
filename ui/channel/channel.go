@@ -31,15 +31,3 @@ type Controller interface {
 	UpdateContents(data.Event)
 }
 
-// Model implements the Model of a channel.
-type Model interface {
-	// Returns up to N events ending at this ID.
-	EventsEndingAt(end data.EventID, n int) []data.Event
-	// TODO: maybe use EventsList instead
-
-	// Send sends the message to the channel.
-	Send(string) error
-
-	// Attach uses the ModelController for future updates.
-	Attach(Controller)
-}
