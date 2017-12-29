@@ -12,6 +12,7 @@ import (
 )
 
 // UIControl is the interface that a higher-level controller must provide.
+// All of its methods should be accessed via Update.
 type UIControl interface {
 	// Update runs the provided closure in the UI event loop.
 	Update(func())
@@ -71,7 +72,9 @@ func New(ctx context.Context, ui UIControl, v View, m Model) Controller {
 }
 
 func (c *C) Quit() {
-	c.ui.Quit()
+	c.ui.Update(func() {
+		c.ui.Quit()
+	})
 }
 
 // TODO: Support localization
@@ -173,7 +176,9 @@ func (c *C) awaitInput(ctx context.Context) {
 		lower := strings.ToLower(m)
 
 		if strings.HasPrefix(lower, "/client") {
-			c.ui.ActivateClient()
+			c.ui.Update(func() {
+				c.ui.ActivateClient()
+			})
 			return
 		}
 		if strings.HasPrefix(lower, "/quit") {

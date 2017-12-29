@@ -20,7 +20,9 @@ func TestController_ResizeNoEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(1) // Update of metadata on attachment.
+	ui.Add(1) // Update of root
+	ui.Add(1) // Update metadata
+	// No update to events; no events present.
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
@@ -47,7 +49,9 @@ func TestController_ResizeWithEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(2) // Update of metadata, contents on attachment.
+	ui.Add(1) // Initial attachment
+	ui.Add(1) // Update metadata
+	ui.Add(1) // Update contents
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		// Still should be zero events; size is zero.
@@ -81,7 +85,9 @@ func TestController_ReceiveEvent(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(2)
+	ui.Add(1) // Set root
+	ui.Add(1) // Update events
+	ui.Add(1) // Update metadata
 	_ = channel.New(ctx, ui, v, m)
 	ui.Add(1)
 	sz := 8
@@ -133,7 +139,9 @@ func TestController_UpdateMeta(t *testing.T) {
 		}
 	}
 
-	ui.Add(1) // Update channel metadata on attachment
+	ui.Add(1) // Update root
+	ui.Add(1) // Update metadata
+	// No update of contents; no events present
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		compare("Topic", v.Topic, m.Channel.Topic)
@@ -174,6 +182,8 @@ func TestController_Quit(t *testing.T) {
 	v := &mocks.View{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ui.Add(1) // set root
+	ui.Add(1) // update metadata
 	_ = channel.New(ctx, ui, v, m)
 
 	ui.Add(1)
@@ -196,7 +206,8 @@ func TestController_Client(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ui.Add(1) // initial set-root
+	ui.Add(1) // set-root
+	ui.Add(1) // metadata update
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if ui.Root != v {
@@ -205,7 +216,7 @@ func TestController_Client(t *testing.T) {
 	})
 
 	// TODO: support a keybinding rather than command
-	ui.Add(1)
+	ui.Add(1) // swap to client
 	v.Controller.Input("/Client please?")
 	var got discomocks.ActiveView
 	ui.RunSync(func() {

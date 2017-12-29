@@ -44,7 +44,9 @@ type ChannelView interface {
 }
 
 // UIController handles UI events from a client View.
+// All its methods should be called within an Update closure.
 type UIController interface {
+	Update(func())
 	ActivateChannel(network, channel string)
 	Quit()
 }

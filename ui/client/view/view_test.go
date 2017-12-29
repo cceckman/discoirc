@@ -606,19 +606,22 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 
+			ui.Add(1)
 			root := tt.Setup()
 			root.Attach(ui)
-			ui.SetWidget(root)
+			ui.Update(func() {
+				ui.SetWidget(root)
+			})
 
 			if tt.WantView != discomocks.ClientView {
-				// Expect an Update
+				// Expect an Update to change the root as keys as pressed.
 				ui.Add(1)
 			}
 			for _, ev := range tt.Input {
 				root.OnKeyEvent(ev)
 			}
 
-			ui.RunSync(func(){
+			ui.RunSync(func() {
 				if ui.V != tt.WantView {
 					t.Errorf("unexpected active view: got: %v want: %v", ui.V, tt.WantView)
 				}
@@ -645,14 +648,12 @@ func TestNetwork_Quit(t *testing.T) {
 	ui.Add(1)
 	// The below update itself.
 	// It's ok for handlers to run in the main loop.
-	ui.Update(func() {
-		root.OnKeyEvent(tui.KeyEvent{
-			Key: tui.KeyCtrlC,
-		})
+	root.OnKeyEvent(tui.KeyEvent{
+		Key: tui.KeyCtrlC,
 	})
 
 	ui.RunSync(func() {
-		if ! ui.HasQuit {
+		if !ui.HasQuit {
 			t.Errorf("client hasn't quit")
 		}
 	})

@@ -18,27 +18,22 @@ const (
 	ChannelView
 )
 
-
 // Controller is mock global-level controller.
-// Operations on it should be run within its UI.
+// Its methods should only be called within the .Update thread.
 type Controller struct {
 	*UI
 
-	V ActiveView
+	V       ActiveView
 	Network string
 	Channel string
 }
 
 func (c *Controller) ActivateClient() {
-	c.UI.Update(func() {
-		c.V = ClientView
-		c.Network, c.Channel = "", ""
-	})
+	c.V = ClientView
+	c.Network, c.Channel = "", ""
 }
 
 func (c *Controller) ActivateChannel(network, channel string) {
-	c.UI.Update(func() {
-		c.V = ChannelView
-		c.Network, c.Channel = network, channel
-	})
+	c.V = ChannelView
+	c.Network, c.Channel = network, channel
 }
