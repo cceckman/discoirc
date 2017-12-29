@@ -11,9 +11,9 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-// UIControl is the interface that a higher-level controller must provide.
+// UIController is the interface that a higher-level controller must provide.
 // All of its methods should be accessed via Update.
-type UIControl interface {
+type UIController interface {
 	// Update runs the provided closure in the UI event loop.
 	Update(func())
 
@@ -61,7 +61,7 @@ var _ Controller = &C{}
 
 // C implements a channel Controller.
 type C struct {
-	ui    UIControl
+	ui    UIController
 	view  View
 	model Model
 
@@ -73,7 +73,7 @@ type C struct {
 }
 
 // New returns a new Controller.
-func New(ctx context.Context, ui UIControl, v View, m Model) Controller {
+func New(ctx context.Context, ui UIController, v View, m Model) Controller {
 	c := &C{
 		ui:         ui,
 		view:       v,
