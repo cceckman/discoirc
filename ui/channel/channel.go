@@ -10,8 +10,9 @@ import (
 // (e.g. message) into an tui.Widget suitable for display.
 type EventRenderer func(data.Event) tui.Widget
 
-// UIController is a type which can receive updates from a view.
-type UIController interface {
+
+// Controller is a type which can receive updates from the UI and a backing model.
+type Controller interface {
 	// Accepts input from the user. Must be non-blocking.
 	Input(string)
 
@@ -21,22 +22,13 @@ type UIController interface {
 
 	// TODO: Deferred: Scrolling
 	// TODO: Deferred: Localization of connection / presence
-
 	Quit()
-}
 
-// ModelController is a type which can receive updates from a Model.
-type ModelController interface {
 	// UpdateMeta indicates a change in the channel state.
 	UpdateMeta(data.Channel)
 
 	// UpdateContents indicates a new Event has arrived.
 	UpdateContents(data.Event)
-}
-
-type Controller interface {
-	UIController
-	ModelController
 }
 
 // Model implements the Model of a channel.
@@ -49,5 +41,5 @@ type Model interface {
 	Send(string) error
 
 	// Attach uses the ModelController for future updates.
-	Attach(ModelController)
+	Attach(Controller)
 }

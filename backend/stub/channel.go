@@ -33,7 +33,7 @@ type Channel struct {
 	meta       chan data.Channel
 
 	sync.RWMutex
-	controller channel.ModelController
+	controller channel.Controller
 	events     data.EventList
 }
 
@@ -152,7 +152,7 @@ func (c *Channel) EventsEndingAt(end data.EventID, n int) []data.Event {
 	return c.events.SelectSizeMax(uint(n), end)
 }
 
-func (c *Channel) Attach(m channel.ModelController) {
+func (c *Channel) Attach(m channel.Controller) {
 	c.Lock()
 	defer c.Unlock()
 	c.controller = m

@@ -34,7 +34,7 @@ type V struct {
 	nick  *tui.Label
 	input *tui.Entry
 
-	controller UIController
+	controller Controller
 }
 
 func (v *V) OnKeyEvent(ev tui.KeyEvent) {
@@ -73,7 +73,7 @@ func (v *V) SetEvents(events []data.Event) {
 	v.events.SetEvents(events)
 }
 
-func (v *V) Attach(c UIController) {
+func (v *V) Attach(c Controller) {
 	v.controller = c
 	// Set initial size
 	v.controller.Resize(v.events.Size().Y)

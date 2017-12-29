@@ -1,10 +1,13 @@
 package mocks
 
 import (
+	"fmt"
+
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 )
 
-// UIController is a mock channel.UIController.
+// UIController is a mock channel.Controller.
 type UIController struct {
 	Received []string
 	Size     int
@@ -24,4 +27,12 @@ func (c *UIController) Quit() {
 	c.HasQuit = true
 }
 
-var _ channel.UIController = &UIController{}
+func (c *UIController) UpdateMeta( _ data.Channel) {
+	panic(fmt.Errorf("unsupported call in mock instance"))
+}
+
+func (c *UIController) UpdateContents( _ data.Event) {
+	panic(fmt.Errorf("unsupported in mock instance"))
+}
+
+var _ channel.Controller = &UIController{}

@@ -41,7 +41,7 @@ type View interface {
 	// the channel contents display.
 	SetRenderer(EventRenderer)
 
-	Attach(UIController)
+	Attach(Controller)
 }
 
 var _ Controller = &C{}
