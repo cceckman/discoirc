@@ -11,7 +11,9 @@ import (
 type EventRenderer func(data.Event) tui.Widget
 
 
-// Controller is a type which can receive updates from the UI and a backing model.
+// Controller manages the lifecycle of a channel view.
+// It bridges a `Model`, which receives updates from a connection, and a `View`,
+// which receives updates from the user.
 type Controller interface {
 	// Accepts input from the user. Must be non-blocking.
 	Input(string)

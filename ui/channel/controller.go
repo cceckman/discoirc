@@ -44,7 +44,7 @@ type View interface {
 	Attach(Controller)
 }
 
-// Model implements the Model of a channel.
+// Model holds and updates the state of a channel.
 type Model interface {
 	// Returns up to N events ending at this ID.
 	EventsEndingAt(end data.EventID, n int) []data.Event
