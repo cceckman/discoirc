@@ -20,9 +20,6 @@ func TestController_ResizeNoEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(1) // Update of root
-	ui.Add(1) // Update metadata
-	// No update to events; no events present.
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
@@ -31,7 +28,6 @@ func TestController_ResizeNoEvents(t *testing.T) {
 	})
 
 	// Resize when no events available; should trigger write of zero events.
-	ui.Add(1)
 	v.Controller.Resize(8)
 	ui.RunSync(func() {
 		if len(v.Events) > 0 {
@@ -49,9 +45,6 @@ func TestController_ResizeWithEvents(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(1) // Initial attachment
-	ui.Add(1) // Update metadata
-	ui.Add(1) // Update contents
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		// Still should be zero events; size is zero.
@@ -61,7 +54,6 @@ func TestController_ResizeWithEvents(t *testing.T) {
 	})
 
 	// Resizing should pick up N events.
-	ui.Add(1)
 	v.Controller.Resize(8)
 	ui.RunSync(func() {
 		if len(v.Events) != 8 {
@@ -85,11 +77,7 @@ func TestController_ReceiveEvent(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(1) // Set root
-	ui.Add(1) // Update events
-	ui.Add(1) // Update metadata
 	_ = channel.New(ctx, ui, v, m)
-	ui.Add(1)
 	sz := 8
 	v.Controller.Resize(sz)
 	ui.RunSync(func() {
@@ -98,7 +86,6 @@ func TestController_ReceiveEvent(t *testing.T) {
 		}
 	})
 
-	ui.Add(1)
 	message := "my message"
 	m.AddEvent(message)
 	ui.RunSync(func() {
@@ -139,8 +126,6 @@ func TestController_UpdateMeta(t *testing.T) {
 		}
 	}
 
-	ui.Add(1) // Update root
-	ui.Add(1) // Update metadata
 	// No update of contents; no events present
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
@@ -182,11 +167,8 @@ func TestController_Quit(t *testing.T) {
 	v := &mocks.View{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ui.Add(1) // set root
-	ui.Add(1) // update metadata
 	_ = channel.New(ctx, ui, v, m)
 
-	ui.Add(1)
 	v.Controller.Input("/quit")
 	ui.RunSync(func() {
 		if !ui.HasQuit {
@@ -206,8 +188,6 @@ func TestController_Client(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ui.Add(1) // set-root
-	ui.Add(1) // metadata update
 	_ = channel.New(ctx, ui, v, m)
 	ui.RunSync(func() {
 		if ui.Root != v {
@@ -216,7 +196,6 @@ func TestController_Client(t *testing.T) {
 	})
 
 	// TODO: support a keybinding rather than command
-	ui.Add(1) // swap to client
 	v.Controller.Input("/Client please?")
 	var got discomocks.ActiveView
 	ui.RunSync(func() {

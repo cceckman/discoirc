@@ -605,12 +605,10 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 
-			ui.Add(1)
 			root := tt.Setup(ui)
 
 			if tt.WantView != discomocks.ClientView {
 				// Expect an Update to change the root as keys as pressed.
-				ui.Add(1)
 			}
 			for _, ev := range tt.Input {
 				root.OnKeyEvent(ev)
@@ -637,10 +635,8 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 
 func TestNetwork_Quit(t *testing.T) {
 	ui := discomocks.NewController()
-	ui.Add(1) // Sets root
 	root := client.New(ui)
 
-	ui.Add(1)
 	// The below update itself.
 	// It's ok for handlers to run in the main loop.
 	root.OnKeyEvent(tui.KeyEvent{

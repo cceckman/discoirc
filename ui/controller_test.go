@@ -38,10 +38,8 @@ func TestActivateClient(t *testing.T) {
 
 	u := discomocks.NewUI()
 
-	u.Add(1) // Will reset the root view.
 	ctl := ui.New(ctx, u)
 
-	u.Add(1) // One change: change the root.
 	ctl.ActivateClient()
 	// Panic: negative WG counter
 	u.RunSync(func() {
