@@ -34,7 +34,7 @@ and Guildenstern!
 much talk'd of you;                     
 2,3 <rosencrantz> Both your majesties   
 HamNet: ✓ #hamlet: +v                   
-<nick>                                  
+<yorick>                                
 `
 
 var theme = func() *tui.Theme {
@@ -53,6 +53,21 @@ var renderTests = []struct {
 		test: "base render",
 		setup: func(c *channel.View) {
 			c.SetRenderer(testRenderer)
+			c.UpdateNetwork(data.NetworkState{
+				Network: "HamNet",
+				State:   data.Connected,
+				Nick:    "yorick",
+			})
+			c.UpdateChannel(data.ChannelState{
+				Network:     "HamNet",
+				Channel:     "#hamlet",
+				Presence:    data.Joined,
+				ChannelMode: "+v",
+				Topic:       "Act I, Scene 1",
+				Unread:      3834, // depending on your editor, of course.
+				Members:     12,   // in the company, more characters.
+				LastMessage: mocks.Events[len(mocks.Events)-1],
+			})
 		},
 		wantContents:    wantContents40x10,
 		wantDecorations: wantDecor40x10,
