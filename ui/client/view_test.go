@@ -657,9 +657,6 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
 
-			if tt.WantView != discomocks.ClientView {
-				// Expect an Update to change the root as keys as pressed.
-			}
 			for _, ev := range tt.Input {
 				root.OnKeyEvent(ev)
 			}
