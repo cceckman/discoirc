@@ -1,8 +1,6 @@
 package mocks
 
 import (
-	"fmt"
-
 	"github.com/cceckman/discoirc/backend"
 	"github.com/cceckman/discoirc/data"
 )
@@ -20,14 +18,14 @@ var Events = data.NewEvents([]data.Event{
 })
 
 type Backend struct {
-	Receiver backend.FilteredStateReceiver
+	Receiver backend.StateReceiver
 	Events   data.EventList
 
 	Sent []string
 }
 
-func (b *Backend) Subscribe(_ backend.StateReceiver) {
-	panic(fmt.Errorf("not implemented"))
+func (b *Backend) Subscribe(r backend.StateReceiver) {
+	b.Receiver = r
 }
 func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
 	b.Receiver = r

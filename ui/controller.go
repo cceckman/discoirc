@@ -1,12 +1,10 @@
 package ui
 
 import (
-	"context"
-
 	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/ui/client"
-	"github.com/cceckman/discoirc/ui/widgets"
+	"github.com/cceckman/discoirc/backend"
 )
 
 // UI is the subset of the tui.UI interface that the Controller uses directly or passes through
@@ -16,13 +14,12 @@ type UI interface {
 	Quit()
 }
 
-func New(ctx context.Context, ui UI) *Controller {
+func New(ui UI, be backend.Backend) *Controller {
 	c := &Controller{
 		UI:       ui,
+		backend: be,
 		toClient: make(chan struct{}),
 	}
-
-	go c.mainLoop(ctx)
 
 	return c
 }
@@ -31,6 +28,8 @@ func New(ctx context.Context, ui UI) *Controller {
 // It manages the lifecycle of other controllers and views.
 type Controller struct {
 	UI
+
+	backend backend.Backend
 
 	toClient chan struct{}
 }
@@ -43,34 +42,7 @@ func (c *Controller) ActivateChannel(network, channel string) {
 
 // ActivateClient closes the current view, and replaces it with a view of all
 // active sessions of this client.
+// Must be run from the UI thread.
 func (c *Controller) ActivateClient() {
-	c.toClient <- struct{}{}
-}
-
-// mainLoop runs outside the UI thread so that it can manage the
-// lifecycle of background threads (via Context).
-func (c *Controller) mainLoop(ctx context.Context) {
-	join(c.UI, func() {
-		c.UI.SetWidget(widgets.NewSplash(c))
-	})
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-c.toClient:
-			client.New(c)
-		}
-		// TODO: Clean up previous threads (context)
-	}
-}
-
-// join is a utility function that calls Update(f), but waits
-// until its completion. It's the synchronous version of ui.Update.
-func join(ui UI, f func()) {
-	blk := make(chan struct{})
-	ui.Update(func(){
-		f()
-		close(blk)
-	})
-	<-blk
+	client.New(c, c.backend)
 }

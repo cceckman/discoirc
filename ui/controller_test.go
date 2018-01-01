@@ -1,13 +1,12 @@
 package ui_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/cceckman/discoirc/ui"
 	_ "github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/client"
-	discomocks "github.com/cceckman/discoirc/ui/mocks"
+	"github.com/cceckman/discoirc/ui/mocks"
 )
 
 func TestActivateChannel(t *testing.T) {
@@ -33,12 +32,9 @@ func TestActivateChannel(t *testing.T) {
 }
 
 func TestActivateClient(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	u := mocks.NewUI()
 
-	u := discomocks.NewUI()
-
-	ctl := ui.New(ctx, u)
+	ctl := ui.New(u, mocks.NewBackend())
 
 	ctl.ActivateClient()
 	// Panic: negative WG counter
