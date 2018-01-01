@@ -43,6 +43,9 @@ func main() {
 
 	go func() {
 		time.Sleep(2 * time.Second)
+		ctl.Update(func() {
+			ctl.ActivateClient()
+		})
 
 		toggle := &Toggle{
 			Demo: backend,
