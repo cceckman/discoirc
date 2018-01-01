@@ -2,6 +2,7 @@ package channel_test
 
 import (
 	"fmt"
+	"image"
 	"testing"
 
 	"github.com/cceckman/discoirc/data"
@@ -45,14 +46,13 @@ var theme = func() *tui.Theme {
 
 var renderTests = []struct {
 	test            string
-	setup           func(c *channel.View)
+	setup           func(c *channel.View) func()
 	wantContents    string
 	wantDecorations string
 }{
 	{
 		test: "base render",
-		setup: func(c *channel.View) {
-			c.SetRenderer(testRenderer)
+		setup: func(c *channel.View) func() {
 			c.UpdateNetwork(data.NetworkState{
 				Network: "HamNet",
 				State:   data.Connected,
@@ -68,12 +68,71 @@ var renderTests = []struct {
 				Members:     12,   // in the company, more characters.
 				LastMessage: mocks.Events[len(mocks.Events)-1],
 			})
+			return func() {}
 		},
 		wantContents:    wantContents40x10,
 		wantDecorations: wantDecor40x10,
 	},
-	// TODO: Resize
-	// TODO: Underflow - not enough events
+	{
+		test: "resize render",
+		setup: func(c *channel.View) func() {
+			c.UpdateNetwork(data.NetworkState{
+				Network: "HamNet",
+				State:   data.Connected,
+				Nick:    "yorick",
+			})
+			c.UpdateChannel(data.ChannelState{
+				Network:     "HamNet",
+				Channel:     "#hamlet",
+				Presence:    data.Joined,
+				ChannelMode: "+v",
+				Topic:       "Act I, Scene 1",
+				Unread:      3834, // depending on your editor, of course.
+				Members:     12,   // in the company, more characters.
+				LastMessage: mocks.Events[len(mocks.Events)-1],
+			})
+			return func() {
+				// Will reset to appropriate size when applied to the surface.
+				c.Resize(image.Pt(80, 80))
+			}
+		},
+		wantContents:    wantContents40x10,
+		wantDecorations: wantDecor40x10,
+	},
+	{
+		test: "underflow render",
+		setup: func(c *channel.View) func() {
+			c.UpdateNetwork(data.NetworkState{
+				Network: "HamNet",
+				State:   data.Connected,
+				Nick:    "yorick",
+			})
+			c.UpdateChannel(data.ChannelState{
+				Network:     "HamNet",
+				Channel:     "#hamlet",
+				Presence:    data.Joined,
+				ChannelMode: "+v",
+				Topic:       "Act I, Scene 1",
+				Unread:      3834, // depending on your editor, of course.
+				Members:     12,   // in the company, more characters.
+				LastMessage: mocks.Events[3],
+			})
+			return func() {}
+		},
+		wantContents: `
+Act I, Scene 1                          
+                                        
+                                        
+                                        
+1,1 TOPIC Act I, Scene 1                
+1,2 JOIN barnardo                       
+1,3 JOIN francisco                      
+1,4 <barnardo> Who's there?             
+HamNet: ✓ #hamlet: +v                   
+<yorick>                                
+`,
+		wantDecorations: wantDecor40x10,
+	},
 }
 
 func TestRender(t *testing.T) {
@@ -90,8 +149,10 @@ func TestRender(t *testing.T) {
 			// Root creation must happen in the main thread
 			ui.RunSync(func() {
 				w = channel.NewView("HamNet", "#hamlet", ui, d)
+				w.SetRenderer(testRenderer)
 			})
-			tt.setup(w)
+			f := tt.setup(w)
+			ui.Update(f)
 			// Render in the UI thread so that the race detector works properly.
 			ui.Update(func() {
 				p.Repaint(w)
