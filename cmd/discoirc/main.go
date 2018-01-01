@@ -8,9 +8,12 @@ import (
 	"os"
 	"time"
 
-	gctl "github.com/cceckman/discoirc/ui"
 	"github.com/golang/glog"
 	"github.com/marcusolsson/tui-go"
+
+	gctl "github.com/cceckman/discoirc/ui"
+	"github.com/cceckman/discoirc/ui/widgets"
+	"github.com/cceckman/discoirc/backend/demo"
 )
 
 var (
@@ -34,29 +37,36 @@ func main() {
 
 	ui := tui.New(tui.NewHBox())
 	ui.SetTheme(GetTheme())
-	ctl := gctl.New(ctx, ui)
+	// TODO: maybe put this in controller?
+	ui.SetWidget(widgets.NewSplash(ui))
+
+	backend := demo.New()
+
+	ctl := gctl.New(ui, backend)
+
 
 	go func() {
 		time.Sleep(2 * time.Second)
 
-		chanCtl := GetStubChannel(ctx, ctl, "Barnetic", "#discoirc", "discobot")
 		toggle := &Toggle{
-			Channel:  chanCtl,
+			Demo: backend,
+			Net: "Barnetic",
+			Chan: "#discoirc",
 			Duration: 2 * time.Second,
 		}
 
 		ctl.Update(func() {
-			ui.SetKeybinding("Ctrl+Space", func() {
-				glog.V(1).Info("toggling metadata cycling")
-				toggle.Meta(ctx)
+			ui.SetKeybinding("Ctrl+R", func() {
+				glog.V(1).Info("toggling network cycling")
+				toggle.Network()
 			})
-			ui.SetKeybinding("Ctrl+A", func() {
-				glog.V(1).Info("toggling message cycling")
-				toggle.Messages(ctx)
+			ui.SetKeybinding("Ctrl+F", func() {
+				glog.V(1).Info("toggling channel cycling")
+				toggle.Channel()
 			})
 		})
-		toggle.Messages(ctx)
-		toggle.Meta(ctx)
+		toggle.Network()
+		toggle.Channel()
 	}()
 
 	if err := ui.Run(); err != nil {
