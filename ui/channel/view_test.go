@@ -180,43 +180,95 @@ func testRenderer(e data.Event) tui.Widget {
 	return r
 }
 
-// TypeString issues KeyEvents to the Widget as if the provided string had been typed.
-func TypeString(w tui.Widget, s string) {
-	for _, rn := range s {
-		var ev tui.KeyEvent
-		if rn != '\n' {
-			ev = tui.KeyEvent{
-				Key:  tui.KeyRune,
-				Rune: rn,
-			}
-		} else {
-			ev = tui.KeyEvent{
-				Key: tui.KeyEnter,
-			}
-		}
-		w.OnKeyEvent(ev)
-	}
-}
-
 func TestInput_Message(t *testing.T) {
 	ui := discomocks.NewController()
 	defer ui.Close()
 	d := mocks.NewBackend()
+	// Root creation must happen in the main thread
+	ui.RunSync(func() {
+		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+	})
 
-	var w *channel.View
-	w = channel.NewView("HamNet", "#hamlet", ui, d)
+	ui.Type("hello everyone")
 
-	TypeString(w, "hello everyone")
 	if len(d.Sent) != 0 {
 		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
 	}
-	TypeString(w, "!\n")
+
+	ui.Type("!\nhow are you")
 	if len(d.Sent) != 1 || d.Sent[0] != "hello everyone!" {
 		t.Errorf("unexpected messages sent: got: %v want: %q", d.Sent, "hello everyone!")
 	}
 }
 
-// TODO: Redo typing tests:
-// - Send message
-// - Quit by message, quit by ctrl+c
-// - Go to client
+func TestInput_QuitMessage(t *testing.T) {
+	ui := discomocks.NewController()
+	defer ui.Close()
+	d := mocks.NewBackend()
+	// Root creation must happen in the main thread
+	ui.RunSync(func() {
+		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+	})
+
+	ui.Type("/quit nothing to see here\n")
+	if len(d.Sent) != 0 {
+		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
+	}
+
+	ui.RunSync(func() {
+		if !ui.HasQuit {
+			t.Errorf("unexpected state: have not quit")
+		}
+	})
+}
+
+func TestInput_QuitKeybind(t *testing.T) {
+	ui := discomocks.NewController()
+	defer ui.Close()
+	d := mocks.NewBackend()
+	// Root creation must happen in the main thread
+	ui.RunSync(func() {
+		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+	})
+
+	ui.Update(func() {
+		ui.Root.OnKeyEvent(tui.KeyEvent{
+			Key: tui.KeyCtrlC,
+		})
+	})
+
+	if len(d.Sent) != 0 {
+		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
+	}
+
+	ui.RunSync(func() {
+		if !ui.HasQuit {
+			t.Errorf("unexpected state: have not quit")
+		}
+	})
+}
+
+func TestInput_ActivateClient(t *testing.T) {
+	ui := discomocks.NewController()
+	defer ui.Close()
+	d := mocks.NewBackend()
+
+	ui.RunSync(func() {
+		ui.V = discomocks.ChannelView
+	})
+
+
+	// Root creation must happen in the main thread
+	ui.RunSync(func() {
+		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+	})
+
+	ui.Type("/client\n")
+
+	ui.RunSync(func() {
+		if ui.V != discomocks.ClientView {
+			t.Errorf("unexpected root state: got: %v want: %v", ui.V, discomocks.ClientView)
+		}
+	})
+}
+
