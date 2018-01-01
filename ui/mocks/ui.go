@@ -26,7 +26,7 @@ func (ui *UI) Type(s string) {
 				Key: tui.KeyEnter,
 			}
 		}
-		ui.Update(func(){
+		ui.Update(func() {
 			if ui.Root == nil {
 				return
 			}
@@ -42,11 +42,29 @@ type UI struct {
 
 	Root tui.Widget
 
+	Painter *tui.Painter
+
 	HasQuit bool
+}
+
+// Repaint re-renders if the painter and root are not nil.
+func (ui *UI) Repaint() {
+	if ui.Painter != nil && ui.Root != nil {
+		ui.Painter.Repaint(ui.Root)
+	}
+
+}
+
+func (ui *UI) Update(f func()) {
+	ui.UpdateCounter.Update(func() {
+		f()
+		ui.Repaint()
+	})
 }
 
 func (ui *UI) SetWidget(w tui.Widget) {
 	ui.Root = w
+	ui.Repaint()
 }
 
 func (ui *UI) Quit() {

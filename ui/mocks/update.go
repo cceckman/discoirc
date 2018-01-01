@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// UpdateCounter is a controller.UIUpdater that can queues, and can synchronize against, outstanding requests.
+// UpdateCounter is a controller.UIUpdater that can queue, and can synchronize against, outstanding requests.
 type UpdateCounter struct {
 	wg sync.WaitGroup
 
