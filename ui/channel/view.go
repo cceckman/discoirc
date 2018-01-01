@@ -28,9 +28,9 @@ type UIController interface {
 
 // View implements the channel view.
 type View struct {
-	ui               UIController
-	sender           backend.Sender
-	network, channel string
+	ui              UIController
+	sender          backend.Sender
+	network, target string
 
 	// root element
 	*tui.Box
@@ -41,7 +41,7 @@ type View struct {
 	// status bar
 	// network     *tui.Label
 	connState *widgets.ConnState
-	// channel     *tui.Label
+	// target     *tui.Label
 	channelMode *tui.Label
 	// input bar
 	nick  *tui.Label
@@ -70,7 +70,7 @@ func (v *View) handleInput(entry *tui.Entry) {
 		return
 	}
 	if v.sender != nil {
-		v.sender.Send(v.network, v.channel, m)
+		v.sender.Send(v.network, v.target, m)
 	}
 }
 
@@ -96,7 +96,7 @@ func (v *View) UpdateNetwork(n data.NetworkState) {
 }
 
 func (v *View) UpdateChannel(d data.ChannelState) {
-	if d.Network != v.network || d.Channel != v.channel {
+	if d.Network != v.network || d.Channel != v.target {
 		return
 	}
 
@@ -113,25 +113,23 @@ func (v *View) UpdateChannel(d data.ChannelState) {
 
 }
 
-// Filter indicates the network and channel this widget should receive updates for.
-func (v *View) Filter() (network, channel string) {
-	network = v.network
-	channel = v.channel
-	return
+// Filter indicates the network and target this widget should receive updates for.
+func (v *View) Filter() (string, string) {
+	return v.network, v.target
 }
 
 // New returns a new View. It must be run from the main (UI) thread.
-func NewView(network, channel string, ui UIController, backend backend.Backend) *View {
+func NewView(network, target string, ui UIController, backend backend.Backend) *View {
 	// construct V
 	v := &View{
 		ui:     ui,
 		sender: backend,
 
 		network: network,
-		channel: channel,
+		target:  target,
 
 		topic:       tui.NewLabel(""),
-		events:      NewEventsWidget(backend),
+		events:      NewEventsWidget(network, target, backend),
 		connState:   widgets.NewConnState(),
 		channelMode: tui.NewLabel(""),
 		nick:        tui.NewLabel(""),
@@ -164,7 +162,7 @@ func NewView(network, channel string, ui UIController, backend backend.Backend) 
 				tui.NewLabel(": "),
 				v.connState,
 				tui.NewLabel(" "),
-				tui.NewLabel(channel),
+				tui.NewLabel(target),
 				tui.NewLabel(": "),
 				v.channelMode,
 				rspacer,

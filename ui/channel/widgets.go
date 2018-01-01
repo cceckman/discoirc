@@ -9,16 +9,23 @@ import (
 	"github.com/cceckman/discoirc/ui/widgets"
 )
 
+// EventRenderer is a function that converts a DiscoIRC event
+// (e.g. message) into an tui.Widget suitable for display.
+type EventRenderer func(data.Event) tui.Widget
+
 // EventsProvider returns up to n events ending with 'last'.
 type EventsProvider interface {
-	EventsBefore(n int, last data.EventID) []data.Event
+	EventsBefore(net, target string, n int, last data.EventID) []data.Event
 }
 
 
-func NewEventsWidget(in EventsProvider) *EventsWidget {
+func NewEventsWidget(network, target string, in EventsProvider) *EventsWidget {
 	return &EventsWidget{
 		TailBox: widgets.NewTailBox(),
 		Renderer: DefaultRenderer,
+
+		network: network,
+		target: target,
 		source: in,
 	}
 }
@@ -29,6 +36,8 @@ type EventsWidget struct {
 
 	source   EventsProvider
 	last data.EventID
+
+	network, target string
 
 	Renderer EventRenderer
 }
@@ -46,7 +55,9 @@ func (v *EventsWidget) refreshContents(){
 	// 1. Assume EventsSince may take a long time; handle it in a non-blocking way.
 	// 2. Handle single-new-message more gracefully, i.e. without redrawing
 	//    all of the widgets.
-	events := v.source.EventsBefore(v.TailBox.Size().Y, v.last)
+	events := v.source.EventsBefore(
+		v.network, v.target,
+		v.TailBox.Size().Y, v.last)
 
 	w := make([]tui.Widget, len(events))
 	for i, e := range events {

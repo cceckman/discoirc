@@ -11,6 +11,8 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
+var _ backend.Backend = &Demo{}
+
 type ChanIdent struct {
 	Network, Channel string
 }

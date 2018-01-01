@@ -17,9 +17,15 @@ var Events = data.NewEvents([]data.Event{
 	data.Event{EventID: data.EventID{Epoch: 2, Seq: 3}, Contents: "<rosencrantz> Both your majesties"},
 })
 
+type target struct {
+	Net string
+	Tgt string
+}
+
 type Backend struct {
 	Receiver backend.StateReceiver
-	Events   data.EventList
+
+	events map[target]data.EventList
 
 	Sent []string
 }
@@ -31,8 +37,15 @@ func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
 	b.Receiver = r
 }
 
-func (b *Backend) EventsBefore(n int, last data.EventID) []data.Event {
-	return b.Events.SelectSizeMax(uint(n), last)
+func (b *Backend) EventsBefore(network, tgt string, n int, last data.EventID) []data.Event {
+	if v, ok := b.events[target{
+		Net: network,
+		Tgt: tgt,
+	}]; ok {
+		return v.SelectSizeMax(uint(n), last)
+	}
+
+	return nil
 }
 
 func (b *Backend) Send(_, _ string, message string) {
@@ -40,8 +53,14 @@ func (b *Backend) Send(_, _ string, message string) {
 }
 
 func NewBackend() *Backend {
+	contents := map[target]data.EventList{
+		target{
+			Net: "HamNet",
+			Tgt: "#hamlet",
+		}: Events,
+	}
 	return &Backend{
-		Events: Events,
+		events: contents,
 	}
 
 }

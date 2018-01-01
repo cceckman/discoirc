@@ -34,7 +34,7 @@ type FilteredStateReceiver interface {
 
 // EventsArchive allows lookup of previous event entries.
 type EventsArchive interface {
-	EventsBefore(n int, last data.EventID) []data.Event
+	EventsBefore(network, channel string, n int, last data.EventID) []data.Event
 }
 
 // Sender sends a message on the given network to the given target (channel or user).
