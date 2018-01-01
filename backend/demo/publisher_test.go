@@ -13,6 +13,8 @@ var (
 	_ backend.DataPublisher = demo.New()
 )
 
+// TODO: Test filtered version
+
 func TestClientView(t *testing.T) {
 	view := mocks.NewClient()
 
