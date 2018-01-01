@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/cceckman/discoirc/backend"
@@ -27,7 +26,7 @@ type Backend struct {
 	Sent []string
 }
 
-func (b *Backend) Subscribe(_ context.Context, _ backend.StateReceiver) {
+func (b *Backend) Subscribe(_ backend.StateReceiver) {
 	panic(fmt.Errorf("not implemented"))
 }
 func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {

@@ -1,7 +1,6 @@
 package client_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/marcusolsson/tui-go"
@@ -367,9 +366,6 @@ var clientTests = []struct {
 func TestRender_Client(t *testing.T) {
 	for _, tt := range clientTests {
 		t.Run(tt.test, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
 			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
@@ -380,7 +376,7 @@ func TestRender_Client(t *testing.T) {
 			var w *client.Client
 			// Root creation must happen in the main thread
 			ui.RunSync(func() {
-				w = client.New(ctx, ui, nil)
+				w = client.New(ui, nil)
 			})
 			tt.setup(w)
 			// Render in the UI thread so that the race detector works properly.
@@ -476,7 +472,7 @@ type namedWidget interface {
 }
 
 func TestNetwork_FocusNoNetworks(t *testing.T) {
-	c := client.New(context.Background(), nil, nil)
+	c := client.New(nil, nil)
 	if c.FocusNext(c) != c {
 		t.Errorf("unexpected next element for root: got: %v want: %v", c.FocusNext(c), c)
 	}
@@ -530,11 +526,8 @@ func TestNetwork_Focus(t *testing.T) {
 	for _, tt := range FocusTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
 			ui := discomocks.NewController()
-			c := client.New(ctx, ui, nil)
+			c := client.New(ui, nil)
 
 			want := tt.Case(c)
 			if len(want) == 0 {
@@ -646,13 +639,10 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 	for _, tt := range ActivationTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 
-			root := client.New(ctx, ui, nil)
+			root := client.New(ui, nil)
 
 			root.GetNetwork("gonet").GetChannel("#discoirc")
 			root.GetNetwork("zetanet").GetChannel("#bar")
@@ -682,7 +672,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 
 func TestNetwork_Quit(t *testing.T) {
 	ui := discomocks.NewController()
-	root := client.New(context.Background(), ui, nil)
+	root := client.New(ui, nil)
 
 	// The below update itself.
 	// It's ok for handlers to run in the main loop.

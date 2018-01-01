@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"sort"
 	"sync"
 
@@ -13,7 +12,7 @@ import (
 
 var _ View = &Client{}
 
-func New(ctx context.Context, ctl UIController, provider backend.DataPublisher) *Client {
+func New(ctl UIController, provider backend.DataPublisher) *Client {
 	c := &Client{
 		networksBox: tui.NewVBox(tui.NewSpacer()),
 		controller:  ctl,
@@ -28,7 +27,7 @@ func New(ctx context.Context, ctl UIController, provider backend.DataPublisher) 
 	}
 	// Allow nil for tests.
 	if provider != nil {
-		provider.Subscribe(ctx, c)
+		provider.Subscribe(c)
 	}
 
 	return c
