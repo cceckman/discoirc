@@ -198,6 +198,24 @@ func TypeString(w tui.Widget, s string) {
 	}
 }
 
+func TestInput_Message(t *testing.T) {
+	ui := discomocks.NewController()
+	defer ui.Close()
+	d := mocks.NewBackend()
+
+	var w *channel.View
+	w = channel.NewView("HamNet", "#hamlet", ui, d)
+
+	TypeString(w, "hello everyone")
+	if len(d.Sent) != 0 {
+		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
+	}
+	TypeString(w, "!\n")
+	if len(d.Sent) != 1 || d.Sent[0] != "hello everyone!" {
+		t.Errorf("unexpected messages sent: got: %v want: %q", d.Sent, "hello everyone!")
+	}
+}
+
 // TODO: Redo typing tests:
 // - Send message
 // - Quit by message, quit by ctrl+c

@@ -37,8 +37,13 @@ type EventsArchive interface {
 	EventsBefore(n int, last data.EventID) []data.Event
 }
 
-// Backend supports notification on new events, and lookup of prevents events.
+// Sender sends a message on the given network to the given target (channel or user).
+type Sender interface {
+	Send(network, target string, message string)
+}
+
 type Backend interface {
 	DataPublisher
 	EventsArchive
+	Sender
 }

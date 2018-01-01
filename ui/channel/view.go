@@ -3,8 +3,8 @@ package channel
 import (
 	"strings"
 
-	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
 )
@@ -28,7 +28,8 @@ type UIController interface {
 
 // View implements the channel view.
 type View struct {
-	ui UIController
+	ui               UIController
+	sender           backend.Sender
 	network, channel string
 
 	// root element
@@ -62,11 +63,15 @@ func (v *View) handleInput(entry *tui.Entry) {
 
 	if strings.HasPrefix(lower, "/client") && v.ui != nil {
 		v.ui.ActivateClient()
+		return
 	}
 	if strings.HasPrefix(lower, "/quit") && v.ui != nil {
 		v.ui.Quit()
+		return
 	}
-	// TODO send message on to a provider
+	if v.sender != nil {
+		v.sender.Send(v.network, v.channel, m)
+	}
 }
 
 func (v *View) SetRenderer(e EventRenderer) {
@@ -116,15 +121,17 @@ func (v *View) Filter() (network, channel string) {
 }
 
 // New returns a new View. It must be run from the main (UI) thread.
-func NewView(network, channel string, ui UIController, provider backend.Backend) *View {
+func NewView(network, channel string, ui UIController, backend backend.Backend) *View {
 	// construct V
 	v := &View{
-		ui:      ui,
+		ui:     ui,
+		sender: backend,
+
 		network: network,
 		channel: channel,
 
-		topic: tui.NewLabel(""),
-		events: NewEventsWidget(provider),
+		topic:       tui.NewLabel(""),
+		events:      NewEventsWidget(backend),
 		connState:   widgets.NewConnState(),
 		channelMode: tui.NewLabel(""),
 		nick:        tui.NewLabel(""),
@@ -170,8 +177,8 @@ func NewView(network, channel string, ui UIController, provider backend.Backend)
 		ui.SetWidget(v)
 	}
 
-	if provider != nil {
-		provider.SubscribeFiltered(v)
+	if backend != nil {
+		backend.SubscribeFiltered(v)
 	}
 
 	return v

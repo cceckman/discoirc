@@ -23,6 +23,8 @@ var Events = data.NewEvents([]data.Event{
 type Backend struct {
 	Receiver backend.FilteredStateReceiver
 	Events   data.EventList
+
+	Sent []string
 }
 
 func (b *Backend) Subscribe(_ context.Context, _ backend.StateReceiver) {
@@ -34,6 +36,10 @@ func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
 
 func (b *Backend) EventsBefore(n int, last data.EventID) []data.Event {
 	return b.Events.SelectSizeMax(uint(n), last)
+}
+
+func (b *Backend) Send(_, _ string, message string) {
+	b.Sent = append(b.Sent, message)
 }
 
 func NewBackend() *Backend {
