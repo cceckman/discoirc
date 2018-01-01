@@ -12,7 +12,7 @@ UI panels are in roughly working order, implemented against a stub backend.
 Allow switching between them, but not launching windows. Statically
 configure channels and connections on the stub server.
 
-- [ ] Channel
+- [x] Channel
   - [x] New messages incoming
   - [x] Send messages
   - [x] List network + channel
@@ -20,11 +20,11 @@ configure channels and connections on the stub server.
   - [x] Show mode
   - [x] Show connection state
   - [x] Show topic
-  - [ ] Jump to session view
-- [ ] Client
-  - [ ] Networks
-  - [ ] Channels on networks
-  - [ ] Connection status on networks
+  - [x] Jump to session view
+- [x] Client
+  - [x] Networks
+  - [x] Channels on networks
+  - [x] Connection status on networks
   - [ ] Jump to channel view
 
 Deferred:
