@@ -3,6 +3,9 @@ package ui_test
 import (
 	"testing"
 
+	"github.com/marcusolsson/tui-go"
+
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/client"
@@ -33,4 +36,42 @@ func TestActivateClient(t *testing.T) {
 			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
 		}
 	})
+}
+
+func TestEndToEnd(t *testing.T) {
+	u := mocks.NewUI()
+	surface := tui.NewTestSurface(20, 5)
+	u.Update(func() {
+		u.Painter = tui.NewPainter(surface, tui.NewTheme())
+	})
+	be := mocks.NewBackend()
+
+	var ctl *ui.Controller
+
+	u.Update(func() { ctl = ui.New(u, be) })
+	u.Update(func() { ctl.ActivateClient() })
+
+	u.Wait()
+	be.Receiver.UpdateChannel(data.ChannelState{
+		Network:     "HamNet",
+		Channel:     "#hamlet",
+		ChannelMode: "i",
+	})
+	u.Type("jj")
+
+	wantContents := `
+ HamNet: ?          
+|#hamlet           i
+|✉ 0             0 ☺
+                    
+                    
+`
+	u.RunSync(func() {
+		got := surface.String()
+		if got != wantContents {
+			t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+		}
+
+	})
+
 }
