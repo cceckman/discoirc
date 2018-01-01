@@ -37,6 +37,12 @@ HamNet: ✓ #hamlet: +v
 <nick>                                  
 `
 
+var theme = func() *tui.Theme {
+	t := tui.NewTheme()
+	t.SetStyle("reversed", tui.Style{Reverse: tui.DecorationOn})
+	return t
+}()
+
 var renderTests = []struct {
 	test            string
 	setup           func(c *channel.View)
@@ -59,7 +65,6 @@ func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
 		t.Run(tt.test, func(t *testing.T) {
 			surface := tui.NewTestSurface(40, 10)
-			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
 
 			ui := discomocks.NewController()
