@@ -1,7 +1,6 @@
 package demo_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/cceckman/discoirc/backend"
@@ -15,31 +14,30 @@ var (
 )
 
 func TestClientView(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
 	view := mocks.NewClient()
 
 	// Prepare some state before the channel attaches.
 	d := demo.New()
 	// Network tick changes nick, cycles connection state
-	d.TickNetwork(ctx, "Barnet")
+	d.TickNetwork("Barnet")
 	// Channel tick changes mode, sends a message, changes topic
-	d.TickChannel(ctx, "Barnet", "#discoirc")
-	d.TickChannel(ctx, "Barnet", "&somethingelse")
+	d.TickChannel("Barnet", "#discoirc")
+	d.TickChannel("Barnet", "&somethingelse")
 
 	// Register the subscription.
-	d.Subscribe(ctx, view)
+	d.Subscribe(view)
 	// Add some more events.
-	d.TickNetwork(ctx, "Baznet")
-	d.TickNetwork(ctx, "Baznet")
-	d.TickChannel(ctx, "Slacknet", "#tuigo")
-	d.TickChannel(ctx, "Slacknet", "#tuigo")
+	d.TickNetwork("Baznet")
+	d.TickNetwork("Baznet")
+	d.TickChannel("Slacknet", "#tuigo")
+	d.TickChannel("Slacknet", "#tuigo")
 
-	// Cancel subscription.
-	cancel()
+	// Cancel out subscription.
+	d.Subscribe(nil)
 
 	// Add some more events; shouldn't be received, after cancellation.
-	d.TickNetwork(ctx, "Network9")
-	d.TickChannel(ctx, "Network10", "#nochan")
+	d.TickNetwork("Network9")
+	d.TickChannel("Network10", "#nochan")
 
 	// Check that the networks are right first; everything else depends on that.
 	wantNets := []string{"Barnet", "Baznet", "Slacknet"}

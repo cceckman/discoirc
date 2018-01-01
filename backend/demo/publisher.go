@@ -2,7 +2,6 @@
 package demo
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -34,31 +33,26 @@ func New() *Demo {
 	}
 }
 
-func (d *Demo) Subscribe(ctx context.Context, c backend.StateReceiver) {
+func (d *Demo) Subscribe(c backend.StateReceiver) {
 	d.Lock()
 	defer d.Unlock()
 	d.receiver = c
+	d.filter = nil
 
-	go func() {
-		<-ctx.Done()
-		d.Lock()
-		defer d.Unlock()
-		d.receiver = nil
-	}()
+	// If the receiver actually exists, update state.
+	if d.receiver != nil {
+		d.updateAll()
+	}
+	return
+}
 
-	// If the context is still active; send initial state.
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-	for _, v := range d.nets {
-		d.receiver.UpdateNetwork(*v)
-	}
-	for _, v := range d.chans {
-		d.receiver.UpdateChannel(*v)
-	}
+func (d *Demo) SubscribeFiltered(recv backend.FilteredStateReceiver) {
+	d.Lock()
+	defer d.Unlock()
+	d.receiver = recv
+	d.filter = recv.Filter
 
+	d.updateAll()
 	return
 }
 
@@ -82,20 +76,20 @@ func tickConnState(in data.ConnectionState) data.ConnectionState {
 	return in
 }
 
-func (d *Demo) updateNetwork(ctx context.Context, network string) {
-	// If the context is still active, send update to client.
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		if d.receiver != nil {
-			d.receiver.UpdateNetwork(*d.nets[network])
+func (d *Demo) updateNetwork(network string) {
+	if d.filter != nil {
+		net, _ := d.filter()
+		if net != network {
+			return
 		}
 	}
 
+	if d.receiver != nil {
+		d.receiver.UpdateNetwork(*d.nets[network])
+	}
 }
 
-func (d *Demo) TickNetwork(ctx context.Context, network string) {
+func (d *Demo) TickNetwork(network string) {
 	d.Lock()
 	defer d.Unlock()
 	// Update internal state.
@@ -109,7 +103,7 @@ func (d *Demo) TickNetwork(ctx context.Context, network string) {
 	}
 	net.State = tickConnState(net.State)
 	net.Nick = tickNick(net.Nick)
-	d.updateNetwork(ctx, network)
+	d.updateNetwork(network)
 }
 
 func tickUMode(m string) string {
@@ -149,7 +143,7 @@ func tickTopic(t string) string {
 	return strings.Join(topic[0:l], " ")
 }
 
-func (d *Demo) TickChannel(ctx context.Context, network, channel string) {
+func (d *Demo) TickChannel(network, channel string) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -177,24 +171,33 @@ func (d *Demo) TickChannel(ctx context.Context, network, channel string) {
 	ch.Members += 1
 	ch.Unread *= 2
 
-	d.updateNetwork(ctx, network)
-	d.updateChannel(ctx, network, channel)
+	d.updateNetwork(network)
+	d.updateChannel(network, channel)
 }
 
-func (d *Demo) updateChannel(ctx context.Context, network, channel string) {
-	// If the context is still active, send update to client.
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		if d.receiver != nil {
-			d.receiver.UpdateChannel(*d.chans[ChanIdent{
-				Network: network,
-				Channel: channel,
-			}])
+func (d *Demo) updateChannel(network, channel string) {
+	if d.filter != nil {
+		net, ch := d.filter()
+		if net != network || ch != channel {
+			return
 		}
 	}
+	if d.receiver != nil {
+		d.receiver.UpdateChannel(*d.chans[ChanIdent{
+			Network: network,
+			Channel: channel,
+		}])
+	}
+}
 
+func (d *Demo) updateAll() {
+	if d.receiver == nil {
+		return
+	}
+	for id, _ := range d.chans {
+		d.updateNetwork(id.Network)
+		d.updateChannel(id.Network, id.Channel)
+	}
 }
 
 /*

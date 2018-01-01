@@ -8,14 +8,14 @@
 package backend
 
 import (
-	"context"
-
 	"github.com/cceckman/discoirc/data"
 )
 
-// A DataPublisher allows UI components to subscribe to updates.
+// A DataPublisher allows components to subscribe to updates.
+// Only one subscriber of any sort may be active at a time, from a single
+// DataPublisher.
 type DataPublisher interface {
-	Subscribe(context.Context, StateReceiver)
+	Subscribe(StateReceiver)
 	SubscribeFiltered(FilteredStateReceiver)
 }
 
