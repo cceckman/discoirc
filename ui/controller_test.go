@@ -58,13 +58,13 @@ func TestEndToEnd(t *testing.T) {
 		Network:     "HamNet",
 		Channel:     "#hamlet",
 		ChannelMode: "i",
-		Topic: "The Battlements",
+		Topic:       "The Battlements",
 		LastMessage: mocks.Events[2],
 	}
 	net := data.NetworkState{
 		Network: "HamNet",
-		Nick: "yorick",
-		State: data.Connecting,
+		Nick:    "yorick",
+		State:   data.Connecting,
 	}
 
 	be.Receiver.UpdateChannel(ch)
@@ -107,7 +107,6 @@ func TestEndToEnd(t *testing.T) {
 HamNet: ? #hamlet:            
 < >                           
 `
-
 
 	u.RunSync(func() {
 		if _, ok := u.Root.(*channel.View); !ok {
