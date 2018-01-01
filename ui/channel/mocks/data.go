@@ -16,8 +16,8 @@ type Backend struct {
 func (b *Backend) Subscribe(_ context.Context, _ backend.StateReceiver) {
 	panic(fmt.Errorf("not implemented"))
 }
-func (b *Backend) SubscribeFiltered(_ backend.FilteredStateReceiver) {
-	panic(fmt.Errorf("not implemented"))
+func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
+	b.Receiver = r
 }
 
 func (b *Backend) EventsBefore(n int, last data.EventID) []data.Event {
