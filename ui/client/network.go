@@ -2,6 +2,7 @@ package client
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/widgets"
@@ -42,15 +43,17 @@ type Network struct {
 	*tui.Box
 	client *Client
 
-	channels []*Channel
-
 	indicatorWidget *indicator
 	nameWidget      *tui.Label
 	nickWidget      *tui.Label
 	connWidget      *widgets.ConnState
 	chanWidget      *tui.Box
-}
 
+	// RW of channels already only be run from the UI thread- but this allows
+	// test operations to be safely run from another thread.
+	mu        sync.Mutex
+	channels []*Channel
+}
 
 func (n *Network) UpdateNetwork(state data.NetworkState) {
 	n.nickWidget.SetText(state.Nick)
@@ -71,6 +74,9 @@ func (n *Network) Name() string {
 }
 
 func (n *Network) GetChannel(name string) *Channel {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	for _, v := range n.channels {
 		if v.name == name {
 			return v
@@ -90,6 +96,9 @@ func (n *Network) GetChannel(name string) *Channel {
 }
 
 func (n *Network) RemoveChannel(name string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	for i, v := range n.channels {
 		if v.name == name {
 			n.channels = append(n.channels[0:i], n.channels[i+1:]...)

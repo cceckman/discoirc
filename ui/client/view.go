@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"github.com/cceckman/discoirc/backend"
 	"github.com/cceckman/discoirc/data"
@@ -23,12 +24,7 @@ func New(ctx context.Context, ctl UIController, provider backend.DataPublisher) 
 
 	// Allow nil for tests.
 	if c.controller != nil {
-		blk := make(chan struct{})
-		c.controller.Update(func() {
-			c.controller.SetWidget(c)
-			close(blk)
-		})
-		<-blk
+		c.controller.SetWidget(c)
 	}
 	// Allow nil for tests.
 	if provider != nil {
@@ -40,23 +36,23 @@ func New(ctx context.Context, ctl UIController, provider backend.DataPublisher) 
 
 type Client struct {
 	tui.Widget
-	networksBox *tui.Box
 
-	networks   []*Network
-	controller UIController
-	focused    tui.Widget
+	networksBox *tui.Box
+	controller  UIController
+	focused     tui.Widget
+
+	// RW of networks already only be run from the UI thread- but this allows
+	// test operations to be safely run from another thread.
+	mu       sync.Mutex
+	networks []*Network
 }
 
 func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	switch ev.Key {
 	case tui.KeyCtrlC:
-		c.controller.Update(func() {
-			c.controller.Quit()
-		})
-		return
+		c.controller.Quit()
 	case tui.KeyDown:
 		c.moveFocus(true)
-		return
 	case tui.KeyUp:
 		c.moveFocus(false)
 	case tui.KeyRune:
@@ -85,7 +81,6 @@ func (c *Client) UpdateChannel(ch data.ChannelState) {
 	})
 }
 
-
 func (c *Client) moveFocus(fwd bool) {
 	c.focused.SetFocused(false)
 	var next tui.Widget
@@ -102,6 +97,8 @@ func (c *Client) moveFocus(fwd bool) {
 }
 
 func (c *Client) GetNetwork(name string) *Network {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	for _, v := range c.networks {
 		if v.name == name {
 			return v
@@ -121,6 +118,9 @@ func (c *Client) GetNetwork(name string) *Network {
 }
 
 func (c *Client) RemoveNetwork(name string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for i, v := range c.networks {
 		if v.name == name {
 			c.networks = append(c.networks[0:i], c.networks[i+1:]...)

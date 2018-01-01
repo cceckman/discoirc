@@ -374,18 +374,27 @@ func TestRender_Client(t *testing.T) {
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
 
-			ui := &discomocks.SyncController{}
+			ui := discomocks.NewController()
+			defer ui.Close()
 
-			w := client.New(ctx, ui, nil)
+			var w *client.Client
+			// Root creation must happen in the main thread
+			ui.RunSync(func() {
+				w = client.New(ctx, ui, nil)
+			})
 			tt.setup(w)
 			// Render in the UI thread so that the race detector works properly.
+			ui.Update(func() {
+				p.Repaint(w)
+			})
 
-			p.Repaint(w)
-
-			got := surface.String()
-			if got != tt.want {
-				t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, tt.want)
-			}
+			// And run tests
+			ui.RunSync(func() {
+				got := surface.String()
+				if got != tt.want {
+					t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, tt.want)
+				}
+			})
 		})
 	}
 }
@@ -524,7 +533,7 @@ func TestNetwork_Focus(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			ui := &discomocks.SyncController{}
+			ui := discomocks.NewController()
 			c := client.New(ctx, ui, nil)
 
 			want := tt.Case(c)
@@ -643,7 +652,6 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 
-			ui.Add(1)
 			root := client.New(ctx, ui, nil)
 
 			root.GetNetwork("gonet").GetChannel("#discoirc")
@@ -651,7 +659,6 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 
 			if tt.WantView != discomocks.ClientView {
 				// Expect an Update to change the root as keys as pressed.
-				ui.Add(1)
 			}
 			for _, ev := range tt.Input {
 				root.OnKeyEvent(ev)
@@ -678,10 +685,8 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 
 func TestNetwork_Quit(t *testing.T) {
 	ui := discomocks.NewController()
-	ui.Add(1) // Sets root
 	root := client.New(context.Background(), ui, nil)
 
-	ui.Add(1)
 	// The below update itself.
 	// It's ok for handlers to run in the main loop.
 	root.OnKeyEvent(tui.KeyEvent{
