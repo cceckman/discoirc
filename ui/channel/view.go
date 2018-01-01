@@ -119,7 +119,7 @@ func (v *View) Filter() (string, string) {
 }
 
 // New returns a new View. It must be run from the main (UI) thread.
-func NewView(network, target string, ui UIController, backend backend.Backend) *View {
+func New(network, target string, ui UIController, backend backend.Backend) *View {
 	// construct V
 	v := &View{
 		ui:     ui,

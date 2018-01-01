@@ -3,8 +3,9 @@ package ui
 import (
 	"github.com/marcusolsson/tui-go"
 
-	"github.com/cceckman/discoirc/ui/client"
 	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/ui/channel"
+	"github.com/cceckman/discoirc/ui/client"
 )
 
 // UI is the subset of the tui.UI interface that the Controller uses directly or passes through
@@ -17,7 +18,7 @@ type UI interface {
 func New(ui UI, be backend.Backend) *Controller {
 	c := &Controller{
 		UI:       ui,
-		backend: be,
+		backend:  be,
 		toClient: make(chan struct{}),
 	}
 
@@ -36,8 +37,8 @@ type Controller struct {
 
 // ActivateChannel closes the current view, and replaces it with a view of the
 // given channel in the given network.
-func (c *Controller) ActivateChannel(network, channel string) {
-	// TODO
+func (c *Controller) ActivateChannel(network, target string) {
+	channel.New(network, target, c, c.backend)
 }
 
 // ActivateClient closes the current view, and replaces it with a view of all

@@ -147,7 +147,7 @@ func TestRender(t *testing.T) {
 			var w *channel.View
 			// Root creation must happen in the main thread
 			ui.RunSync(func() {
-				w = channel.NewView("HamNet", "#hamlet", ui, d)
+				w = channel.New("HamNet", "#hamlet", ui, d)
 				w.SetRenderer(testRenderer)
 			})
 			f := tt.setup(w)
@@ -185,7 +185,7 @@ func TestInput_Message(t *testing.T) {
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
 	ui.RunSync(func() {
-		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+		_ = channel.New("HamNet", "#hamlet", ui, d)
 	})
 
 	ui.Type("hello everyone")
@@ -206,7 +206,7 @@ func TestInput_QuitMessage(t *testing.T) {
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
 	ui.RunSync(func() {
-		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+		_ = channel.New("HamNet", "#hamlet", ui, d)
 	})
 
 	ui.Type("/quit nothing to see here\n")
@@ -227,7 +227,7 @@ func TestInput_QuitKeybind(t *testing.T) {
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
 	ui.RunSync(func() {
-		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+		_ = channel.New("HamNet", "#hamlet", ui, d)
 	})
 
 	ui.Update(func() {
@@ -259,7 +259,7 @@ func TestInput_ActivateClient(t *testing.T) {
 
 	// Root creation must happen in the main thread
 	ui.RunSync(func() {
-		_ = channel.NewView("HamNet", "#hamlet", ui, d)
+		_ = channel.New("HamNet", "#hamlet", ui, d)
 	})
 
 	ui.Type("/client\n")
