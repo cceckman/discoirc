@@ -90,7 +90,7 @@ func tickNick(nick string) string {
 	suffix := strings.TrimPrefix(nick, base)
 	// OK to ignore err; val defaulting to 0 is correct.
 	val, _ := strconv.Atoi(suffix)
-	return fmt.Sprintf("%s%d", base, val)
+	return fmt.Sprintf("%s%d", base, val + 1)
 }
 
 func tickConnState(in data.ConnectionState) data.ConnectionState {

@@ -58,7 +58,7 @@ func (t *Toggle) Channel() {
 	}
 
 	var ctx context.Context
-	ctx, t.cancelNetwork = context.WithCancel(context.Background())
+	ctx, t.cancelChannel = context.WithCancel(context.Background())
 	go func() {
 		tick := time.NewTicker(t.Duration)
 		defer tick.Stop()
