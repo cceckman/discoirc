@@ -3,10 +3,10 @@ package client
 import (
 	"fmt"
 
+	"github.com/cceckman/discoirc/data"
+
 	"github.com/marcusolsson/tui-go"
 )
-
-var _ ChannelView = &Channel{}
 
 func NewChannel(network *Network, name string) *Channel {
 	r := &Channel{
@@ -46,6 +46,12 @@ type Channel struct {
 	membersWidget   *tui.Label
 }
 
+func (c *Channel) UpdateChannel(ch data.ChannelState) {
+	c.modeWidget.SetText(ch.ChannelMode)
+	c.unreadWidget.SetText(fmt.Sprintf("✉ %d", ch.Unread))
+	c.membersWidget.SetText(fmt.Sprintf("%d ☺", ch.Members))
+}
+
 func (c *Channel) SetFocused(focus bool) {
 	c.focus = focus
 	if focus {
@@ -57,18 +63,6 @@ func (c *Channel) SetFocused(focus bool) {
 
 func (c *Channel) IsFocused() bool {
 	return c.focus
-}
-
-func (c *Channel) SetMode(m string) {
-	c.modeWidget.SetText(m)
-}
-
-func (c *Channel) SetUnread(n int) {
-	c.unreadWidget.SetText(fmt.Sprintf("✉ %d", n))
-}
-
-func (c *Channel) SetMembers(n int) {
-	c.membersWidget.SetText(fmt.Sprintf("%d ☺", n))
 }
 
 func (c *Channel) Name() string {

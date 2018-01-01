@@ -3,10 +3,10 @@ package client
 import (
 	"sort"
 
+	"github.com/cceckman/discoirc/data"
+	"github.com/cceckman/discoirc/ui/widgets"
 	"github.com/marcusolsson/tui-go"
 )
-
-var _ NetworkView = &Network{}
 
 // NewNetwork gives a new Network view.
 func NewNetwork(client *Client, name string) *Network {
@@ -16,7 +16,7 @@ func NewNetwork(client *Client, name string) *Network {
 		indicatorWidget: newIndicator(),
 		nameWidget:      tui.NewLabel(name),
 		nickWidget:      tui.NewLabel(""),
-		connWidget:      tui.NewLabel(""),
+		connWidget:      widgets.NewConnState(),
 		chanWidget:      tui.NewVBox(),
 	}
 
@@ -47,8 +47,14 @@ type Network struct {
 	indicatorWidget *indicator
 	nameWidget      *tui.Label
 	nickWidget      *tui.Label
-	connWidget      *tui.Label
+	connWidget      *widgets.ConnState
 	chanWidget      *tui.Box
+}
+
+
+func (n *Network) UpdateNetwork(state data.NetworkState) {
+	n.nickWidget.SetText(state.Nick)
+	n.connWidget.Set(state.State)
 }
 
 func (n *Network) SetFocused(focus bool) {
@@ -64,15 +70,7 @@ func (n *Network) Name() string {
 	return n.name
 }
 
-func (n *Network) SetNick(s string) {
-	n.nickWidget.SetText(s)
-}
-
-func (n *Network) SetConnection(s string) {
-	n.connWidget.SetText(s)
-}
-
-func (n *Network) GetChannel(name string) ChannelView {
+func (n *Network) GetChannel(name string) *Channel {
 	for _, v := range n.channels {
 		if v.name == name {
 			return v

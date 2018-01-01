@@ -1,14 +1,18 @@
 package client
 
 import (
+	"context"
 	"sort"
+
+	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/data"
 
 	"github.com/marcusolsson/tui-go"
 )
 
 var _ View = &Client{}
 
-func New(ctl UIController) *Client {
+func New(ctx context.Context, ctl UIController, provider backend.DataPublisher) *Client {
 	c := &Client{
 		networksBox: tui.NewVBox(tui.NewSpacer()),
 		controller:  ctl,
@@ -25,6 +29,10 @@ func New(ctl UIController) *Client {
 			close(blk)
 		})
 		<-blk
+	}
+	// Allow nil for tests.
+	if provider != nil {
+		provider.Subscribe(ctx, c)
 	}
 
 	return c
@@ -65,6 +73,19 @@ func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	}
 }
 
+func (c *Client) UpdateNetwork(n data.NetworkState) {
+	c.controller.Update(func() {
+		c.GetNetwork(n.Network).UpdateNetwork(n)
+	})
+}
+
+func (c *Client) UpdateChannel(ch data.ChannelState) {
+	c.controller.Update(func() {
+		c.GetNetwork(ch.Network).GetChannel(ch.Channel).UpdateChannel(ch)
+	})
+}
+
+
 func (c *Client) moveFocus(fwd bool) {
 	c.focused.SetFocused(false)
 	var next tui.Widget
@@ -80,7 +101,7 @@ func (c *Client) moveFocus(fwd bool) {
 	c.focused.SetFocused(true)
 }
 
-func (c *Client) GetNetwork(name string) NetworkView {
+func (c *Client) GetNetwork(name string) *Network {
 	for _, v := range c.networks {
 		if v.name == name {
 			return v
