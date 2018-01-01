@@ -40,7 +40,7 @@ func TestActivateClient(t *testing.T) {
 
 func TestEndToEnd(t *testing.T) {
 	u := mocks.NewUI()
-	surface := tui.NewTestSurface(20, 5)
+	surface := tui.NewTestSurface(30, 10)
 	u.Update(func() {
 		u.Painter = tui.NewPainter(surface, tui.NewTheme())
 	})
@@ -58,16 +58,22 @@ func TestEndToEnd(t *testing.T) {
 		Network:     "HamNet",
 		Channel:     "#hamlet",
 		ChannelMode: "i",
+		LastMessage: mocks.Events[2],
 	})
 	// Simulate selection
 	u.Type("jj")
 
 	wantContents := `
- HamNet: ?          
-|#hamlet           i
-|✉ 0             0 ☺
-                    
-                    
+ HamNet: ?                    
+|#hamlet                     i
+|✉ 0                       0 ☺
+                              
+                              
+                              
+                              
+                              
+                              
+                              
 `
 	u.RunSync(func() {
 		got := surface.String()
