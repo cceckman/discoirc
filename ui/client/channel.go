@@ -76,8 +76,6 @@ func (c *Channel) OnKeyEvent(ev tui.KeyEvent) {
 
 	ctl := c.network.client.controller
 	if ev.Key == tui.KeyEnter && ctl != nil {
-		ctl.Update(func() {
-			ctl.ActivateChannel(c.network.name, c.name)
-		})
+		ctl.ActivateChannel(c.network.name, c.name)
 	}
 }

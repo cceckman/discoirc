@@ -48,15 +48,18 @@ func TestEndToEnd(t *testing.T) {
 
 	var ctl *ui.Controller
 
+	// Root creation happens in main thread
 	u.Update(func() { ctl = ui.New(u, be) })
+	// Client activation happens in response to user events, in the main thread
 	u.Update(func() { ctl.ActivateClient() })
-
 	u.Wait()
+
 	be.Receiver.UpdateChannel(data.ChannelState{
 		Network:     "HamNet",
 		Channel:     "#hamlet",
 		ChannelMode: "i",
 	})
+	// Simulate selection
 	u.Type("jj")
 
 	wantContents := `
@@ -70,6 +73,16 @@ func TestEndToEnd(t *testing.T) {
 		got := surface.String()
 		if got != wantContents {
 			t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+		}
+
+	})
+
+	// Simulate activation
+	u.Type("\n")
+
+	u.RunSync(func() {
+		if _, ok := u.Root.(*channel.View); !ok {
+			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
 		}
 
 	})
