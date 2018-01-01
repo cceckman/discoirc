@@ -13,12 +13,10 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-// TODO: Add methods for requesting connections / joins.
-
 // A DataPublisher allows UI components to subscribe to updates.
 type DataPublisher interface {
 	Subscribe(context.Context, StateReceiver)
-	// SubscribeChannelView(context.Context, ChannelView)
+	SubscribeFiltered(FilteredStateReceiver)
 }
 
 // StateReceiver receives updates about one or more networks and channels.
@@ -32,4 +30,15 @@ type FilteredStateReceiver interface {
 	StateReceiver
 
 	Filter() (network, channel string)
+}
+
+// EventsArchive allows lookup of previous event entries.
+type EventsArchive interface {
+	EventsBefore(n int, last data.EventID) []data.Event
+}
+
+// Backend supports notification on new events, and lookup of prevents events.
+type Backend interface {
+	DataPublisher
+	EventsArchive
 }
