@@ -7,8 +7,7 @@ import (
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
-	"github.com/cceckman/discoirc/ui/channel/mocks"
-	discomocks "github.com/cceckman/discoirc/ui/mocks"
+	"github.com/cceckman/discoirc/ui/mocks"
 
 	"github.com/marcusolsson/tui-go"
 )
@@ -141,7 +140,7 @@ func TestRender(t *testing.T) {
 			surface := tui.NewTestSurface(40, 10)
 			p := tui.NewPainter(surface, theme)
 
-			ui := discomocks.NewController()
+			ui := mocks.NewController()
 			defer ui.Close()
 			d := mocks.NewBackend()
 
@@ -181,7 +180,7 @@ func testRenderer(e data.Event) tui.Widget {
 }
 
 func TestInput_Message(t *testing.T) {
-	ui := discomocks.NewController()
+	ui := mocks.NewController()
 	defer ui.Close()
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
@@ -202,7 +201,7 @@ func TestInput_Message(t *testing.T) {
 }
 
 func TestInput_QuitMessage(t *testing.T) {
-	ui := discomocks.NewController()
+	ui := mocks.NewController()
 	defer ui.Close()
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
@@ -223,7 +222,7 @@ func TestInput_QuitMessage(t *testing.T) {
 }
 
 func TestInput_QuitKeybind(t *testing.T) {
-	ui := discomocks.NewController()
+	ui := mocks.NewController()
 	defer ui.Close()
 	d := mocks.NewBackend()
 	// Root creation must happen in the main thread
@@ -249,12 +248,12 @@ func TestInput_QuitKeybind(t *testing.T) {
 }
 
 func TestInput_ActivateClient(t *testing.T) {
-	ui := discomocks.NewController()
+	ui := mocks.NewController()
 	defer ui.Close()
 	d := mocks.NewBackend()
 
 	ui.RunSync(func() {
-		ui.V = discomocks.ChannelView
+		ui.V = mocks.ChannelView
 	})
 
 
@@ -266,8 +265,8 @@ func TestInput_ActivateClient(t *testing.T) {
 	ui.Type("/client\n")
 
 	ui.RunSync(func() {
-		if ui.V != discomocks.ClientView {
-			t.Errorf("unexpected root state: got: %v want: %v", ui.V, discomocks.ClientView)
+		if ui.V != mocks.ClientView {
+			t.Errorf("unexpected root state: got: %v want: %v", ui.V, mocks.ClientView)
 		}
 	})
 }
