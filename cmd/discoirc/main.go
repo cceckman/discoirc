@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -31,9 +30,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer glog.Flush()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	ui := tui.New(tui.NewHBox())
 	ui.SetTheme(GetTheme())

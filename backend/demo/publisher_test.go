@@ -94,9 +94,6 @@ func TestClientView(t *testing.T) {
 			Network: "Barnet",
 			Channel: "#discoirc",
 		}]
-		if discoirc.Unread == 0 {
-			t.Errorf("no unread messages for #discoirc")
-		}
 		if discoirc.Members == 0 {
 			t.Errorf("no members for #discoirc")
 		}
@@ -116,9 +113,6 @@ func TestClientView(t *testing.T) {
 			Network: "Barnet",
 			Channel: "&somethingelse",
 		}]
-		if somethingelse.Unread == 0 {
-			t.Errorf("no unread messages for &somethingelse")
-		}
 		if somethingelse.Members == 0 {
 			t.Errorf("no members for &somethingelse")
 		}
@@ -148,9 +142,6 @@ func TestClientView(t *testing.T) {
 			Network: "Slacknet",
 			Channel: "#tuigo",
 		}]
-		if tuigo.Unread != 4 {
-			t.Errorf("unexpected unread messages for #tuigo: got: %d want: %d", tuigo.Unread, 2)
-		}
 		if tuigo.Members != 2 {
 			t.Errorf("unexpected members for #tuigo: got: %d want: %d", tuigo.Members, 3)
 		}
