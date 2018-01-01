@@ -54,17 +54,27 @@ func TestEndToEnd(t *testing.T) {
 	u.Update(func() { ctl.ActivateClient() })
 	u.Wait()
 
-	be.Receiver.UpdateChannel(data.ChannelState{
+	ch := data.ChannelState{
 		Network:     "HamNet",
 		Channel:     "#hamlet",
 		ChannelMode: "i",
+		Topic: "The Battlements",
 		LastMessage: mocks.Events[2],
-	})
+	}
+	net := data.NetworkState{
+		Network: "HamNet",
+		Nick: "yorick",
+		State: data.Connecting,
+	}
+
+	be.Receiver.UpdateChannel(ch)
+	be.Receiver.UpdateNetwork(net)
+
 	// Simulate selection
 	u.Type("jj")
 
 	wantContents := `
- HamNet: ?                    
+ HamNet: …              yorick
 |#hamlet                     i
 |✉ 0                       0 ☺
                               
@@ -85,12 +95,28 @@ func TestEndToEnd(t *testing.T) {
 
 	// Simulate activation
 	u.Type("\n")
+	wantContents = `
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+HamNet: ? #hamlet:            
+< >                           
+`
+
 
 	u.RunSync(func() {
 		if _, ok := u.Root.(*channel.View); !ok {
 			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
 		}
-
+		got := surface.String()
+		if got != wantContents {
+			t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+		}
 	})
 
 }
