@@ -19,46 +19,65 @@ type ChanIdent struct {
 
 // Demo provides data and updates to discoirc UI components.
 type Demo struct {
+	done            chan struct{}
+	subscribe       chan backend.StateReceiver
+	subscribeFilter chan backend.FilteredStateReceiver
+	update          chan struct{}
+
 	sync.Mutex
-
-	receiver backend.StateReceiver
-	filter   func() (string, string)
-
-	nets  map[string]*data.NetworkState
-	chans map[ChanIdent]*data.ChannelState
-
-	contents map[ChanIdent][]data.Event
+	subscriber backend.StateReceiver
+	filter     func() (string, string)
+	nets       map[string]*data.NetworkState
+	chans      map[ChanIdent]*data.ChannelState
+	contents   map[ChanIdent][]data.Event
 }
 
 func New() *Demo {
-	return &Demo{
-		nets:     make(map[string]*data.NetworkState),
-		chans:    make(map[ChanIdent]*data.ChannelState),
-		contents: make(map[ChanIdent][]data.Event),
+	d := &Demo{
+		nets:            make(map[string]*data.NetworkState),
+		chans:           make(map[ChanIdent]*data.ChannelState),
+		contents:        make(map[ChanIdent][]data.Event),
+		update:          make(chan struct{}),
+		subscribe:       make(chan backend.StateReceiver),
+		subscribeFilter: make(chan backend.FilteredStateReceiver),
+	}
+	go d.run()
+	return d
+}
+
+func (d *Demo) Close() {
+	close(d.done)
+}
+
+func (d *Demo) run() {
+
+	for {
+		select {
+		case <-d.done:
+			return
+		case recv := <-d.subscribe:
+			d.Lock()
+			d.subscriber = recv
+			d.filter = nil
+			d.Unlock()
+		case recv := <-d.subscribeFilter:
+			d.Lock()
+			d.subscriber = recv
+			d.filter = recv.Filter
+			d.Unlock()
+		case <-d.update:
+		}
+
+		d.updateAll()
 	}
 }
 
-func (d *Demo) Subscribe(c backend.StateReceiver) {
-	d.Lock()
-	defer d.Unlock()
-	d.receiver = c
-	d.filter = nil
-
-	// If the receiver actually exists, update state.
-	if d.receiver != nil {
-		d.updateAll()
-	}
-	return
+func (d *Demo) Subscribe(recv backend.StateReceiver) {
+	d.subscribe <- recv
 }
 
 func (d *Demo) SubscribeFiltered(recv backend.FilteredStateReceiver) {
-	d.Lock()
-	defer d.Unlock()
-	d.receiver = recv
-	d.filter = recv.Filter
-
-	d.updateAll()
-	return
+	d.subscribeFilter <- recv
 }
 
 func (d *Demo) ensureNetwork(network string) {
@@ -113,8 +132,8 @@ func (d *Demo) updateNetwork(network string) {
 		}
 	}
 
-	if d.receiver != nil {
-		d.receiver.UpdateNetwork(*d.nets[network])
+	if d.subscriber != nil {
+		d.subscriber.UpdateNetwork(*d.nets[network])
 	}
 }
 
@@ -127,7 +146,7 @@ func (d *Demo) TickNetwork(network string) {
 	net := d.nets[network]
 	net.State = tickConnState(net.State)
 	net.Nick = tickNick(net.Nick)
-	d.updateNetwork(network)
+	d.update <- struct{}{}
 }
 
 func tickUMode(m string) string {
@@ -182,8 +201,7 @@ func (d *Demo) TickChannel(network, channel string) {
 	ch.Topic = tickTopic(ch.Topic)
 	ch.Members += 1
 
-	d.updateNetwork(network)
-	d.updateChannel(network, channel)
+	d.update <- struct{}{}
 }
 
 func (d *Demo) updateChannel(network, channel string) {
@@ -193,8 +211,8 @@ func (d *Demo) updateChannel(network, channel string) {
 			return
 		}
 	}
-	if d.receiver != nil {
-		d.receiver.UpdateChannel(*d.chans[ChanIdent{
+	if d.subscriber != nil {
+		d.subscriber.UpdateChannel(*d.chans[ChanIdent{
 			Network: network,
 			Channel: channel,
 		}])
@@ -202,9 +220,8 @@ func (d *Demo) updateChannel(network, channel string) {
 }
 
 func (d *Demo) updateAll() {
-	if d.receiver == nil {
-		return
-	}
+	d.Lock()
+	defer d.Unlock()
 	for id, _ := range d.chans {
 		d.updateNetwork(id.Network)
 		d.updateChannel(id.Network, id.Channel)
@@ -277,7 +294,7 @@ func (d *Demo) appendMessage(network, channel string, speaker, message string) {
 	d.chans[id].Unread += 1
 	d.chans[id].LastMessage = next
 
-	d.updateChannel(network, channel)
+	d.update <- struct{}{}
 }
 
 func (d *Demo) Send(network, channel string, message string) {

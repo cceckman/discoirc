@@ -10,6 +10,7 @@ import (
 
 func TestSubscribeFiltered(t *testing.T) {
 	b := demo.New()
+	defer b.Close()
 
 	// Initialize data: two lines in to sonnet 18
 	b.TickNetwork("sonnet")
@@ -65,6 +66,7 @@ func TestSubscribeFiltered(t *testing.T) {
 
 func TestSubscribe_FromUI(t *testing.T) {
 	b := demo.New()
+	defer b.Close()
 
 	// Initialize data: two lines in to sonnet 18
 	b.TickNetwork("sonnet")
