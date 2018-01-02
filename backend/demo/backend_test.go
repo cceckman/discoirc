@@ -3,6 +3,7 @@ package demo_test
 import (
 	"testing"
 
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/backend/demo"
 	"github.com/cceckman/discoirc/backend/mocks"
 )
@@ -22,47 +23,44 @@ func TestSubscribeFiltered(t *testing.T) {
 	b.TickMessages("sonnet", "#one90one")
 
 	ch := mocks.NewChannel("sonnet", "#eighteen")
+	defer ch.Close()
+
 	b.SubscribeFiltered(ch)
 
+	var fst, snd data.ChannelState
+
 	// First portion of test: Got initial state-fill
-	_, ok := ch.Nets["sonnet"]
-	if !ok || len(ch.Nets) != 1 {
-		t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, "sonnet")
-	}
-	fstChanState, ok := ch.Chans[mocks.ChannelIdent{
-		Network: "sonnet",
-		Channel: "#eighteen",
-	}]
+	ch.Join(func() {
+		_, ok := ch.Nets["sonnet"]
+		if !ok || len(ch.Nets) != 1 {
+			t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, "sonnet")
+		}
+		fst, ok = ch.Chans[mocks.ChannelIdent{
+			Network: "sonnet",
+			Channel: "#eighteen",
+		}]
 
-	if !ok || len(ch.Chans) != 1 {
-		t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
-	}
-
+		if !ok || len(ch.Chans) != 1 {
+			t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+		}
+	})
 
 	// Send message updats
 	b.TickMessages("sonnet", "#eighteen")
 
-	sndChanState, ok := ch.Chans[mocks.ChannelIdent{
-		Network: "sonnet",
-		Channel: "#eighteen",
-	}]
-	if !ok || len(ch.Chans) != 1 {
-		t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
-	}
-	if fstChanState.LastMessage == sndChanState.LastMessage {
-		t.Errorf("didn't receive new messages: got: %v / %v", fstChanState.LastMessage, sndChanState.LastMessage)
-	}
-
-	// Send some more dummy updates
-	b.TickNetwork("botnet")
-	b.TickChannel("botnet", "#t3000")
-	b.TickChannel("sonnet", "#one90one")
-
-	if _, ok := ch.Nets["sonnet"]; !ok || len(ch.Nets) != 1 {
-		t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, "sonnet")
-	}
-
-
-
-
+	ch.Join(func() {
+		var ok bool
+		snd, ok = ch.Chans[mocks.ChannelIdent{
+			Network: "sonnet",
+			Channel: "#eighteen",
+		}]
+		if !ok || len(ch.Chans) != 1 {
+			t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+		}
+		if fst.LastMessage == snd.LastMessage {
+			t.Errorf("didn't receive new messages: got: %v / %v", fst.LastMessage, snd.LastMessage)
+		}
+	})
 }
+
+
