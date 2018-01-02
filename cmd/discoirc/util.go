@@ -20,14 +20,14 @@ func GetTheme() *tui.Theme {
 // Toggle is a stub.Channel wrapper that toggles message / metadata updates.
 type Toggle struct {
 	Net, Chan string
-	Duration         time.Duration
+	Duration  time.Duration
 	*demo.Demo
 
 	cancelNetwork func()
 	cancelChannel func()
 }
 
-func (t *Toggle) Network(){
+func (t *Toggle) Network() {
 	if t.cancelNetwork != nil {
 		t.cancelNetwork()
 		t.cancelNetwork = nil

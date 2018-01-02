@@ -256,7 +256,6 @@ func TestInput_ActivateClient(t *testing.T) {
 		ui.V = mocks.ChannelView
 	})
 
-
 	// Root creation must happen in the main thread
 	ui.RunSync(func() {
 		_ = channel.New("HamNet", "#hamlet", ui, d)
@@ -270,4 +269,3 @@ func TestInput_ActivateClient(t *testing.T) {
 		}
 	})
 }
-

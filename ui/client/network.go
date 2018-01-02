@@ -51,7 +51,7 @@ type Network struct {
 
 	// RW of channels already only be run from the UI thread- but this allows
 	// test operations to be safely run from another thread.
-	mu        sync.Mutex
+	mu       sync.Mutex
 	channels []*Channel
 }
 

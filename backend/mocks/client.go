@@ -19,7 +19,7 @@ func NewClient() *Client {
 		Chans: make(map[ChannelIdent]data.ChannelState),
 		await: make(chan func()),
 	}
-	go func(){
+	go func() {
 		for f := range c.await {
 			f()
 		}
@@ -27,14 +27,13 @@ func NewClient() *Client {
 	return c
 }
 
-
 // Client is a mocked-up client.View.
 // Its Update* methods run functions in a separate thread.
 type Client struct {
 	Nets  map[string]data.NetworkState
 	Chans map[ChannelIdent]data.ChannelState
 
-	wg sync.WaitGroup
+	wg    sync.WaitGroup
 	await chan func()
 }
 
@@ -49,13 +48,13 @@ func (c *Client) UpdateNetwork(d data.NetworkState) {
 // Close waits for all outstanding updates to complete, then collects this Client.
 func (c *Client) Close() {
 	c.wg.Wait()
-	c.Join(func(){
+	c.Join(func() {
 		close(c.await)
 	})
 }
 
 // Join runs the closure in the same thread as updates, and returns once it completes.
-func (c *Client) Join(f func ()) {
+func (c *Client) Join(f func()) {
 	blk := make(chan struct{})
 	c.wg.Add(1)
 	c.await <- func() {

@@ -20,8 +20,8 @@ type Channel struct {
 
 // ChannelState summarizes the state of a channel.
 type ChannelState struct {
-	Network, Channel      string
-	Presence              Presence
+	Network, Channel string
+	Presence         Presence
 	// TODO: This representation is incorrect.
 	// A user's mode is for the network, not to the channel.
 	ChannelMode, UserMode string

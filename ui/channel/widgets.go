@@ -18,15 +18,14 @@ type EventsProvider interface {
 	EventsBefore(net, target string, n int, last data.EventID) []data.Event
 }
 
-
 func NewEventsWidget(network, target string, in EventsProvider) *EventsWidget {
 	return &EventsWidget{
-		TailBox: widgets.NewTailBox(),
+		TailBox:  widgets.NewTailBox(),
 		Renderer: DefaultRenderer,
 
 		network: network,
-		target: target,
-		source: in,
+		target:  target,
+		source:  in,
 	}
 }
 
@@ -34,8 +33,8 @@ func NewEventsWidget(network, target string, in EventsProvider) *EventsWidget {
 type EventsWidget struct {
 	*widgets.TailBox
 
-	source   EventsProvider
-	last data.EventID
+	source EventsProvider
+	last   data.EventID
 
 	network, target string
 
@@ -50,7 +49,7 @@ func (v *EventsWidget) SetLast(new data.EventID) {
 }
 
 // refreshContents redraws the contents of the EventsWidget,
-func (v *EventsWidget) refreshContents(){
+func (v *EventsWidget) refreshContents() {
 	// TODO:
 	// 1. Assume EventsSince may take a long time; handle it in a non-blocking way.
 	// 2. Handle single-new-message more gracefully, i.e. without redrawing

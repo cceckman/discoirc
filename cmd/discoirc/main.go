@@ -10,9 +10,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/marcusolsson/tui-go"
 
+	"github.com/cceckman/discoirc/backend/demo"
 	gctl "github.com/cceckman/discoirc/ui"
 	"github.com/cceckman/discoirc/ui/widgets"
-	"github.com/cceckman/discoirc/backend/demo"
 )
 
 var (
@@ -40,7 +40,6 @@ func main() {
 
 	ctl := gctl.New(ui, backend)
 
-
 	go func() {
 		time.Sleep(2 * time.Second)
 		ctl.Update(func() {
@@ -48,9 +47,9 @@ func main() {
 		})
 
 		toggle := &Toggle{
-			Demo: backend,
-			Net: "Barnetic",
-			Chan: "#discoirc",
+			Demo:     backend,
+			Net:      "Barnetic",
+			Chan:     "#discoirc",
 			Duration: 2 * time.Second,
 		}
 

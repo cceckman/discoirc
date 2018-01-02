@@ -24,7 +24,6 @@ Sketch: How should selection work? Some options:
 Let's go with 2 to begin with.
 */
 
-
 func newIndicator() *indicator {
 	r := &indicator{}
 	r.SetFill(' ')

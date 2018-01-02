@@ -9,10 +9,9 @@ const (
 	Connected
 )
 
-
 // Connection represents a user's relation with an IRC network.
 type Connection struct {
 	Network string
-	Nick string
-	State ConnectionState
+	Nick    string
+	State   ConnectionState
 }
