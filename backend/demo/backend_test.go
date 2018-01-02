@@ -3,9 +3,9 @@ package demo_test
 import (
 	"testing"
 
-	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/backend/demo"
 	"github.com/cceckman/discoirc/backend/mocks"
+	"github.com/cceckman/discoirc/data"
 )
 
 func TestSubscribeFiltered(t *testing.T) {
@@ -63,4 +63,32 @@ func TestSubscribeFiltered(t *testing.T) {
 	})
 }
 
+func TestSubscribe_FromUI(t *testing.T) {
+	b := demo.New()
 
+	// Initialize data: two lines in to sonnet 18
+	b.TickNetwork("sonnet")
+	b.TickChannel("sonnet", "#eighteen")
+	b.TickMessages("sonnet", "#eighteen")
+
+	// And a couple dummy messages
+	b.TickNetwork("botnet")
+	b.TickChannel("botnet", "#t3000")
+	b.TickChannel("sonnet", "#one90one")
+	b.TickMessages("sonnet", "#one90one")
+
+	c := mocks.NewClient()
+	defer c.Close()
+
+	c.Join(func() {
+		b.Subscribe(c)
+	})
+
+	// First portion of test: Got initial state-fill
+	c.Join(func() {
+		_, ok := c.Nets["sonnet"]
+		if !ok || len(c.Nets) != 1 {
+			t.Errorf("unexpected networks: got: %v wanted: %q", c.Nets, "sonnet")
+		}
+	})
+}
