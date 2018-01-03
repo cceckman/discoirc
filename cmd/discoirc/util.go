@@ -23,8 +23,9 @@ type Toggle struct {
 	Duration  time.Duration
 	*demo.Demo
 
-	cancelNetwork func()
-	cancelChannel func()
+	cancelNetwork  func()
+	cancelChannel  func()
+	cancelMessages func()
 }
 
 func (t *Toggle) Network() {
@@ -68,6 +69,29 @@ func (t *Toggle) Channel() {
 				return
 			case <-tick.C:
 				t.Demo.TickChannel(t.Net, t.Chan)
+			}
+		}
+	}()
+}
+
+func (t *Toggle) Messages() {
+	if t.cancelMessages != nil {
+		t.cancelMessages()
+		t.cancelMessages = nil
+		return
+	}
+
+	var ctx context.Context
+	ctx, t.cancelMessages = context.WithCancel(context.Background())
+	go func() {
+		tick := time.NewTicker(t.Duration)
+		defer tick.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-tick.C:
+				t.Demo.TickMessages(t.Net, t.Chan)
 			}
 		}
 	}()
