@@ -277,10 +277,13 @@ func (d *Demo) tickMessages(network, channel string) {
 
 	// Construct a message using the absolute sequence number; as if
 	// each character were reciting the sonnet in turn.
-	abseq := len(d.contents[id])
-	msg := messages[abseq%len(messages)]
-	speaker := speakers[(abseq/len(messages))%len(speakers)]
+	seq := len(d.contents[id])
+	msg := messages[seq%len(messages)]
 
+	// what iteration of the sonnet are we on?
+	iteration := seq / len(messages)
+	// different speaker for each iteration.
+	speaker := speakers[iteration%len(speakers)]
 	d.appendMessage(network, channel, speaker, msg)
 }
 
