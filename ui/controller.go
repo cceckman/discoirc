@@ -17,9 +17,8 @@ type UI interface {
 
 func New(ui UI, be backend.Backend) *Controller {
 	c := &Controller{
-		UI:       ui,
-		backend:  be,
-		toClient: make(chan struct{}),
+		UI:      ui,
+		backend: be,
 	}
 
 	return c
@@ -31,8 +30,6 @@ type Controller struct {
 	UI
 
 	backend backend.Backend
-
-	toClient chan struct{}
 }
 
 // ActivateChannel closes the current view, and replaces it with a view of the
@@ -46,4 +43,16 @@ func (c *Controller) ActivateChannel(network, target string) {
 // Must be run from the UI thread.
 func (c *Controller) ActivateClient() {
 	client.New(c, c.backend)
+}
+
+// Update runns the update in the UI thread.
+// Unlike the underlying tui library, this Update call is synchronous; it only
+// completes after the callback is run.
+func (c *Controller) Update(f func()) {
+	blk := make(chan struct{})
+	c.UI.Update(func() {
+		f()
+		close(blk)
+	})
+	<-blk
 }
