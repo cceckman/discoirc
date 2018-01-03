@@ -176,7 +176,7 @@ func New(network, target string, ui UIController, backend backend.Backend) *View
 	}
 
 	if backend != nil {
-		backend.SubscribeFiltered(v)
+		go backend.SubscribeFiltered(v)
 	}
 
 	return v
