@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/cceckman/discoirc/backend"
 	"github.com/cceckman/discoirc/data"
@@ -19,65 +18,87 @@ type ChanIdent struct {
 
 // Demo provides data and updates to discoirc UI components.
 type Demo struct {
-	done            chan struct{}
-	subscribe       chan backend.StateReceiver
-	subscribeFilter chan backend.FilteredStateReceiver
-	update          chan struct{}
+	incoming chan func()
 
-	sync.Mutex
 	subscriber backend.StateReceiver
 	filter     func() (string, string)
-	nets       map[string]*data.NetworkState
-	chans      map[ChanIdent]*data.ChannelState
-	contents   map[ChanIdent][]data.Event
+
+	nets     map[string]*data.NetworkState
+	chans    map[ChanIdent]*data.ChannelState
+	contents map[ChanIdent][]data.Event
 }
 
 func New() *Demo {
 	d := &Demo{
-		nets:            make(map[string]*data.NetworkState),
-		chans:           make(map[ChanIdent]*data.ChannelState),
-		contents:        make(map[ChanIdent][]data.Event),
-		update:          make(chan struct{}),
-		subscribe:       make(chan backend.StateReceiver),
-		subscribeFilter: make(chan backend.FilteredStateReceiver),
+		nets:     make(map[string]*data.NetworkState),
+		chans:    make(map[ChanIdent]*data.ChannelState),
+		contents: make(map[ChanIdent][]data.Event),
+		incoming: make(chan func()),
 	}
 	go d.run()
 	return d
 }
 
 func (d *Demo) Close() {
-	close(d.done)
+	close(d.incoming)
 }
 
 func (d *Demo) run() {
-
-	for {
-		select {
-		case <-d.done:
-			return
-		case recv := <-d.subscribe:
-			d.Lock()
-			d.subscriber = recv
-			d.filter = nil
-			d.Unlock()
-		case recv := <-d.subscribeFilter:
-			d.Lock()
-			d.subscriber = recv
-			d.filter = recv.Filter
-			d.Unlock()
-		case <-d.update:
-		}
-
-		d.updateAll()
+	for f := range d.incoming {
+		f()
 	}
 }
 
 func (d *Demo) Subscribe(recv backend.StateReceiver) {
-	d.subscribe <- recv
+	d.incoming <- func() {
+		d.subscriber = recv
+		d.filter = nil
+		d.updateAll()
+	}
 }
 
 func (d *Demo) SubscribeFiltered(recv backend.FilteredStateReceiver) {
-	d.subscribeFilter <- recv
+	d.incoming <- func() {
+		d.subscriber = recv
+		d.filter = recv.Filter
+		d.updateAll()
+	}
+}
+
+func (d *Demo) TickNetwork(network string) {
+	d.incoming <- func() {
+		d.tickNetwork(network)
+	}
+}
+
+func (d *Demo) TickChannel(network, channel string) {
+	d.incoming <- func() {
+		d.tickChannel(network, channel)
+	}
+}
+
+func (d *Demo) TickMessages(network, channel string) {
+	d.incoming <- func() {
+		d.tickMessages(network, channel)
+	}
+}
+
+func (d *Demo) Send(network, channel string, messages string) {
+	d.incoming <- func() {
+		d.send(network, channel, messages)
+	}
+}
+
+// Join waits until all other issued operations (ticks, sends, etc.)
+// have completd
+//
+// This can be used by tests to block until pending operations have completed.
+func (d *Demo) Join() {
+	blk := make(chan struct{})
+	d.incoming <- func() {
+		close(blk)
+	}
+	<-blk
 }
 
 func (d *Demo) ensureNetwork(network string) {
@@ -137,16 +158,12 @@ func (d *Demo) updateNetwork(network string) {
 	}
 }
 
-func (d *Demo) TickNetwork(network string) {
-	d.Lock()
-	defer d.Unlock()
-	// Update internal state.
-
+func (d *Demo) tickNetwork(network string) {
 	d.ensureNetwork(network)
 	net := d.nets[network]
 	net.State = tickConnState(net.State)
 	net.Nick = tickNick(net.Nick)
-	d.update <- struct{}{}
+	d.updateAll()
 }
 
 func tickUMode(m string) string {
@@ -186,10 +203,7 @@ func tickTopic(t string) string {
 	return strings.Join(topic[0:l], " ")
 }
 
-func (d *Demo) TickChannel(network, channel string) {
-	d.Lock()
-	defer d.Unlock()
-
+func (d *Demo) tickChannel(network, channel string) {
 	d.ensureChannel(network, channel)
 	ch := d.chans[ChanIdent{
 		Network: network,
@@ -201,7 +215,7 @@ func (d *Demo) TickChannel(network, channel string) {
 	ch.Topic = tickTopic(ch.Topic)
 	ch.Members += 1
 
-	d.update <- struct{}{}
+	d.updateAll()
 }
 
 func (d *Demo) updateChannel(network, channel string) {
@@ -220,10 +234,10 @@ func (d *Demo) updateChannel(network, channel string) {
 }
 
 func (d *Demo) updateAll() {
-	d.Lock()
-	defer d.Unlock()
+	for net, _ := range d.nets {
+		d.updateNetwork(net)
+	}
 	for id, _ := range d.chans {
-		d.updateNetwork(id.Network)
 		d.updateChannel(id.Network, id.Channel)
 	}
 }
@@ -254,10 +268,7 @@ var speakers = []string{
 	"gentleman2",
 }
 
-func (d *Demo) TickMessages(network, channel string) {
-	d.Lock()
-	defer d.Unlock()
-
+func (d *Demo) tickMessages(network, channel string) {
 	d.ensureChannel(network, channel)
 	id := ChanIdent{
 		Network: network,
@@ -271,6 +282,12 @@ func (d *Demo) TickMessages(network, channel string) {
 	speaker := speakers[(abseq/len(messages))%len(speakers)]
 
 	d.appendMessage(network, channel, speaker, msg)
+}
+
+func (d *Demo) send(network, channel string, message string) {
+	d.ensureNetwork(network)
+	nick := d.nets[network].Nick
+	d.appendMessage(network, channel, nick, message)
 }
 
 func (d *Demo) appendMessage(network, channel string, speaker, message string) {
@@ -294,37 +311,25 @@ func (d *Demo) appendMessage(network, channel string, speaker, message string) {
 	d.chans[id].Unread += 1
 	d.chans[id].LastMessage = next
 
-	d.update <- struct{}{}
-}
-
-func (d *Demo) Send(network, channel string, message string) {
-	d.Lock()
-	defer d.Unlock()
-
-	d.ensureNetwork(network)
-	nick := d.nets[network].Nick
-	d.appendMessage(network, channel, nick, message)
+	d.updateAll()
 }
 
 func (d *Demo) EventsBefore(network, channel string, n int, last data.EventID) []data.Event {
-	d.Lock()
-	defer d.Unlock()
-
 	id := ChanIdent{
 		Network: network,
 		Channel: channel,
 	}
-	ls := data.NewEvents(d.contents[id]).SelectSizeMax(uint(n), last)
-
-	if v, ok := d.chans[id]; ok {
-		v.Unread = 0
-		// TODO: I suspect this can lead to deadlock- an attempt at notifying
-		// the UI it needs to update (the "unread" property),
-		// as originated by the UI thread (EventsBefore).
-		d.updateChannel(network, channel)
+	r := make(chan []data.Event)
+	d.incoming <- func() {
+		r <- data.NewEvents(d.contents[id]).SelectSizeMax(uint(n), last)
+		close(r)
+		if v, ok := d.chans[id]; ok {
+			v.Unread = 0
+			d.updateAll()
+		}
 	}
 
-	return ls
+	return <-r
 }
 
 /*
