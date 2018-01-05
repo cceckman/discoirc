@@ -45,13 +45,13 @@ var theme = func() *tui.Theme {
 
 var renderTests = []struct {
 	test            string
-	setup           func(c *channel.View) func()
+	setup           func(c *channel.View)
 	wantContents    string
 	wantDecorations string
 }{
 	{
 		test: "base render",
-		setup: func(c *channel.View) func() {
+		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
 				Network: "HamNet",
 				State:   data.Connected,
@@ -67,14 +67,13 @@ var renderTests = []struct {
 				Members:     12,   // in the company, more characters.
 				LastMessage: mocks.Events[len(mocks.Events)-1],
 			})
-			return func() {}
 		},
 		wantContents:    wantContents40x10,
 		wantDecorations: wantDecor40x10,
 	},
 	{
 		test: "resize render",
-		setup: func(c *channel.View) func() {
+		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
 				Network: "HamNet",
 				State:   data.Connected,
@@ -90,17 +89,15 @@ var renderTests = []struct {
 				Members:     12,   // in the company, more characters.
 				LastMessage: mocks.Events[len(mocks.Events)-1],
 			})
-			return func() {
-				// Will reset to appropriate size when applied to the surface.
-				c.Resize(image.Pt(80, 80))
-			}
+
+			c.Resize(image.Pt(80, 80))
 		},
 		wantContents:    wantContents40x10,
 		wantDecorations: wantDecor40x10,
 	},
 	{
 		test: "underflow render",
-		setup: func(c *channel.View) func() {
+		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
 				Network: "HamNet",
 				State:   data.Connected,
@@ -116,7 +113,6 @@ var renderTests = []struct {
 				Members:     12,   // in the company, more characters.
 				LastMessage: mocks.Events[3],
 			})
-			return func() {}
 		},
 		wantContents: `
 Act I, Scene 1                          
@@ -141,33 +137,22 @@ func TestRender(t *testing.T) {
 			p := tui.NewPainter(surface, theme)
 
 			ui := mocks.NewController()
-			defer ui.Close()
 			d := mocks.NewBackend()
 
-			var w *channel.View
 			// Root creation must happen in the main thread
-			ui.RunSync(func() {
-				w = channel.New("HamNet", "#hamlet", ui, d)
-				w.SetRenderer(testRenderer)
-			})
-			f := tt.setup(w)
-			ui.Update(f)
-			// Render in the UI thread so that the race detector works properly.
-			ui.Update(func() {
-				p.Repaint(w)
-			})
+			w := channel.New("HamNet", "#hamlet", ui, d)
+			w.SetRenderer(testRenderer)
+			tt.setup(w)
+			p.Repaint(w)
 
-			// And run tests
-			ui.RunSync(func() {
-				gotContents := surface.String()
-				if tt.wantContents != "" && gotContents != tt.wantContents {
-					t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", gotContents, tt.wantContents)
-				}
-				gotDecorations := surface.Decorations()
-				if tt.wantDecorations != "" && gotDecorations != tt.wantDecorations {
-					t.Errorf("unexpected decorations:\ngot = \n%s\n--\nwant = \n%s\n--", gotDecorations, tt.wantDecorations)
-				}
-			})
+			gotContents := surface.String()
+			if tt.wantContents != "" && gotContents != tt.wantContents {
+				t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", gotContents, tt.wantContents)
+			}
+			gotDecorations := surface.Decorations()
+			if tt.wantDecorations != "" && gotDecorations != tt.wantDecorations {
+				t.Errorf("unexpected decorations:\ngot = \n%s\n--\nwant = \n%s\n--", gotDecorations, tt.wantDecorations)
+			}
 		})
 
 	}
@@ -181,12 +166,8 @@ func testRenderer(e data.Event) tui.Widget {
 
 func TestInput_Message(t *testing.T) {
 	ui := mocks.NewController()
-	defer ui.Close()
 	d := mocks.NewBackend()
-	// Root creation must happen in the main thread
-	ui.RunSync(func() {
-		_ = channel.New("HamNet", "#hamlet", ui, d)
-	})
+	_ = channel.New("HamNet", "#hamlet", ui, d)
 
 	ui.Type("hello everyone")
 
@@ -202,70 +183,49 @@ func TestInput_Message(t *testing.T) {
 
 func TestInput_QuitMessage(t *testing.T) {
 	ui := mocks.NewController()
-	defer ui.Close()
 	d := mocks.NewBackend()
-	// Root creation must happen in the main thread
-	ui.RunSync(func() {
-		_ = channel.New("HamNet", "#hamlet", ui, d)
-	})
+	_ = channel.New("HamNet", "#hamlet", ui, d)
 
 	ui.Type("/quit nothing to see here\n")
 	if len(d.Sent) != 0 {
 		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
 	}
 
-	ui.RunSync(func() {
-		if !ui.HasQuit {
-			t.Errorf("unexpected state: have not quit")
-		}
-	})
+	if !ui.HasQuit {
+		t.Errorf("unexpected state: have not quit")
+	}
 }
 
 func TestInput_QuitKeybind(t *testing.T) {
 	ui := mocks.NewController()
-	defer ui.Close()
 	d := mocks.NewBackend()
-	// Root creation must happen in the main thread
-	ui.RunSync(func() {
-		_ = channel.New("HamNet", "#hamlet", ui, d)
-	})
+	_ = channel.New("HamNet", "#hamlet", ui, d)
 
-	ui.Update(func() {
-		ui.Root.OnKeyEvent(tui.KeyEvent{
-			Key: tui.KeyCtrlC,
-		})
+	ui.Root.OnKeyEvent(tui.KeyEvent{
+		Key: tui.KeyCtrlC,
 	})
 
 	if len(d.Sent) != 0 {
 		t.Errorf("message unexpectedly sent: got: %v want: none", d.Sent)
 	}
 
-	ui.RunSync(func() {
-		if !ui.HasQuit {
-			t.Errorf("unexpected state: have not quit")
-		}
-	})
+	if !ui.HasQuit {
+		t.Errorf("unexpected state: have not quit")
+	}
 }
 
 func TestInput_ActivateClient(t *testing.T) {
 	ui := mocks.NewController()
-	defer ui.Close()
 	d := mocks.NewBackend()
 
-	ui.RunSync(func() {
-		ui.V = mocks.ChannelView
-	})
+	ui.V = mocks.ChannelView
 
 	// Root creation must happen in the main thread
-	ui.RunSync(func() {
-		_ = channel.New("HamNet", "#hamlet", ui, d)
-	})
+	_ = channel.New("HamNet", "#hamlet", ui, d)
 
 	ui.Type("/client\n")
 
-	ui.RunSync(func() {
-		if ui.V != mocks.ClientView {
-			t.Errorf("unexpected root state: got: %v want: %v", ui.V, mocks.ClientView)
-		}
-	})
+	if ui.V != mocks.ClientView {
+		t.Errorf("unexpected root state: got: %v want: %v", ui.V, mocks.ClientView)
+	}
 }

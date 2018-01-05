@@ -44,15 +44,3 @@ func (c *Controller) ActivateChannel(network, target string) {
 func (c *Controller) ActivateClient() {
 	client.New(c, c.backend)
 }
-
-// Update runns the update in the UI thread.
-// Unlike the underlying tui library, this Update call is synchronous; it only
-// completes after the callback is run.
-func (c *Controller) Update(f func()) {
-	blk := make(chan struct{})
-	c.UI.Update(func() {
-		f()
-		close(blk)
-	})
-	<-blk
-}

@@ -5,9 +5,9 @@ import (
 )
 
 func NewUI() *UI {
-	return &UI{
-		UpdateCounter: NewUpdateCounter(),
-	}
+	ui := &UI{}
+
+	return ui
 
 }
 
@@ -26,20 +26,15 @@ func (ui *UI) Type(s string) {
 				Key: tui.KeyEnter,
 			}
 		}
-		ui.Update(func() {
-			if ui.Root == nil {
-				return
-			}
-			ui.Root.OnKeyEvent(ev)
-		})
+		if ui.Root == nil {
+			return
+		}
+		ui.Root.OnKeyEvent(ev)
 	}
-
 }
 
 // UI implements a subset of the tui.UI functionality for use in tests.
 type UI struct {
-	*UpdateCounter
-
 	Root tui.Widget
 
 	Painter *tui.Painter
@@ -56,10 +51,7 @@ func (ui *UI) Repaint() {
 }
 
 func (ui *UI) Update(f func()) {
-	ui.UpdateCounter.Update(func() {
-		f()
-		ui.Repaint()
-	})
+	f()
 }
 
 func (ui *UI) SetWidget(w tui.Widget) {

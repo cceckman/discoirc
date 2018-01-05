@@ -371,26 +371,17 @@ func TestRender_Client(t *testing.T) {
 			p := tui.NewPainter(surface, theme)
 
 			ui := discomocks.NewController()
-			defer ui.Close()
 
-			var w *client.Client
 			// Root creation must happen in the main thread
-			ui.RunSync(func() {
-				w = client.New(ui, nil)
-			})
+			w := client.New(ui, nil)
 			tt.setup(w)
-			// Render in the UI thread so that the race detector works properly.
-			ui.Update(func() {
-				p.Repaint(w)
-			})
+			p.Repaint(w)
 
 			// And run tests
-			ui.RunSync(func() {
-				got := surface.String()
-				if got != tt.want {
-					t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, tt.want)
-				}
-			})
+			got := surface.String()
+			if got != tt.want {
+				t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, tt.want)
+			}
 		})
 	}
 }
@@ -651,19 +642,17 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 				root.OnKeyEvent(ev)
 			}
 
-			ui.RunSync(func() {
-				if ui.V != tt.WantView {
-					t.Errorf("unexpected active view: got: %v want: %v", ui.V, tt.WantView)
-				}
+			if ui.V != tt.WantView {
+				t.Errorf("unexpected active view: got: %v want: %v", ui.V, tt.WantView)
+			}
 
-				if tt.WantNet != "" && ui.Network != tt.WantNet {
-					t.Errorf("unexpected active network: got: %q want: %q", ui.Network, tt.WantNet)
-				}
+			if tt.WantNet != "" && ui.Network != tt.WantNet {
+				t.Errorf("unexpected active network: got: %q want: %q", ui.Network, tt.WantNet)
+			}
 
-				if tt.WantChan != "" && ui.Channel != tt.WantChan {
-					t.Errorf("unexpected active channel: got: %q want: %q", ui.Channel, tt.WantChan)
-				}
-			})
+			if tt.WantChan != "" && ui.Channel != tt.WantChan {
+				t.Errorf("unexpected active channel: got: %q want: %q", ui.Channel, tt.WantChan)
+			}
 
 		})
 	}
@@ -680,9 +669,7 @@ func TestNetwork_Quit(t *testing.T) {
 		Key: tui.KeyCtrlC,
 	})
 
-	ui.RunSync(func() {
-		if !ui.HasQuit {
-			t.Errorf("client hasn't quit")
-		}
-	})
+	if !ui.HasQuit {
+		t.Errorf("client hasn't quit")
+	}
 }

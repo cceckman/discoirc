@@ -18,11 +18,9 @@ func TestActivateChannel(t *testing.T) {
 	ctl := ui.New(u, mocks.NewBackend())
 
 	ctl.ActivateChannel("foonet", "#barchan")
-	u.RunSync(func() {
-		if _, ok := u.Root.(*channel.View); !ok {
-			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
-		}
-	})
+	if _, ok := u.Root.(*channel.View); !ok {
+		t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
+	}
 }
 
 func TestActivateClient(t *testing.T) {
@@ -31,28 +29,19 @@ func TestActivateClient(t *testing.T) {
 	ctl := ui.New(u, mocks.NewBackend())
 
 	ctl.ActivateClient()
-	u.RunSync(func() {
-		if _, ok := u.Root.(client.View); !ok {
-			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
-		}
-	})
+	if _, ok := u.Root.(client.View); !ok {
+		t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
+	}
 }
 
 func TestEndToEnd(t *testing.T) {
 	u := mocks.NewUI()
 	surface := tui.NewTestSurface(30, 10)
-	u.Update(func() {
-		u.Painter = tui.NewPainter(surface, tui.NewTheme())
-	})
+	u.Painter = tui.NewPainter(surface, tui.NewTheme())
 	be := mocks.NewBackend()
 
-	var ctl *ui.Controller
-
-	// Root creation happens in main thread
-	u.Update(func() { ctl = ui.New(u, be) })
-	// Client activation happens in response to user events, in the main thread
-	u.Update(func() { ctl.ActivateClient() })
-	u.Wait()
+	ctl := ui.New(u, be)
+	ctl.ActivateClient()
 
 	ch := data.ChannelState{
 		Network:     "HamNet",
@@ -69,11 +58,30 @@ func TestEndToEnd(t *testing.T) {
 
 	be.Receiver.UpdateChannel(ch)
 	be.Receiver.UpdateNetwork(net)
+	u.Repaint()
+
+	wantContents := `
+ HamNet: …              yorick
+ #hamlet                     i
+ ✉ 0                       0 ☺
+                              
+                              
+                              
+                              
+                              
+                              
+                              
+`
+	got := surface.String()
+	if got != wantContents {
+		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+	}
 
 	// Simulate selection
 	u.Type("jj")
+	u.Repaint()
 
-	wantContents := `
+	wantContents = `
  HamNet: …              yorick
 |#hamlet                     i
 |✉ 0                       0 ☺
@@ -85,16 +93,14 @@ func TestEndToEnd(t *testing.T) {
                               
                               
 `
-	u.RunSync(func() {
-		got := surface.String()
-		if got != wantContents {
-			t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
-		}
-
-	})
+	got = surface.String()
+	if got != wantContents {
+		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+	}
 
 	// Simulate activation
 	u.Type("\n")
+	u.Repaint()
 	wantContents = `
                               
                               
@@ -108,14 +114,12 @@ HamNet: ? #hamlet:
 < >                           
 `
 
-	u.RunSync(func() {
-		if _, ok := u.Root.(*channel.View); !ok {
-			t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
-		}
-		got := surface.String()
-		if got != wantContents {
-			t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
-		}
-	})
+	if _, ok := u.Root.(*channel.View); !ok {
+		t.Errorf("unexpected view at UI root: got: %+v want: client.View", u.Root)
+	}
+	got = surface.String()
+	if got != wantContents {
+		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, wantContents)
+	}
 
 }
