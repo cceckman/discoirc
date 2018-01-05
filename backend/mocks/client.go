@@ -13,9 +13,10 @@ type ChannelIdent struct {
 
 func NewClient() *Client {
 	c := &Client{
-		Nets:  make(map[string]data.NetworkState),
-		Chans: make(map[ChannelIdent]data.ChannelState),
-		await: make(chan func()),
+		Nets:     make(map[string]data.NetworkState),
+		Chans:    make(map[ChannelIdent]data.ChannelState),
+		Contents: make(map[ChannelIdent][]data.Event),
+		await:    make(chan func()),
 	}
 	go func() {
 		for f := range c.await {
@@ -28,8 +29,9 @@ func NewClient() *Client {
 // Client is a mocked-up client.View.
 // Its Update* methods run functions in a separate thread.
 type Client struct {
-	Nets  map[string]data.NetworkState
-	Chans map[ChannelIdent]data.ChannelState
+	Nets     map[string]data.NetworkState
+	Chans    map[ChannelIdent]data.ChannelState
+	Contents map[ChannelIdent][]data.Event
 
 	await chan func()
 
@@ -62,13 +64,14 @@ func (c *Client) Join(f func()) {
 
 func (c *Client) UpdateChannel(d data.ChannelState) {
 	c.Join(func() {
-		c.Chans[ChannelIdent{
+		cid := ChannelIdent{
 			Network: d.Network,
 			Channel: d.Channel,
-		}] = d
+		}
+		c.Chans[cid] = d
 
 		if c.Archive != nil {
-			_ = c.Archive.EventsBefore(
+			c.Contents[cid] = c.Archive.EventsBefore(
 				d.Network, d.Channel,
 				1, d.LastMessage.EventID)
 		}

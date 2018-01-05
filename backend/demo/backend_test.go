@@ -150,6 +150,10 @@ func TestSubscribe_FromUI(t *testing.T) {
 	}
 }
 
+func TestChannelCallback(t *testing.T) {
+
+}
+
 func TestSubscribe_Resubscribe(t *testing.T) {
 	attempts := 4
 	b := demo.New()
