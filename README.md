@@ -6,7 +6,7 @@ Status](https://travis-ci.org/cceckman/discoirc.svg?branch=master)](https://trav
 Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://goreportcard.com/report/github.com/cceckman/discoirc)
 
 <center>
-```
+<pre>
              ||
              ||
            <><><>
@@ -18,7 +18,7 @@ Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://gore
            <><><>
 
           discoirc
-```
+</pre>
 </center>
 
 
