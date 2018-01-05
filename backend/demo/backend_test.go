@@ -151,7 +151,36 @@ func TestSubscribe_FromUI(t *testing.T) {
 }
 
 func TestChannelCallback(t *testing.T) {
+	attempts := 4
+	b := demo.New()
+	c := mocks.NewChannel(sonnet, eighteen)
+	defer c.Close()
 
+	c.Archive = b
+	b.Subscribe(c)
+
+	// Send 3 messages in two channels
+	for i := 0; i < 3; i++ {
+		b.TickMessages(sonnet, eighteen)
+		b.TickMessages(sonnet, "#globe")
+	}
+
+	cid := mocks.ChannelIdent{sonnet, eighteen}
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		c.Join(func() {
+			expect_channels := len(c.Contents) == 1
+			expect_contents := len(c.Contents[cid]) == 3
+			done = expect_channels && expect_contents
+
+			if !expect_channels && i == attempts {
+				t.Errorf("unexpected channels: got: %v want: %v", c.Contents, cid)
+			}
+
+			if !expect_contents && i == attempts {
+				t.Errorf("unexpected contents: got: %v want: %v", c.Contents[cid], "three lines of Shakespare's sonnet 18")
+			}
+		})
+	}
 }
 
 func TestSubscribe_Resubscribe(t *testing.T) {
