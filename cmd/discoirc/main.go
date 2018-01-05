@@ -62,8 +62,8 @@ func main() {
 				glog.V(1).Info("toggling channel cycling")
 				toggle.Channel()
 			})
-			ui.SetKeybinding("Ctrl+F", func() {
-				glog.V(1).Info("toggling channel cycling")
+			ui.SetKeybinding("Ctrl+V", func() {
+				glog.V(1).Info("toggling message cycling")
 				toggle.Messages()
 			})
 
