@@ -1,8 +1,6 @@
 package mocks
 
 import (
-	"sync"
-
 	"github.com/cceckman/discoirc/backend"
 	"github.com/cceckman/discoirc/data"
 )
@@ -33,21 +31,16 @@ type Client struct {
 	Nets  map[string]data.NetworkState
 	Chans map[ChannelIdent]data.ChannelState
 
-	wg    sync.WaitGroup
 	await chan func()
 }
 
 func (c *Client) UpdateNetwork(d data.NetworkState) {
-	c.wg.Add(1)
-	c.await <- func() {
+	c.Join(func() {
 		c.Nets[d.Network] = d
-		c.wg.Done()
-	}
+	})
 }
 
-// Close waits for all outstanding updates to complete, then collects this Client.
 func (c *Client) Close() {
-	c.wg.Wait()
 	c.Join(func() {
 		close(c.await)
 	})
@@ -56,22 +49,18 @@ func (c *Client) Close() {
 // Join runs the closure in the same thread as updates, and returns once it completes.
 func (c *Client) Join(f func()) {
 	blk := make(chan struct{})
-	c.wg.Add(1)
 	c.await <- func() {
 		f()
 		close(blk)
-		c.wg.Done()
 	}
 	<-blk
 }
 
 func (c *Client) UpdateChannel(d data.ChannelState) {
-	c.wg.Add(1)
-	c.await <- func() {
+	c.Join(func() {
 		c.Chans[ChannelIdent{
 			Network: d.Network,
 			Channel: d.Channel,
 		}] = d
-		c.wg.Done()
-	}
+	})
 }

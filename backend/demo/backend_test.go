@@ -2,106 +2,150 @@ package demo_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/cceckman/discoirc/backend/demo"
 	"github.com/cceckman/discoirc/backend/mocks"
 	"github.com/cceckman/discoirc/data"
 )
 
+var sonnet, eighteen = "sonnet", "#eighteen"
+
+func delay(n int) int {
+	time.Sleep(200 * time.Millisecond)
+	return n + 1
+}
+
 func TestSubscribeFiltered(t *testing.T) {
 	b := demo.New()
-	// defer b.Close()
 
 	// Initialize data: two lines in to sonnet 18
-	b.TickNetwork("sonnet")
-	b.TickChannel("sonnet", "#eighteen")
-	b.TickMessages("sonnet", "#eighteen")
+	b.TickNetwork(sonnet)
+	b.TickChannel(sonnet, eighteen)
+	b.TickMessages(sonnet, eighteen)
 
 	// And a couple dummy messages
 	b.TickNetwork("botnet")
 	b.TickChannel("botnet", "#t3000")
-	b.TickChannel("sonnet", "#one90one")
-	b.TickMessages("sonnet", "#one90one")
+	b.TickChannel(sonnet, "#one90one")
+	b.TickMessages(sonnet, "#one90one")
 
-	ch := mocks.NewChannel("sonnet", "#eighteen")
-	// defer ch.Close()
+	ch := mocks.NewChannel(sonnet, eighteen)
+	defer ch.Close()
 
 	b.SubscribeFiltered(ch)
-	// May not have pushed; ensure two more update are enqueued.
-	// TODO: This is shit- can't reason about the behavior.
-	// Do more less threading.
-	b.TickNetwork("botnet")
 
-	var fst, snd data.ChannelState
+	var fst, snd, thd data.ChannelState
 	var ok bool
 
-	// First portion of test: Got initial state-fill
-	ch.Join(func() {
-		_, ok = ch.Nets["sonnet"]
-		if !ok || len(ch.Nets) != 1 {
-			t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, "sonnet")
-		}
+	attempts := 4
 
-		fst, ok = ch.Chans[mocks.ChannelIdent{
-			Network: "sonnet",
-			Channel: "#eighteen",
-		}]
+	// Poll for 1s for up-to-date-ness.
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// First portion of test: Got initial state-fill
+		ch.Join(func() {
+			_, ok = ch.Nets[sonnet]
+			fst, ok = ch.Chans[mocks.ChannelIdent{
+				Network: sonnet,
+				Channel: eighteen,
+			}]
 
-		if !ok || len(ch.Chans) != 1 {
-			t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
-		}
-	})
+			expected_network := ok && len(ch.Nets) == 1
+			expected_channel := ok && len(ch.Chans) == 1
+			done = expected_network && expected_channel
 
-	// Send message updats
-	b.TickMessages("sonnet", "#eighteen")
-	// And a dummy one, to force sync.
-	// TODO: This is shit- can't reason about the behavior.
-	// Do more less threading.
-	b.TickMessages("sonnet", "#one90one")
+			if !expected_network && i == attempts {
+				t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, sonnet)
+			}
 
-	ch.Join(func() {
-		snd, ok = ch.Chans[mocks.ChannelIdent{
-			Network: "sonnet",
-			Channel: "#eighteen",
-		}]
-		if !ok || len(ch.Chans) != 1 {
-			t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
-		}
-		if fst.LastMessage == snd.LastMessage {
-			t.Errorf("didn't receive new messages: got: %v / %v", fst.LastMessage, snd.LastMessage)
-		}
-	})
+			if !expected_channel && i == attempts {
+				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+			}
+		})
+	}
+
+	// Send message updates
+	b.TickMessages(sonnet, eighteen)
+
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// Second portion: expect update to messages and unread.
+		ch.Join(func() {
+			snd, ok = ch.Chans[mocks.ChannelIdent{
+				Network: sonnet,
+				Channel: eighteen,
+			}]
+
+			expected_channel := ok && len(ch.Chans) == 1
+			expected_message := fst.LastMessage != snd.LastMessage
+			expected_unread := fst.Unread < snd.Unread
+			done = expected_channel && expected_message && expected_unread
+
+			if !expected_channel && i == attempts {
+				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+			}
+			if !expected_message && i == attempts {
+				t.Errorf("didn't receive new messages: got %v, then %v", fst.LastMessage, snd.LastMessage)
+			}
+
+			if !expected_unread && i == attempts {
+				t.Errorf("didn't see unread updated: got %v, then %v", fst.Unread, snd.Unread)
+			}
+		})
+	}
+
+	// Test unread clearing
+	go func() {
+		_ = b.EventsBefore(sonnet, eighteen, 1000, snd.LastMessage.EventID)
+	}()
+
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// Second portion: expect update to messages and unread.
+		ch.Join(func() {
+			thd, ok = ch.Chans[mocks.ChannelIdent{
+				Network: sonnet,
+				Channel: eighteen,
+			}]
+
+			expected_unread := thd.Unread < snd.Unread
+			expected_zero := thd.Unread == 0
+			done = expected_unread && expected_zero
+
+			if !expected_unread && i == attempts {
+				t.Errorf("didn't see unread messages cleared: got %d, then %d", snd.Unread, thd.Unread)
+			}
+
+			if !expected_zero && i == attempts {
+				t.Errorf("unread did not reset to zero: got %d want %d", thd.Unread, 0)
+			}
+		})
+	}
 }
 
 func TestSubscribe_FromUI(t *testing.T) {
 	b := demo.New()
-	defer b.Close()
 
-	// Initialize data: two lines in to sonnet 18
-	b.TickNetwork("sonnet")
-	b.TickChannel("sonnet", "#eighteen")
-
-	return // DO NOT SUBMIT
-	b.TickMessages("sonnet", "#eighteen")
-
-	// And a couple dummy messages
+	// Initialize data: two networks
+	b.TickMessages(sonnet, eighteen)
 	b.TickNetwork("botnet")
-	b.TickChannel("botnet", "#t3000")
-	b.TickChannel("sonnet", "#one90one")
-	b.TickMessages("sonnet", "#one90one")
 
 	c := mocks.NewClient()
 	defer c.Close()
 
+	// Run subscribe in the UI thread, make sure we don't get a race.
 	c.Join(func() {
 		b.Subscribe(c)
 	})
 
-	// First portion of test: Got initial state-fill
-	c.Join(func() {
-		_, ok := c.Nets["sonnet"]
-		if !ok || len(c.Nets) != 1 {
-			t.Errorf("unexpected networks: got: %v wanted: %q", c.Nets, "sonnet")
-		}
-	})
+	attempts := 4
+
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// First portion of test: Got initial state-fill
+		c.Join(func() {
+			expect_networks := len(c.Nets) == 2
+			done = expect_networks
+			if !expect_networks && i == attempts {
+				t.Errorf("unexpected networks: got: %v wanted: %d", c.Nets, 2)
+			}
+		})
+	}
 }
