@@ -1,6 +1,8 @@
 package demo
 
 import (
+	"sync"
+
 	"github.com/cceckman/discoirc/backend"
 )
 
@@ -24,23 +26,38 @@ func (d *Demo) subscribe(recv backend.StateReceiver, filter func() (string, stri
 }
 
 func (d *Demo) updateAll() {
+	// UpdateNetwork and UpdateChannels are presumed synchronous, and may
+	// need the RLock back (if they call to EventsBefore). We don't want to
+	// hold any locks while we have them.
+
+	// We'll issue zero or more updates as goroutines during this run.
+	// To maintain that updateAll is synchronous - completes all its work
+	// before returning - we want to put this last, after any locks we may
+	// hold are released.
+	// in the defer stack so they complete before it returns.
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	d.RLock()
 	defer d.RUnlock()
 
-	// No subscriber? update is a noop.
-	if d.subscriber == nil {
+	recv := d.subscriber
+
+	if recv == nil {
+		// Nothing to receive our updates.
 		return
 	}
-
-	// UpdateNetwork call is synchronous, and we're holding an RLock.
-	// TODO: do something else to keep things ordered, and do Update in
-	// a goroutine.
 
 	if d.filter != nil {
 		net, ch := d.filter()
 		netState, ok := d.nets[net]
+		netV := *netState // pass by value
 		if ok {
-			d.subscriber.UpdateNetwork(*netState)
+			wg.Add(1)
+			go func() {
+				recv.UpdateNetwork(netV)
+				wg.Done()
+			}()
 		}
 
 		chId := ChanIdent{
@@ -49,8 +66,13 @@ func (d *Demo) updateAll() {
 		}
 
 		tgtState, ok := d.chans[chId]
+		tgtV := *tgtState
 		if ok {
-			d.subscriber.UpdateChannel(*tgtState)
+			wg.Add(1)
+			go func() {
+				recv.UpdateChannel(tgtV)
+				wg.Done()
+			}()
 		}
 
 		return
@@ -58,10 +80,20 @@ func (d *Demo) updateAll() {
 
 	// No filter; update everything.
 	for _, v := range d.nets {
-		d.subscriber.UpdateNetwork(*v)
+		v := *v
+		wg.Add(1)
+		go func() {
+			recv.UpdateNetwork(v)
+			wg.Done()
+		}()
 	}
 
 	for _, v := range d.chans {
-		d.subscriber.UpdateChannel(*v)
+		v := *v
+		wg.Add(1)
+		go func() {
+			recv.UpdateChannel(v)
+			wg.Done()
+		}()
 	}
 }

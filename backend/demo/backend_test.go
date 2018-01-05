@@ -31,7 +31,6 @@ func TestSubscribeFiltered(t *testing.T) {
 	b.TickMessages(sonnet, "#one90one")
 
 	ch := mocks.NewChannel(sonnet, eighteen)
-	defer ch.Close()
 
 	b.SubscribeFiltered(ch)
 
@@ -129,7 +128,6 @@ func TestSubscribe_FromUI(t *testing.T) {
 	b.TickNetwork("botnet")
 
 	c := mocks.NewClient()
-	defer c.Close()
 
 	// Run subscribe in the UI thread, make sure we don't get a race.
 	c.Join(func() {
@@ -154,10 +152,9 @@ func TestChannelCallback(t *testing.T) {
 	attempts := 4
 	b := demo.New()
 	c := mocks.NewChannel(sonnet, eighteen)
-	defer c.Close()
 
 	c.Archive = b
-	b.Subscribe(c)
+	b.SubscribeFiltered(c)
 
 	// Send 3 messages in two channels
 	for i := 0; i < 3; i++ {
@@ -191,7 +188,6 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 	b.TickMessages(sonnet, eighteen)
 
 	c1 := mocks.NewClient()
-	defer c1.Close()
 	go b.Subscribe(c1)
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
@@ -206,7 +202,6 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 	}
 
 	c2 := mocks.NewClient()
-	defer c2.Close()
 	go b.Subscribe(c2)
 
 	b.TickMessages("botnet", eighteen)

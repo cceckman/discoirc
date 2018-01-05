@@ -46,12 +46,6 @@ func (c *Client) UpdateNetwork(d data.NetworkState) {
 	})
 }
 
-func (c *Client) Close() {
-	c.Join(func() {
-		close(c.await)
-	})
-}
-
 // Join runs the closure in the same thread as updates, and returns once it completes.
 func (c *Client) Join(f func()) {
 	blk := make(chan struct{})
@@ -73,7 +67,7 @@ func (c *Client) UpdateChannel(d data.ChannelState) {
 		if c.Archive != nil {
 			c.Contents[cid] = c.Archive.EventsBefore(
 				d.Network, d.Channel,
-				1, d.LastMessage.EventID)
+				100, d.LastMessage.EventID)
 		}
 	})
 }
