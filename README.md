@@ -5,6 +5,23 @@ Status](https://travis-ci.org/cceckman/discoirc.svg?branch=master)](https://trav
 [![Go Report
 Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://goreportcard.com/report/github.com/cceckman/discoirc)
 
+<center>
+```
+             ||
+             ||
+           <><><>
+         <><><><><>
+        <><><><><><>
+        <><><><><><>
+        <><><><><><>
+         <><><><><>
+           <><><>
+
+          discoirc
+```
+</center>
+
+
 `discoirc` is a terminal-based IRC client. It's similar in some ways to `irssi`,
 but with some specific [goals](docs/goals.md) in mind.
 
