@@ -32,6 +32,10 @@ type Client struct {
 	Chans map[ChannelIdent]data.ChannelState
 
 	await chan func()
+
+	// If Archives is nonempty, UpdateChannel will cause a query to
+	// EventsBefore to be made on each update.
+	Archive backend.EventsArchive
 }
 
 func (c *Client) UpdateNetwork(d data.NetworkState) {
@@ -62,5 +66,11 @@ func (c *Client) UpdateChannel(d data.ChannelState) {
 			Network: d.Network,
 			Channel: d.Channel,
 		}] = d
+
+		if c.Archive != nil {
+			_ = c.Archive.EventsBefore(
+				d.Network, d.Channel,
+				1, d.LastMessage.EventID)
+		}
 	})
 }
