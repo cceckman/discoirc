@@ -21,11 +21,8 @@
 
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
-
-[[constraint]]
   name = "github.com/marcusolsson/tui-go"
-  branch = "master"
+  version = "0.3.0"
   # Use downstream branch, awaiting upstream patches.
-  source = "http://github.com/cceckman/tui-go.git"
+  # source = "http://github.com/cceckman/tui-go.git"
+  # branch = "master"
