@@ -146,7 +146,7 @@ func nextPresence(p data.Presence) data.Presence {
 func nextTopic(t string) string {
 	topic := strings.Split("The Tragical History of the Life and Death of Doctor Faustus", " ")
 	l := len(strings.Split(t, " "))
-	l = ((l + 1) % len(topic)) + 1
+	l = ((l) % len(topic)) + 1
 	return strings.Join(topic[0:l], " ")
 }
 
