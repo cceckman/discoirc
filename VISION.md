@@ -13,12 +13,13 @@ for the indefinite future.
 `discoirc` should let the user do basic IRC stuff:
 
 - Join, leave, manage channels and networks
-- Filter and prioritize messages, e.g. highlights
-- Log things
+- Filter, search, and prioritize messages (highlights / notifications)
+- Extract logs
+- Do so securely to the requirement of the network
 
 ### ...not get in the way.
 `discoirc` should be no more annoying to use than my current `irssi` setup.
-That's the low bar - it should be properly easy and intuitive to use.
+That's the low bar - the higher bar is "easy and intuitive to use."
 
 ### ...look to the future.
 The [IRCv3](https://ircv3.net) working group is working to better standardize,
@@ -27,7 +28,8 @@ adhere to that, and should support modern technologies pertinent to IRC:
 
 - Basic (not really secure) auth (e.g. passwords)
 - Crypto (SSL, SASL) auth
-- 🦄: TCP handoff for transparent restarts
+- 🦄Stretch: TCP handoff for transparent restarts
+- Unicode-first
 
 It should also integrate, where reasonable, with other chat systems (e.g. Slack
 IRC gateway)
@@ -36,7 +38,7 @@ IRC gateway)
 
 ### ...be a window manager.
 Lots of terminal programs incorporate a layer of window management
-functionality. `vim` has multiple windows in which multiple files, or selections from the same file, can be open. `irssi` has windows and channels. Both let you lay those windows out in variou ways.
+functionality. `vim` has multiple windows in which multiple files, or selections from the same file, can be open. `irssi` has windows and channels. Both let you lay those windows out in various ways.
 
 But this means that most of the time, there's a bunch of layers of window
 management open:
@@ -77,9 +79,9 @@ and [`attach`](https://github.com/cceckman/Tilde/blob/master/scripts/attach)
 to the `tmux` session.)
 
 ### ...implement unnecessary features.
-The Internet has progressed a lot since IRC's heyday. It's [still in use](https://xkcd.com/1782/) - I use it on an everyday basis - but there's a lot of the protocol that we just don't need.
+The Internet has progressed a lot since IRC's heyday. It's [still in use](https://xkcd.com/1782/) - I use it on an everyday basis - but there's a lot of stuff in the protocol, and in clients, that we don't need.
 
-We don't need to send files over IRC nowadays. It's not interesting to post my now-playing to my team's IRC channel. Where we need integrations, we can do that with bots rather than with features in the IRC client - or with plugins.
-
-`discoirc` should keep to only those features of use to general IRC use. If it's worth implementing for everyone, it's worth implementing in the core. (And if the lack of a plugin is really bothering you, well, no one is deprecating `irssi`.)
-
+We don't need to send files over IRC. We don't need to have a 'now-playing'
+plugin hook in the client. We don't need e.g. URL rewriting within the client
+(if it's useful to do, have a bot that does it for *everyone* in the channel.)
+We don't need to imlement non-UTF-8 character sets.

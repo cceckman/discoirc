@@ -25,7 +25,7 @@ configure channels and connections on the stub server.
   - [x] Networks
   - [x] Channels on networks
   - [x] Connection status on networks
-  - [ ] Jump to channel view
+  - [x] Jump to channel view
 
 Deferred:
 
