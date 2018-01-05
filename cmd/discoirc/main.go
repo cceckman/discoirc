@@ -66,11 +66,10 @@ func main() {
 				glog.V(1).Info("toggling message cycling")
 				toggle.Messages()
 			})
-
+			toggle.Network()
+			toggle.Channel()
+			toggle.Messages()
 		})
-		toggle.Network()
-		toggle.Channel()
-		toggle.Messages()
 	}()
 
 	if err := ui.Run(); err != nil {
