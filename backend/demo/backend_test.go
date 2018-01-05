@@ -149,3 +149,49 @@ func TestSubscribe_FromUI(t *testing.T) {
 		})
 	}
 }
+
+func TestSubscribe_Resubscribe(t *testing.T) {
+	attempts := 4
+	b := demo.New()
+
+	// Initialize data: one network
+	b.TickMessages(sonnet, eighteen)
+
+	c1 := mocks.NewClient()
+	defer c1.Close()
+	go b.Subscribe(c1)
+
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// First portion of test: Got initial state-fill
+		c1.Join(func() {
+			expect_networks := len(c1.Nets) == 1
+			done = expect_networks
+			if !expect_networks && i == attempts {
+				t.Errorf("unexpected networks: got: %v wanted: %d", c1.Nets, 1)
+			}
+		})
+	}
+
+	c2 := mocks.NewClient()
+	defer c2.Close()
+	go b.Subscribe(c2)
+
+	b.TickMessages("botnet", eighteen)
+
+	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
+		// First portion of test: Got initial state-fill
+		c2.Join(func() {
+			expect_networks := len(c2.Nets) == 2
+			done = expect_networks
+			if !expect_networks && i == attempts {
+				t.Errorf("unexpected networks: got: %v wanted: %d", c2.Nets, 2)
+			}
+		})
+	}
+
+	b.Subscribe(nil)
+
+	c2.Join(func() {
+		// Do nothing; just verifying closure.
+	})
+}
