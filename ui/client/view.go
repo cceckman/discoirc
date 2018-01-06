@@ -12,6 +12,8 @@ import (
 
 var _ View = &Client{}
 
+// New sets the root view of the UIController to a new Client, with data
+// drawn and updated from the backend.
 func New(ctl UIController, provider backend.DataPublisher) *Client {
 	c := &Client{
 		networksBox: tui.NewVBox(tui.NewSpacer()),
@@ -33,6 +35,8 @@ func New(ctl UIController, provider backend.DataPublisher) *Client {
 	return c
 }
 
+// Client is one of the top-level discoirc views, showing an overview of the
+// networks and channels to which the client is connected.
 type Client struct {
 	tui.Widget
 
@@ -46,6 +50,7 @@ type Client struct {
 	networks []*Network
 }
 
+// OnKeyEvent handles keypress events for the Client's root view.
 func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	switch ev.Key {
 	case tui.KeyCtrlC:
@@ -68,12 +73,17 @@ func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	}
 }
 
+// UpdateNetwork accepts updates to network state from the backend, and uses
+// them to update the UI.
+// It schedules the work in the UI thread and blocks until it completes.
 func (c *Client) UpdateNetwork(n data.NetworkState) {
 	c.controller.Update(func() {
 		c.GetNetwork(n.Network).UpdateNetwork(n)
 	})
 }
-
+// UpdateChannel accepts updates to channel state from the backend, and uses
+// them to update the UI.
+// It schedules the work in the UI thread and blocks until it completes.
 func (c *Client) UpdateChannel(ch data.ChannelState) {
 	c.controller.Update(func() {
 		c.GetNetwork(ch.Network).GetChannel(ch.Channel).UpdateChannel(ch)
@@ -95,6 +105,8 @@ func (c *Client) moveFocus(fwd bool) {
 	c.focused.SetFocused(true)
 }
 
+// GetNetwork gets the view of the Network of the given name.
+// If a view of the Network isn't present, it adds one and returns it.
 func (c *Client) GetNetwork(name string) *Network {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -116,6 +128,8 @@ func (c *Client) GetNetwork(name string) *Network {
 	return nil
 }
 
+// RemoveNetwork removes the view of the named Network from this client.
+// It is idempotent- if the network doesn't exist, it just returns.
 func (c *Client) RemoveNetwork(name string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -130,10 +144,15 @@ func (c *Client) RemoveNetwork(name string) {
 	return
 }
 
+// FocusDefault provides the default focus target for the Client.
+// It implements tui.FocusChain.
 func (c *Client) FocusDefault() tui.Widget {
 	return c
 }
 
+// FocusNext returns the next Widget that should be selected after the given Widget
+// in a chain of focusable Widgets.
+// It implements tui.FocusChain.
 func (c *Client) FocusNext(w tui.Widget) tui.Widget {
 	switch w := w.(type) {
 	case *Client:
@@ -167,6 +186,9 @@ func (c *Client) FocusNext(w tui.Widget) tui.Widget {
 	return c.FocusDefault()
 }
 
+// FocusPrev returns the previous Widget that should be selected before the given Widget
+// in a chain of focusable Widgets.
+// It implements tui.FocusChain.
 func (c *Client) FocusPrev(w tui.Widget) tui.Widget {
 	switch w := w.(type) {
 	case *Client:
@@ -208,7 +230,6 @@ func (c *Client) FocusPrev(w tui.Widget) tui.Widget {
 
 }
 
-// nextNetwork picks the next network in the list, wrapping around to the top.
 func (c *Client) nextNetwork(w *Network) *Network {
 	for i, n := range c.networks {
 		if n == w {
