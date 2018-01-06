@@ -7,7 +7,8 @@ import (
 
 	"github.com/marcusolsson/tui-go"
 )
-
+ 
+// NewChannel returns a new Channel view.
 func NewChannel(network *Network, name string) *Channel {
 	r := &Channel{
 		network:         network,
@@ -33,6 +34,7 @@ func NewChannel(network *Network, name string) *Channel {
 	return r
 }
 
+// Channel is a view (Widget) giving an overview of a channel.
 type Channel struct {
 	tui.Widget
 	network *Network
@@ -46,12 +48,16 @@ type Channel struct {
 	membersWidget   *tui.Label
 }
 
+// UpdateChannel updates the view with the provided channel state.
 func (c *Channel) UpdateChannel(ch data.ChannelState) {
 	c.modeWidget.SetText(ch.ChannelMode)
 	c.unreadWidget.SetText(fmt.Sprintf("✉ %d", ch.Unread))
 	c.membersWidget.SetText(fmt.Sprintf("%d ☺", ch.Members))
 }
 
+// SetFocused indicates the user's focus is on the Channel.
+// The Channel should provide a visual indicator of this focus and respond to
+// key events.
 func (c *Channel) SetFocused(focus bool) {
 	c.focus = focus
 	if focus {
@@ -61,14 +67,17 @@ func (c *Channel) SetFocused(focus bool) {
 	}
 }
 
+// IsFocused returns true if the user's focus is on the channel.
 func (c *Channel) IsFocused() bool {
 	return c.focus
 }
 
+// Name gives the channel's name.
 func (c *Channel) Name() string {
 	return c.name
 }
 
+// OnKeyEvent handles key presses, if the channel is selected.
 func (c *Channel) OnKeyEvent(ev tui.KeyEvent) {
 	if !c.focus {
 		return

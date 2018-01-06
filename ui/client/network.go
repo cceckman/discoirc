@@ -55,11 +55,15 @@ type Network struct {
 	channels []*Channel
 }
 
+// UpdateNetwork updates the view with the provided network state.
 func (n *Network) UpdateNetwork(state data.NetworkState) {
 	n.nickWidget.SetText(state.Nick)
 	n.connWidget.Set(state.State)
 }
 
+// SetFocused indicates the user's focus is on the Network.
+// The Network should provide a visual indicator of this focus and respond to
+// key events.
 func (n *Network) SetFocused(focus bool) {
 	n.Box.SetFocused(true)
 	if focus {
@@ -69,10 +73,13 @@ func (n *Network) SetFocused(focus bool) {
 	}
 }
 
+// Name gives the name of the network.
 func (n *Network) Name() string {
 	return n.name
 }
 
+// GetChannel gets the view of the Channel of the given name within the Network.
+// If a view of the Channel isn't present, it adds one and returns it.
 func (n *Network) GetChannel(name string) *Channel {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -95,6 +102,8 @@ func (n *Network) GetChannel(name string) *Channel {
 	return nil
 }
 
+// RemoveChannel removes the view of the named Channel from this network.
+// It is idempotent- if the channel doesn't exist, it just returns.
 func (n *Network) RemoveChannel(name string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
