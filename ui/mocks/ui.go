@@ -12,7 +12,7 @@ func NewUI() *UI {
 
 }
 
-// Type produces an approprate keypress against its root for each character in the input.
+// Type produces an appropriate keypress against its root for each character in the input.
 // Each is a separate event in the UI thread.
 func (ui *UI) Type(s string) {
 	for _, rn := range s {
