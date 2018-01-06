@@ -115,6 +115,7 @@ func Less(a EventID, b EventID) bool {
 
 // Len implements sort.Interface for EventList.
 func (e EventList) Len() int { return len(e) }
+
 // Less implements sort.Interface for EventList
 func (e EventList) Less(i, j int) bool {
 	return Less(e[i].EventID, e[j].EventID)

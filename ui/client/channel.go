@@ -7,7 +7,7 @@ import (
 
 	"github.com/marcusolsson/tui-go"
 )
- 
+
 // NewChannel returns a new Channel view.
 func NewChannel(network *Network, name string) *Channel {
 	r := &Channel{

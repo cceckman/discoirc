@@ -81,6 +81,7 @@ func (c *Client) UpdateNetwork(n data.NetworkState) {
 		c.GetNetwork(n.Network).UpdateNetwork(n)
 	})
 }
+
 // UpdateChannel accepts updates to channel state from the backend, and uses
 // them to update the UI.
 // It schedules the work in the UI thread and blocks until it completes.
