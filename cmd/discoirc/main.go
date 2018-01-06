@@ -36,7 +36,7 @@ func main() {
 		glog.Fatal("error intitializing UI: ", err)
 	}
 
-	ui.SetTheme(GetTheme())
+	ui.SetTheme(getTheme())
 	// TODO: maybe put this in controller?
 	ui.SetWidget(widgets.NewSplash(ui))
 
@@ -60,19 +60,19 @@ func main() {
 		ctl.Update(func() {
 			ui.SetKeybinding("Ctrl+R", func() {
 				glog.V(1).Info("toggling network cycling")
-				toggle.Network()
+				toggle.network()
 			})
 			ui.SetKeybinding("Ctrl+F", func() {
 				glog.V(1).Info("toggling channel cycling")
-				toggle.Channel()
+				toggle.channel()
 			})
 			ui.SetKeybinding("Ctrl+V", func() {
 				glog.V(1).Info("toggling message cycling")
-				toggle.Messages()
+				toggle.messages()
 			})
-			toggle.Network()
-			toggle.Channel()
-			toggle.Messages()
+			toggle.network()
+			toggle.channel()
+			toggle.messages()
 		})
 	}()
 

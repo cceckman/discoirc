@@ -9,7 +9,7 @@ import (
 	"github.com/cceckman/discoirc/backend/demo"
 )
 
-func GetTheme() *tui.Theme {
+func getTheme() *tui.Theme {
 	t := tui.NewTheme()
 	t.SetStyle("reversed", tui.Style{
 		Reverse: tui.DecorationOn,
@@ -28,7 +28,7 @@ type Toggle struct {
 	cancelMessages func()
 }
 
-func (t *Toggle) Network() {
+func (t *Toggle) network() {
 	if t.cancelNetwork != nil {
 		t.cancelNetwork()
 		t.cancelNetwork = nil
@@ -51,7 +51,7 @@ func (t *Toggle) Network() {
 	}()
 }
 
-func (t *Toggle) Channel() {
+func (t *Toggle) channel() {
 	if t.cancelChannel != nil {
 		t.cancelChannel()
 		t.cancelChannel = nil
@@ -74,7 +74,7 @@ func (t *Toggle) Channel() {
 	}()
 }
 
-func (t *Toggle) Messages() {
+func (t *Toggle) messages() {
 	if t.cancelMessages != nil {
 		t.cancelMessages()
 		t.cancelMessages = nil
