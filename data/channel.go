@@ -10,16 +10,6 @@ const (
 	Joined
 )
 
-// Channel represents the state of a user's presence in a channel.
-type Channel struct {
-	Name       string
-	Connection Connection
-
-	Topic    string
-	Presence Presence
-	Mode     string
-}
-
 // ChannelState summarizes the state of a channel.
 type ChannelState struct {
 	Network, Channel string
