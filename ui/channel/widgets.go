@@ -18,6 +18,7 @@ type EventsProvider interface {
 	EventsBefore(net, target string, n int, last data.EventID) []data.Event
 }
 
+// NewEventsWidget returns a new EventsWidget.
 func NewEventsWidget(network, target string, in EventsProvider) *EventsWidget {
 	return &EventsWidget{
 		TailBox:  widgets.NewTailBox(),
@@ -41,6 +42,8 @@ type EventsWidget struct {
 	Renderer EventRenderer
 }
 
+// SetLast sets the last Event displayed. If it's newer than the previous value,
+// it may cause request a backfill of its contents.
 func (v *EventsWidget) SetLast(new data.EventID) {
 	if v.last != new && v.source != nil {
 		v.last = new
@@ -65,6 +68,8 @@ func (v *EventsWidget) refreshContents() {
 	v.SetContents(w...)
 }
 
+// Resize handles resizing of the Widget. It may trigger a refresh of the
+// Widget's contents.
 func (v *EventsWidget) Resize(size image.Point) {
 	oldSize := v.Size()
 	v.TailBox.Resize(size)
