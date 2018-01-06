@@ -34,8 +34,7 @@
     ".",
     "wordwrap"
   ]
-  revision = "e15c085db2edb796ec53acc3504313217c2ece14"
-  version = "v0.3.0"
+  revision = "e45209b6d84031d5afebb52c4cd963b1338f05da"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"
@@ -64,6 +63,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bae351513c6ed69481aa3c707a072201a33b7a164753f8eb9fa54ac42f1262f2"
+  inputs-digest = "828bf312aef9b9d9bfd9d0e7043b7ebbaba174abce9a093e0fc4d85ce41724a9"
   solver-name = "gps-cdcl"
   solver-version = 1

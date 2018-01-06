@@ -31,7 +31,11 @@ func main() {
 	}
 	defer glog.Flush()
 
-	ui := tui.New(tui.NewHBox())
+	ui, err := tui.New(tui.NewHBox())
+	if err != nil {
+		glog.Fatal("error intitializing UI: ", err)
+	}
+
 	ui.SetTheme(GetTheme())
 	// TODO: maybe put this in controller?
 	ui.SetWidget(widgets.NewSplash(ui))
