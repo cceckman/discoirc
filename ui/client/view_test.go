@@ -573,9 +573,9 @@ var ActivationTests = []struct {
 	{
 		Test: "hit Down, activate",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyDown},
-			tui.KeyEvent{Key: tui.KeyDown},
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyDown},
+			{Key: tui.KeyDown},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ChannelView,
 		WantNet:  "gonet", WantChan: "#discoirc",
@@ -583,9 +583,9 @@ var ActivationTests = []struct {
 	{
 		Test: "hit J, activate",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyRune, Rune: 'j'},
-			tui.KeyEvent{Key: tui.KeyRune, Rune: 'j'},
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyRune, Rune: 'j'},
+			{Key: tui.KeyRune, Rune: 'j'},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ChannelView,
 		WantNet:  "gonet", WantChan: "#discoirc",
@@ -593,8 +593,8 @@ var ActivationTests = []struct {
 	{
 		Test: "hit K, activate",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyRune, Rune: 'k'},
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyRune, Rune: 'k'},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ChannelView,
 		WantNet:  "zetanet", WantChan: "#bar",
@@ -602,8 +602,8 @@ var ActivationTests = []struct {
 	{
 		Test: "hit Up, activate",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyUp},
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyUp},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ChannelView,
 		WantNet:  "zetanet", WantChan: "#bar",
@@ -611,7 +611,7 @@ var ActivationTests = []struct {
 	{
 		Test: "no activation on root",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ClientView,
 	},
@@ -619,8 +619,8 @@ var ActivationTests = []struct {
 	{
 		Test: "no activation on network",
 		Input: []tui.KeyEvent{
-			tui.KeyEvent{Key: tui.KeyDown},
-			tui.KeyEvent{Key: tui.KeyEnter},
+			{Key: tui.KeyDown},
+			{Key: tui.KeyEnter},
 		},
 		WantView: discomocks.ClientView,
 	},

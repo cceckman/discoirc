@@ -9,27 +9,27 @@ import (
 )
 
 var testdata = []data.Event{
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: 2, Seq: 2},
 		Contents: "worldY",
 	},
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: 1, Seq: 1},
 		Contents: "worldX",
 	},
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: 2, Seq: 3},
 		Contents: "helloZ",
 	},
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: 3, Seq: 1},
 		Contents: "worldZ",
 	},
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: 2, Seq: 1},
 		Contents: "helloY",
 	},
-	data.Event{
+	{
 		EventID:  data.EventID{Epoch: -1, Seq: 1},
 		Contents: "helloX",
 	},
