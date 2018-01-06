@@ -27,7 +27,7 @@ func (d *Demo) ensureChannel(network, channel string) {
 	d.Lock()
 	defer d.Unlock()
 
-	chId := ChanIdent{Network: network, Channel: channel}
+	chId := chanIdent{Network: network, Channel: channel}
 	ch := d.chans[chId]
 	if ch == nil {
 		d.chans[chId] = &data.ChannelState{
@@ -54,7 +54,7 @@ func (d *Demo) TickNetwork(network string) {
 
 func (d *Demo) TickChannel(network, channel string) {
 	d.ensureChannel(network, channel)
-	ch := d.chans[ChanIdent{
+	ch := d.chans[chanIdent{
 		Network: network,
 		Channel: channel,
 	}]
@@ -69,7 +69,7 @@ func (d *Demo) TickChannel(network, channel string) {
 
 func (d *Demo) TickMessages(network, channel string) {
 	d.ensureChannel(network, channel)
-	id := ChanIdent{
+	id := chanIdent{
 		Network: network,
 		Channel: channel,
 	}

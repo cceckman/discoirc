@@ -60,7 +60,7 @@ func (d *Demo) updateAll() {
 			}()
 		}
 
-		chId := ChanIdent{
+		chId := chanIdent{
 			Network: net,
 			Channel: ch,
 		}

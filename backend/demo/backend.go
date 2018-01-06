@@ -12,7 +12,7 @@ import (
 
 var _ backend.Backend = &Demo{}
 
-type ChanIdent struct {
+type chanIdent struct {
 	Network, Channel string
 }
 
@@ -24,16 +24,16 @@ type Demo struct {
 	filter     func() (string, string)
 
 	nets     map[string]*data.NetworkState
-	chans    map[ChanIdent]*data.ChannelState
-	contents map[ChanIdent][]data.Event
+	chans    map[chanIdent]*data.ChannelState
+	contents map[chanIdent][]data.Event
 }
 
 // New returns a new demonstration backend
 func New() *Demo {
 	d := &Demo{
 		nets:     make(map[string]*data.NetworkState),
-		chans:    make(map[ChanIdent]*data.ChannelState),
-		contents: make(map[ChanIdent][]data.Event),
+		chans:    make(map[chanIdent]*data.ChannelState),
+		contents: make(map[chanIdent][]data.Event),
 	}
 	return d
 }
@@ -50,7 +50,7 @@ func (d *Demo) Send(network, channel string, message string) {
 
 // appendMessage must be called under the write lock.
 func (d *Demo) appendMessage(network, channel string, speaker, message string) {
-	id := ChanIdent{
+	id := chanIdent{
 		Network: network,
 		Channel: channel,
 	}
@@ -77,7 +77,7 @@ func (d *Demo) EventsBefore(network, channel string, n int, last data.EventID) [
 	d.RLock()
 	defer d.RUnlock()
 
-	id := ChanIdent{
+	id := chanIdent{
 		Network: network,
 		Channel: channel,
 	}
