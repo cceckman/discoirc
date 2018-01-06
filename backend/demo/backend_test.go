@@ -162,7 +162,10 @@ func TestChannelCallback(t *testing.T) {
 		b.TickMessages(sonnet, "#globe")
 	}
 
-	cid := mocks.ChannelIdent{sonnet, eighteen}
+	cid := mocks.ChannelIdent{
+		Network: sonnet,
+		Channel: eighteen,
+	}
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		c.Join(func() {
 			expect_channels := len(c.Contents) == 1
