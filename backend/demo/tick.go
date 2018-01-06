@@ -17,7 +17,6 @@ func (d *Demo) ensureNetwork(network string) {
 		d.nets[network] = &data.NetworkState{
 			Network: network,
 		}
-		net = d.nets[network]
 	}
 }
 
@@ -35,7 +34,6 @@ func (d *Demo) ensureChannel(network, channel string) {
 			Channel: channel,
 			Unread:  0,
 		}
-		ch = d.chans[chID]
 	}
 }
 
