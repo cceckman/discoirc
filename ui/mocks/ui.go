@@ -4,6 +4,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
+// NewUI returns a new mock UI.
 func NewUI() *UI {
 	ui := &UI{}
 
@@ -50,15 +51,18 @@ func (ui *UI) Repaint() {
 
 }
 
+// Update runs the provided function.
 func (ui *UI) Update(f func()) {
 	f()
 }
 
+// SetWidget sets the root Widget.
 func (ui *UI) SetWidget(w tui.Widget) {
 	ui.Root = w
 	ui.Repaint()
 }
 
+// Quit inidicates the UI has quit.
 func (ui *UI) Quit() {
 	ui.HasQuit = true
 }

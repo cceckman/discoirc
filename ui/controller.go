@@ -15,6 +15,7 @@ type UI interface {
 	Quit()
 }
 
+// New returns a new Controller.
 func New(ui UI, be backend.Backend) *Controller {
 	c := &Controller{
 		UI:      ui,

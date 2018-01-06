@@ -1,3 +1,4 @@
+// Package mocks provides mocks to use for testing backends.
 package mocks
 
 import (

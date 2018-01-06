@@ -1,4 +1,4 @@
-// 2017-12-24 cceckman <charles@cceckman.com>
+// discoirc is a terminal IRC client.
 package main
 
 import (

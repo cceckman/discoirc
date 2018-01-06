@@ -28,6 +28,7 @@ type Demo struct {
 	contents map[ChanIdent][]data.Event
 }
 
+// New returns a new demonstration backend
 func New() *Demo {
 	d := &Demo{
 		nets:     make(map[string]*data.NetworkState),
@@ -37,6 +38,7 @@ func New() *Demo {
 	return d
 }
 
+// Send sends the given message to the target.
 func (d *Demo) Send(network, channel string, message string) {
 	d.ensureChannel(network, channel)
 
@@ -70,6 +72,7 @@ func (d *Demo) appendMessage(network, channel string, speaker, message string) {
 	go d.updateAll()
 }
 
+// EventsBefore returns N events preceding the given event in the given channel.
 func (d *Demo) EventsBefore(network, channel string, n int, last data.EventID) []data.Event {
 	d.RLock()
 	defer d.RUnlock()
