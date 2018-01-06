@@ -27,18 +27,19 @@ func (d *Demo) ensureChannel(network, channel string) {
 	d.Lock()
 	defer d.Unlock()
 
-	chId := chanIdent{Network: network, Channel: channel}
-	ch := d.chans[chId]
+	chID := chanIdent{Network: network, Channel: channel}
+	ch := d.chans[chID]
 	if ch == nil {
-		d.chans[chId] = &data.ChannelState{
+		d.chans[chID] = &data.ChannelState{
 			Network: network,
 			Channel: channel,
 			Unread:  0,
 		}
-		ch = d.chans[chId]
+		ch = d.chans[chID]
 	}
 }
 
+// TickNetwork increments the values of the given network.
 func (d *Demo) TickNetwork(network string) {
 	d.ensureNetwork(network)
 
@@ -52,6 +53,7 @@ func (d *Demo) TickNetwork(network string) {
 	go d.updateAll()
 }
 
+// TickChannel increments the values of the given channel.
 func (d *Demo) TickChannel(network, channel string) {
 	d.ensureChannel(network, channel)
 	ch := d.chans[chanIdent{
@@ -62,11 +64,12 @@ func (d *Demo) TickChannel(network, channel string) {
 	ch.UserMode = nextMode(ch.UserMode)
 	ch.Presence = nextPresence(ch.Presence)
 	ch.Topic = nextTopic(ch.Topic)
-	ch.Members += 1
+	ch.Members++
 
 	go d.updateAll()
 }
 
+// TickMessages adds a message to the channel.
 func (d *Demo) TickMessages(network, channel string) {
 	d.ensureChannel(network, channel)
 	id := chanIdent{
@@ -89,7 +92,7 @@ func (d *Demo) TickMessages(network, channel string) {
 
 	// Update unread before appending;
 	// only these messages may count as unread.
-	d.chans[id].Unread += 1
+	d.chans[id].Unread++
 	d.appendMessage(network, channel, speaker, msg)
 }
 

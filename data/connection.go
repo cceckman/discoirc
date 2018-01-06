@@ -2,7 +2,6 @@ package data
 
 // ConnectionState represents the status of a user's connection to an IRC network.
 type ConnectionState int
-
 const (
 	Disconnected ConnectionState = iota
 	Connecting

@@ -6,10 +6,12 @@ import (
 	"github.com/cceckman/discoirc/backend"
 )
 
+// Subscribe attaches the receiver.
 func (d *Demo) Subscribe(recv backend.StateReceiver) {
 	d.subscribe(recv, nil)
 }
 
+// SubscribeFiltered attaches the receiver.
 func (d *Demo) SubscribeFiltered(recv backend.FilteredStateReceiver) {
 	d.subscribe(recv, recv.Filter)
 }
@@ -60,12 +62,12 @@ func (d *Demo) updateAll() {
 			}()
 		}
 
-		chId := chanIdent{
+		chID := chanIdent{
 			Network: net,
 			Channel: ch,
 		}
 
-		tgtState, ok := d.chans[chId]
+		tgtState, ok := d.chans[chID]
 		tgtV := *tgtState
 		if ok {
 			wg.Add(1)
