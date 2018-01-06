@@ -5,6 +5,9 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
+// Events is a set of data.Events used by tests as filler data - a Lorem.
+// Specifically, it's a few lines and stage directions from the first two scenes
+// of Shakespeare's Hamlet.
 var Events = data.NewEvents([]data.Event{
 	{EventID: data.EventID{Epoch: 1, Seq: 1}, Contents: "TOPIC Act I, Scene 1"},
 	{EventID: data.EventID{Epoch: 1, Seq: 2}, Contents: "JOIN barnardo"},
@@ -22,6 +25,7 @@ type target struct {
 	Tgt string
 }
 
+// Backend is a mock implementor of the backend.Backend interface.
 type Backend struct {
 	Receiver backend.StateReceiver
 
@@ -30,13 +34,17 @@ type Backend struct {
 	Sent []string
 }
 
+// Subscribe implements backend.Backend
 func (b *Backend) Subscribe(r backend.StateReceiver) {
 	b.Receiver = r
 }
+
+// SubscribeFiltered implements backend.Backend
 func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
 	b.Receiver = r
 }
 
+// EventsBefore implements backend.Backend
 func (b *Backend) EventsBefore(network, tgt string, n int, last data.EventID) []data.Event {
 	if v, ok := b.events[target{
 		Net: network,
@@ -48,10 +56,12 @@ func (b *Backend) EventsBefore(network, tgt string, n int, last data.EventID) []
 	return nil
 }
 
+// Send implements backend.Backend
 func (b *Backend) Send(_, _ string, message string) {
 	b.Sent = append(b.Sent, message)
 }
 
+// NewBackend returns a new, mock, Backend
 func NewBackend() *Backend {
 	contents := map[target]data.EventList{
 		{

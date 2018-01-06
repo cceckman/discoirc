@@ -6,6 +6,7 @@ import (
 
 var _ tui.Widget = &Filler{}
 
+// NewFiller returns a new Filler widget
 func NewFiller(fill rune) *Filler {
 	return &Filler{
 		fill: fill,
@@ -27,6 +28,7 @@ func (f *Filler) SetFill(fill rune) {
 	f.fill = fill
 }
 
+// Draw renders the Widget using the provided Painter
 func (f *Filler) Draw(p *tui.Painter) {
 	sz := f.Size()
 	for j := 0; j < sz.Y; j++ {
