@@ -103,6 +103,7 @@ func (d *Demo) EventsBefore(network, channel string, n int, last data.EventID) [
 		if !ok {
 			// No channel metadata to update;
 			// just return.
+			return
 		}
 
 		// We know at least 'read' messages have been read, but

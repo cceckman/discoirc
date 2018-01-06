@@ -115,7 +115,6 @@ func (n *Network) RemoveChannel(name string) {
 			return
 		}
 	}
-	return
 }
 
 // focusNext returns the next Widget to focus on, or nil if the next Widget

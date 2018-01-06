@@ -114,16 +114,6 @@ func nextConnState(in data.ConnectionState) data.ConnectionState {
 	return in
 }
 
-func nextUMode(m string) string {
-	modes := []string{"q", "a", "o", "h", "v", ""}
-	for i, s := range modes {
-		if m == s {
-			return modes[(i+1)%len(modes)]
-		}
-	}
-	return modes[0]
-}
-
 func nextMode(m string) string {
 	modes := []string{"i", "k", "l", "s", ""}
 	for i, s := range modes {

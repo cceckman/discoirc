@@ -142,7 +142,6 @@ func (c *Client) RemoveNetwork(name string) {
 			return
 		}
 	}
-	return
 }
 
 // FocusDefault provides the default focus target for the Client.
