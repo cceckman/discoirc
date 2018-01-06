@@ -8,10 +8,12 @@ import (
 
 var _ backend.StateReceiver = &Client{}
 
+// ChannelIdent is a channel's identity.
 type ChannelIdent struct {
 	Network, Channel string
 }
 
+// NewClient returns a new Client.
 func NewClient() *Client {
 	c := &Client{
 		Nets:     make(map[string]data.NetworkState),
@@ -41,6 +43,7 @@ type Client struct {
 	Archive backend.EventsArchive
 }
 
+// UpdateNetwork receives the new state of the network.
 func (c *Client) UpdateNetwork(d data.NetworkState) {
 	c.Join(func() {
 		c.Nets[d.Network] = d
@@ -57,6 +60,7 @@ func (c *Client) Join(f func()) {
 	<-blk
 }
 
+// UpdateChannel receives the new state of the channel.
 func (c *Client) UpdateChannel(d data.ChannelState) {
 	c.Join(func() {
 		cid := ChannelIdent{

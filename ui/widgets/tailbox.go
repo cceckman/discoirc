@@ -18,17 +18,20 @@ type TailBox struct {
 
 var _ tui.Widget = &TailBox{}
 
+// NewTailBox returns a new TailBox widget.
 func NewTailBox(w ...tui.Widget) *TailBox {
 	return &TailBox{
 		contents: w,
 	}
 }
 
+// SetContents sets the component widgets of the TailBox.
 func (t *TailBox) SetContents(w ...tui.Widget) {
 	t.contents = w
 	t.doLayout(t.Size())
 }
 
+// Draw renders the TailBox.
 func (t *TailBox) Draw(p *tui.Painter) {
 	p.WithMask(image.Rect(0, 0, t.sz.X, t.sz.Y), func(p *tui.Painter) {
 		// Draw background

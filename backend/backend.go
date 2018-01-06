@@ -42,6 +42,7 @@ type Sender interface {
 	Send(network, target string, message string)
 }
 
+// Backend supports the full set of backend functionality.
 type Backend interface {
 	DataPublisher
 	EventsArchive

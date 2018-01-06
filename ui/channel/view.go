@@ -48,6 +48,7 @@ type View struct {
 	input *tui.Entry
 }
 
+// OnKeyEvent handles key presses.
 func (v *View) OnKeyEvent(ev tui.KeyEvent) {
 	if ev.Key == tui.KeyCtrlC && v.ui != nil {
 		v.ui.Quit()
@@ -74,10 +75,12 @@ func (v *View) handleInput(entry *tui.Entry) {
 	}
 }
 
+// SetRenderer sets the function that turns Events into Widgets.
 func (v *View) SetRenderer(e EventRenderer) {
 	v.events.Renderer = e
 }
 
+// UpdateNetwork receives the new state of the network.
 func (v *View) UpdateNetwork(n data.NetworkState) {
 	if n.Network != v.network {
 		return
@@ -95,6 +98,7 @@ func (v *View) UpdateNetwork(n data.NetworkState) {
 	}
 }
 
+// UpdateChannel receives the new state of the channel.
 func (v *View) UpdateChannel(d data.ChannelState) {
 	if d.Network != v.network || d.Channel != v.target {
 		return

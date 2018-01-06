@@ -11,12 +11,14 @@ type ConnState struct {
 	*tui.Label
 }
 
+// NewConnState returns a ConnState widget.
 func NewConnState() *ConnState {
 	return &ConnState{
 		Label: tui.NewLabel("?"),
 	}
 }
 
+// Set sets the current connection state.
 func (c *ConnState) Set(state data.ConnectionState) {
 	connStrings := map[data.ConnectionState]string{
 		data.Disconnected: "∅",

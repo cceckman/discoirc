@@ -32,6 +32,7 @@ type splash struct {
 	ui Quitter
 }
 
+// OnKeyEvent handles keypress events.
 func (s *splash) OnKeyEvent(ev tui.KeyEvent) {
 	// TODO: put all of these into a single "isQuitEvent" utility funcion.
 	if ev.Key == tui.KeyCtrlC {
@@ -41,6 +42,7 @@ func (s *splash) OnKeyEvent(ev tui.KeyEvent) {
 	s.Widget.OnKeyEvent(ev)
 }
 
+// NewSplash returns a new Splash widget.
 func NewSplash(ui Quitter) tui.Widget {
 	return &splash{
 		ui: ui,
