@@ -4,7 +4,9 @@ package data
 type Presence int
 
 const (
+	// NotPresent indicates the user is not in the channel.
 	NotPresent Presence = iota
+	// Joined indicates the user is in the channel.
 	Joined
 )
 

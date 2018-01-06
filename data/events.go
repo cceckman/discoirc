@@ -17,6 +17,7 @@ type EventID struct {
 	Seq   uint
 }
 
+// Events is an interface supporting selecting a subset of events.
 type Events interface {
 	SelectSize(uint) []Event
 	SelectSizeMax(uint, EventID) []Event
@@ -32,6 +33,7 @@ func NewEvents(es []Event) EventList {
 	return r
 }
 
+// EventList implements the Events interface for an slice of Events.
 type EventList []Event
 
 // SelectSize selects the most recent n events.
@@ -43,7 +45,7 @@ func (e EventList) SelectSize(n uint) []Event {
 	return e[start:]
 }
 
-// SelectMaxSize selects at most n Events ending at max.
+// SelectSizeMax selects at most n Events ending at max.
 func (e EventList) SelectSizeMax(n uint, max EventID) []Event {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
@@ -77,7 +79,7 @@ func (e EventList) SelectMinSize(min EventID, n uint) []Event {
 	return e[start:end]
 }
 
-// Select returns a slice from its receiver with those within the EventRange.
+// SelectMinMax returns a slice from its receiver with those within the range of events.
 func (e EventList) SelectMinMax(min, max EventID) []Event {
 	// Events must already be sorted.
 
@@ -100,6 +102,7 @@ func (e EventList) SelectMinMax(min, max EventID) []Event {
 	return e[start:end]
 }
 
+// Less is a helper function for comparing events.
 func Less(a EventID, b EventID) bool {
 	if a.Epoch == b.Epoch {
 		return a.Seq < b.Seq
@@ -110,10 +113,14 @@ func Less(a EventID, b EventID) bool {
 	return false
 }
 
+// Len implements sort.Interface for EventList.
 func (e EventList) Len() int { return len(e) }
+// Less implements sort.Interface for EventList
 func (e EventList) Less(i, j int) bool {
 	return Less(e[i].EventID, e[j].EventID)
 }
+
+// Swap implements sort.Interface for EventList
 func (e EventList) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
 
 // An Event represents an event in IRC, e.g. a message.
@@ -123,6 +130,7 @@ type Event struct {
 	Contents string
 }
 
+// String returns a string representation of the Event
 func (e *Event) String() string {
 	return e.Contents
 }
