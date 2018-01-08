@@ -2,28 +2,33 @@ package mocks
 
 import (
 	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/data"
 )
 
-var _ backend.FilteredStateReceiver = &Channel{}
+var _ backend.StateReceiver = &Channel{}
 
 // NewChannel returns a new mock Channel.
 func NewChannel(network, name string) *Channel {
 	return &Channel{
 		Client: NewClient(),
-
-		Network: network,
-		Channel: name,
+		Scope: data.Scope{
+			Net:  network,
+			Name: name,
+		},
 	}
 }
 
 // Channel is a mock Channel view. It supports the FilteredSubscriber interface.
 type Channel struct {
 	*Client
-
-	Network, Channel string
+	Scope data.Scope
 }
 
 // Filter specifies the network and target this Channel is watching for.
-func (c *Channel) Filter() (string, string) {
-	return c.Network, c.Channel
+func (c *Channel) Filter() data.Filter {
+	return data.Filter{
+		Scope:     c.Scope,
+		MatchNet:  true,
+		MatchName: true,
+	}
 }
