@@ -12,15 +12,14 @@ const (
 
 // ChannelState summarizes the state of a channel.
 type ChannelState struct {
-	Network, Channel string
-	Presence         Presence
-	// TODO: This representation is incorrect.
-	// A user's mode is for the network, not to the channel.
-	ChannelMode, UserMode string
+	Scope
+
+	Presence    Presence
+	ChannelMode string
 
 	Topic   string
 	Members int
 
 	Unread      int
-	LastMessage Event
+	LastMessage Seq
 }
