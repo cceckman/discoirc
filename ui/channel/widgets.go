@@ -15,18 +15,17 @@ type EventRenderer func(data.Event) tui.Widget
 
 // EventsProvider returns up to n events ending with 'last'.
 type EventsProvider interface {
-	EventsBefore(net, target string, n int, last data.EventID) []data.Event
+	EventsBefore(s data.Scope, n int, last data.Seq) data.EventList
 }
 
 // NewEventsWidget returns a new EventsWidget.
-func NewEventsWidget(network, target string, in EventsProvider) *EventsWidget {
+func NewEventsWidget(scope data.Scope, in EventsProvider) *EventsWidget {
 	return &EventsWidget{
 		TailBox:  widgets.NewTailBox(),
 		Renderer: DefaultRenderer,
 
-		network: network,
-		target:  target,
-		source:  in,
+		scope:  scope,
+		source: in,
 	}
 }
 
@@ -35,16 +34,16 @@ type EventsWidget struct {
 	*widgets.TailBox
 
 	source EventsProvider
-	last   data.EventID
+	last   data.Seq
 
-	network, target string
+	scope data.Scope
 
 	Renderer EventRenderer
 }
 
 // SetLast sets the last Event displayed. If it's newer than the previous value,
 // it may cause request a backfill of its contents.
-func (v *EventsWidget) SetLast(new data.EventID) {
+func (v *EventsWidget) SetLast(new data.Seq) {
 	if v.last != new && v.source != nil {
 		v.last = new
 		v.refreshContents()
@@ -58,7 +57,7 @@ func (v *EventsWidget) refreshContents() {
 	// 2. Handle single-new-message more gracefully, i.e. without redrawing
 	//    all of the widgets.
 	events := v.source.EventsBefore(
-		v.network, v.target,
+		v.scope,
 		v.TailBox.Size().Y, v.last)
 
 	w := make([]tui.Widget, len(events))

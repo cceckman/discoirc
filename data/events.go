@@ -20,6 +20,13 @@ type Filter struct {
 	MatchNet, MatchName bool
 }
 
+// Match chekcs the scope against
+func (f *Filter) Match(s Scope) bool {
+	net := !f.MatchNet || (s.Net == f.Net)
+	name := !f.MatchName || (s.Name == f.Name)
+	return net && name
+}
+
 // Seq is the sequence identifier of an Event.
 type Seq int64
 
@@ -46,7 +53,7 @@ type EventList []Event
 func (e EventList) SelectSizeMax(n int, max Seq) EventList {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
-		return end[i].Seq() > max
+		return e[i].Seq() > max
 	})
 
 	start := end - int(n)

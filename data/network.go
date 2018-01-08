@@ -16,8 +16,6 @@ const (
 type NetworkState struct {
 	Scope
 
-	Nick string
-
 	Nick     string
 	State    ConnectionState
 	UserMode string
