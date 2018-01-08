@@ -9,7 +9,10 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-var sonnet, eighteen = "sonnet", "#eighteen"
+var (
+	sonnet   = data.Scope{Net: "sonnet"}
+	eighteen = data.Scope{Net: "sonnet", Name: "#eighteen"}
+)
 
 func delay(n int) int {
 	time.Sleep(200 * time.Millisecond)
@@ -20,19 +23,19 @@ func TestSubscribeFiltered(t *testing.T) {
 	b := demo.New()
 
 	// Initialize data: two lines in to sonnet 18
-	b.TickNetwork(sonnet)
-	b.TickChannel(sonnet, eighteen)
-	b.TickMessages(sonnet, eighteen)
+	b.TickNetwork(sonnet.Net)
+	b.TickChannel(eighteen.Net, eighteen.Name)
+	b.TickMessages(eighteen.Net, eighteen.Name)
 
 	// And a couple dummy messages
 	b.TickNetwork("botnet")
 	b.TickChannel("botnet", "#t3000")
-	b.TickChannel(sonnet, "#one90one")
-	b.TickMessages(sonnet, "#one90one")
+	b.TickChannel(sonnet.Net, "#one90one")
+	b.TickMessages(sonnet.Net, "#one90one")
 
-	ch := mocks.NewChannel(sonnet, eighteen)
+	ch := mocks.NewChannel(eighteen.Net, eighteen.Name)
 
-	b.SubscribeFiltered(ch)
+	b.Subscribe(ch)
 
 	var fst, snd, thd data.ChannelState
 	var ok bool
@@ -44,10 +47,7 @@ func TestSubscribeFiltered(t *testing.T) {
 		// First portion of test: Got initial state-fill
 		ch.Join(func() {
 			_, ok = ch.Nets[sonnet]
-			fst, ok = ch.Chans[mocks.ChannelIdent{
-				Network: sonnet,
-				Channel: eighteen,
-			}]
+			fst, ok = ch.Chans[eighteen]
 
 			expected_network := ok && len(ch.Nets) == 1
 			expected_channel := ok && len(ch.Chans) == 1
@@ -64,15 +64,12 @@ func TestSubscribeFiltered(t *testing.T) {
 	}
 
 	// Send message updates
-	b.TickMessages(sonnet, eighteen)
+	b.TickMessages(eighteen.Net, eighteen.Name)
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		// Second portion: expect update to messages and unread.
 		ch.Join(func() {
-			snd, ok = ch.Chans[mocks.ChannelIdent{
-				Network: sonnet,
-				Channel: eighteen,
-			}]
+			snd, ok = ch.Chans[eighteen]
 
 			expected_channel := ok && len(ch.Chans) == 1
 			expected_message := fst.LastMessage != snd.LastMessage
@@ -94,16 +91,13 @@ func TestSubscribeFiltered(t *testing.T) {
 
 	// Test unread clearing
 	go func() {
-		_ = b.EventsBefore(sonnet, eighteen, 1000, snd.LastMessage.EventID)
+		_ = b.EventsBefore(eighteen, 1000, snd.LastMessage)
 	}()
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		// Second portion: expect update to messages and unread.
 		ch.Join(func() {
-			thd, ok = ch.Chans[mocks.ChannelIdent{
-				Network: sonnet,
-				Channel: eighteen,
-			}]
+			thd, ok = ch.Chans[eighteen]
 
 			expected_unread := thd.Unread < snd.Unread
 			expected_zero := thd.Unread == 0
@@ -124,7 +118,7 @@ func TestSubscribe_FromUI(t *testing.T) {
 	b := demo.New()
 
 	// Initialize data: two networks
-	b.TickMessages(sonnet, eighteen)
+	b.TickMessages(eighteen.Net, eighteen.Name)
 	b.TickNetwork("botnet")
 
 	c := mocks.NewClient()
@@ -151,33 +145,29 @@ func TestSubscribe_FromUI(t *testing.T) {
 func TestChannelCallback(t *testing.T) {
 	attempts := 4
 	b := demo.New()
-	c := mocks.NewChannel(sonnet, eighteen)
+	c := mocks.NewChannel(eighteen.Net, eighteen.Name)
 
 	c.Archive = b
-	b.SubscribeFiltered(c)
+	b.Subscribe(c)
 
 	// Send 3 messages in two channels
 	for i := 0; i < 3; i++ {
-		b.TickMessages(sonnet, eighteen)
-		b.TickMessages(sonnet, "#globe")
+		b.TickMessages(eighteen.Net, eighteen.Name)
+		b.TickMessages(sonnet.Net, "#globe")
 	}
 
-	cid := mocks.ChannelIdent{
-		Network: sonnet,
-		Channel: eighteen,
-	}
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		c.Join(func() {
 			expect_channels := len(c.Contents) == 1
-			expect_contents := len(c.Contents[cid]) == 3
+			expect_contents := len(c.Contents[eighteen]) == 3
 			done = expect_channels && expect_contents
 
 			if !expect_channels && i == attempts {
-				t.Errorf("unexpected channels: got: %v want: %v", c.Contents, cid)
+				t.Errorf("unexpected channels: got: %v want: %v", c.Contents, eighteen)
 			}
 
 			if !expect_contents && i == attempts {
-				t.Errorf("unexpected contents: got: %v want: %v", c.Contents[cid], "three lines of Shakespare's sonnet 18")
+				t.Errorf("unexpected contents: got: %v want: %v", c.Contents[eighteen], "three lines of Shakespare's sonnet 18")
 			}
 		})
 	}
@@ -188,7 +178,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 	b := demo.New()
 
 	// Initialize data: one network
-	b.TickMessages(sonnet, eighteen)
+	b.TickMessages(eighteen.Net, eighteen.Name)
 
 	c1 := mocks.NewClient()
 	go b.Subscribe(c1)
@@ -207,7 +197,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 	c2 := mocks.NewClient()
 	go b.Subscribe(c2)
 
-	b.TickMessages("botnet", eighteen)
+	b.TickMessages("botnet", "#eighteen")
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		// First portion of test: Got initial state-fill
