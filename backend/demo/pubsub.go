@@ -43,7 +43,11 @@ func (d *Demo) updateAll() {
 	// Walk through everything; skip if it doesn't match the scope.
 	for _, v := range d.nets {
 		v := *v
-		if !filter.Match(v.Scope) {
+		// Filter doesn't entirely express what's of interest to the
+		// channel view; a real backend has to do some amount of
+		// duplication to the channel.
+		/// Do a more specific match here.
+		if filter.MatchNet && v.Scope.Net != filter.Net {
 			continue
 		}
 
