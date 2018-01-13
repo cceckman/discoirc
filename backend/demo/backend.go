@@ -51,15 +51,11 @@ func (d *Demo) Send(scope data.Scope, message string) {
 	d.Lock()
 	defer d.Unlock()
 	nick := d.nets[scope.Net].Nick
-	d.appendMessage(scope.Net, scope.Name, nick, message)
+	d.appendMessage(scope, nick, message)
 }
 
 // appendMessage must be called under the write lock.
-func (d *Demo) appendMessage(network, channel string, speaker, message string) {
-	id := data.Scope{
-		Net:  network,
-		Name: channel,
-	}
+func (d *Demo) appendMessage(id data.Scope, speaker, message string) {
 	last := d.chans[id].LastMessage
 	next := &event{
 		scope: id,

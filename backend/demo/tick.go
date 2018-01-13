@@ -91,7 +91,7 @@ func (d *Demo) TickMessages(network, channel string) {
 	// Update unread before appending;
 	// only these messages may count as unread.
 	d.chans[id].Unread++
-	d.appendMessage(network, channel, speaker, msg)
+	d.appendMessage(data.Scope{Net: network, Name: channel}, speaker, msg)
 }
 
 func nextNick(nick string) string {
