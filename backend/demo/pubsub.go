@@ -33,6 +33,10 @@ func (d *Demo) updateAll() {
 	d.RLock()
 	defer d.RUnlock()
 
+	if d.subscriber == nil {
+		return
+	}
+
 	recv := d.subscriber
 	filter := recv.Filter()
 
