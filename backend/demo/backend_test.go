@@ -225,24 +225,23 @@ func TestSend(t *testing.T) {
 	c.Archive = b
 	b.Subscribe(c)
 
-	msg := "hello!"
-
-	// Send a message via the UI interface
-	b.Send(eighteen, msg)
+	// Send a message via the UI interface; assume it's from an arbitrary thread
+	go b.Send(eighteen, "hello!")
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
 		c.Join(func() {
 			expect_contents := len(c.Contents[eighteen]) == 1
-			expect_message := expect_contents && c.Contents[eighteen][0].String() == msg
+			fmtMsg := "<> hello!"
+			expect_message := expect_contents && c.Contents[eighteen][0].String() == fmtMsg
 
 			done = expect_message
 
-			if !expect_message && i == attempts {
+			if !expect_contents && i == attempts {
 				t.Errorf("unexpected contents: got: %v want: %v", len(c.Contents[eighteen]), 1)
 			}
 
 			if expect_contents && !expect_message && i == attempts {
-				t.Errorf("unexpected message: got: %v want: %v", c.Contents[eighteen][0].String(), msg)
+				t.Errorf("unexpected message: got: %v want: %v", c.Contents[eighteen][0].String(), fmtMsg)
 			}
 		})
 	}

@@ -51,7 +51,7 @@ func (d *Demo) Send(scope data.Scope, message string) {
 	d.Lock()
 	defer d.Unlock()
 	nick := d.nets[scope.Net].Nick
-	d.appendMessage(scope.Net, scope.Net, nick, message)
+	d.appendMessage(scope.Net, scope.Name, nick, message)
 }
 
 // appendMessage must be called under the write lock.
