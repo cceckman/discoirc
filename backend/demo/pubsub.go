@@ -40,12 +40,7 @@ func (d *Demo) updateAll() {
 	recv := d.subscriber
 	filter := recv.Filter()
 
-	if recv == nil {
-		// Nothing to receive our updates.
-		return
-	}
-
-	// No filter; update everything.
+	// Walk through everything; skip if it doesn't match the scope.
 	for _, v := range d.nets {
 		v := *v
 		if !filter.Match(v.Scope) {

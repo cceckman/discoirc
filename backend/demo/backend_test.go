@@ -54,7 +54,7 @@ func TestSubscribeFiltered(t *testing.T) {
 			done = expected_network && expected_channel
 
 			if !expected_network && i == attempts {
-				t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, sonnet)
+				t.Errorf("unexpected networks: got: %v wanted: %q", ch.Nets, eighteen.Net)
 			}
 
 			if !expected_channel && i == attempts {
