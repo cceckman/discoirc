@@ -21,6 +21,7 @@ type ChannelState struct {
 	Members int
 
 	Unread      int
+	LastMessage Seq
 }
 
 
