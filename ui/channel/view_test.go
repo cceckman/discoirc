@@ -146,7 +146,7 @@ func TestRender(t *testing.T) {
 			d := mocks.NewBackend()
 
 			// Root creation must happen in the main thread
-			w := channel.New(data.Scope{"HamNet", "#hamlet"}, ui, d)
+			w := channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 			w.SetRenderer(testRenderer)
 			tt.setup(w)
 			p.Repaint(w)
@@ -173,7 +173,7 @@ func testRenderer(e data.Event) tui.Widget {
 func TestInput_Message(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New(data.Scope{"HamNet", "#hamlet"}, ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("hello everyone")
 
@@ -190,7 +190,7 @@ func TestInput_Message(t *testing.T) {
 func TestInput_QuitMessage(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New(data.Scope{"HamNet", "#hamlet"}, ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/quit nothing to see here\n")
 	if len(d.Sent) != 0 {
@@ -205,7 +205,7 @@ func TestInput_QuitMessage(t *testing.T) {
 func TestInput_QuitKeybind(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New(data.Scope{"HamNet", "#hamlet"}, ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Root.OnKeyEvent(tui.KeyEvent{
 		Key: tui.KeyCtrlC,
@@ -227,7 +227,7 @@ func TestInput_ActivateClient(t *testing.T) {
 	ui.V = mocks.ChannelView
 
 	// Root creation must happen in the main thread
-	_ = channel.New(data.Scope{"HamNet", "#hamlet"}, ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/client\n")
 
