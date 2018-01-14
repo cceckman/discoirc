@@ -51,8 +51,8 @@ working, for instance.
 * IRC
   * The [IRCv3](https://ircv3.net) site and community have good resources on the
     IRC protocol.
-  * https://github.com/fluffle/goirc could help manage IRC connections. But I
-    may or may not want finer-grained control.
+  * The [gIRC](https://github.com/lrstanley/girc) library implements many of the
+    IRCv3 extensions to the base protocol.
 * Config & scripting Interfaces
   * https://github.com/golang/protobuf for internal data structures & config.
   * Or maybe other things at
