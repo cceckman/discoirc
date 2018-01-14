@@ -81,12 +81,12 @@ var clientTests = []struct {
 		test: "ordered networks",
 		setup: func(w *client.Client) {
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Barnet",
-				Nick:    "barnacle",
+				Scope: data.Scope{Net: "Barnet"},
+				Nick:  "barnacle",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 		},
 		want: `
@@ -106,16 +106,16 @@ var clientTests = []struct {
 		test: "Removed last network",
 		setup: func(w *client.Client) {
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Barnet",
-				Nick:    "barnacle",
+				Scope: data.Scope{Net: "Barnet"},
+				Nick:  "barnacle",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			w.RemoveNetwork("Charlienet")
 		},
@@ -136,16 +136,16 @@ var clientTests = []struct {
 		test: "Removed first network",
 		setup: func(w *client.Client) {
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Barnet",
-				Nick:    "barnacle",
+				Scope: data.Scope{Net: "Barnet"},
+				Nick:  "barnacle",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			w.RemoveNetwork("AlphaNet")
 		},
@@ -166,16 +166,16 @@ var clientTests = []struct {
 		test: "Removed middle network",
 		setup: func(w *client.Client) {
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "Barnet",
-				Nick:    "barnacle",
+				Scope: data.Scope{Net: "Barnet"},
+				Nick:  "barnacle",
 			})
 			w.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			w.RemoveNetwork("Barnet")
 		},
@@ -196,31 +196,38 @@ var clientTests = []struct {
 		test: "networks with channels",
 		setup: func(c *client.Client) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#discoirc",
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#discoirc",
+				},
 				ChannelMode: "+foobar",
 				Unread:      99,
 				Members:     48,
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#tui-go",
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#tui-go",
+				},
 				ChannelMode: "+v",
 				Unread:      0,
 				Members:     3,
 			})
 			c.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
-				State:   data.Connected,
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
+				State: data.Connected,
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "Charlienet",
-				Channel:     "#badpuns",
+
+				Scope: data.Scope{
+					Net:  "Charlienet",
+					Name: "#badpuns",
+				},
 				ChannelMode: "+v",
 			})
 		},
@@ -241,19 +248,24 @@ var clientTests = []struct {
 		test: "channel removal",
 		setup: func(c *client.Client) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#discoirc",
+
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#discoirc",
+				},
 				ChannelMode: "+foobar",
 				Unread:      99,
 				Members:     48,
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#tui-go",
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#tui-go",
+				},
 				ChannelMode: "+v",
 				Unread:      0,
 				Members:     3,
@@ -278,25 +290,29 @@ var clientTests = []struct {
 		test: "selected channel, deselected channel",
 		setup: func(c *client.Client) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#discoirc",
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#discoirc",
+				},
 				ChannelMode: "+foobar",
 				Unread:      99,
 				Members:     48,
 			})
 
 			c.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
-				State:   data.Connected,
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
+				State: data.Connected,
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "Charlienet",
-				Channel:     "#badpuns",
+				Scope: data.Scope{
+					Net:  "Charlienet",
+					Name: "#badpuns",
+				},
 				ChannelMode: "+v",
 			})
 
@@ -322,25 +338,28 @@ var clientTests = []struct {
 		test: "selected network, deselected network",
 		setup: func(c *client.Client) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "AlphaNet",
-				Nick:    "edward",
+				Scope: data.Scope{Net: "AlphaNet"},
+				Nick:  "edward",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "AlphaNet",
-				Channel:     "#discoirc",
+				Scope: data.Scope{
+					Net:  "AlphaNet",
+					Name: "#discoirc",
+				},
 				ChannelMode: "+foobar",
 				Unread:      99,
 				Members:     48,
 			})
-
 			c.UpdateNetwork(data.NetworkState{
-				Network: "Charlienet",
-				Nick:    "charles",
-				State:   data.Connected,
+				Scope: data.Scope{Net: "Charlienet"},
+				Nick:  "charles",
+				State: data.Connected,
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "Charlienet",
-				Channel:     "#badpuns",
+				Scope: data.Scope{
+					Net:  "Charlienet",
+					Name: "#badpuns",
+				},
 				ChannelMode: "+v",
 			})
 

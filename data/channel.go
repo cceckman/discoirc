@@ -12,15 +12,30 @@ const (
 
 // ChannelState summarizes the state of a channel.
 type ChannelState struct {
-	Network, Channel string
-	Presence         Presence
-	// TODO: This representation is incorrect.
-	// A user's mode is for the network, not to the channel.
-	ChannelMode, UserMode string
+	Scope
+
+	Presence    Presence
+	ChannelMode string
 
 	Topic   string
 	Members int
 
 	Unread      int
-	LastMessage Event
+	LastMessage Seq
 }
+
+
+// ChannelStateEvent is an Event indicating a change in a channel's state.
+type ChannelStateEvent struct {
+	ChannelState
+
+	// Line is the IRC line indicating this change.
+	Line string
+
+	seq Seq
+}
+
+var _ Event = &ChannelStateEvent{}
+func (c *ChannelStateEvent) Scope() Scope { return c.ChannelState.Scope }
+func (c *ChannelStateEvent) String() string { return c.Line }
+func (c *ChannelStateEvent) Seq() Seq { return c.seq }

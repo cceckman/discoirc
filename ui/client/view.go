@@ -73,12 +73,17 @@ func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	}
 }
 
+func (c *Client) Filter() data.Filter {
+	// Empty filter matches everything.
+	return data.Filter{}
+}
+
 // UpdateNetwork accepts updates to network state from the backend, and uses
 // them to update the UI.
 // It schedules the work in the UI thread and blocks until it completes.
 func (c *Client) UpdateNetwork(n data.NetworkState) {
 	c.controller.Update(func() {
-		c.GetNetwork(n.Network).UpdateNetwork(n)
+		c.GetNetwork(n.Net).UpdateNetwork(n)
 	})
 }
 
@@ -87,7 +92,7 @@ func (c *Client) UpdateNetwork(n data.NetworkState) {
 // It schedules the work in the UI thread and blocks until it completes.
 func (c *Client) UpdateChannel(ch data.ChannelState) {
 	c.controller.Update(func() {
-		c.GetNetwork(ch.Network).GetChannel(ch.Channel).UpdateChannel(ch)
+		c.GetNetwork(ch.Net).GetChannel(ch.Name).UpdateChannel(ch)
 	})
 }
 

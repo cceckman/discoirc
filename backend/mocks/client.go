@@ -8,17 +8,12 @@ import (
 
 var _ backend.StateReceiver = &Client{}
 
-// ChannelIdent is a channel's identity.
-type ChannelIdent struct {
-	Network, Channel string
-}
-
 // NewClient returns a new Client.
 func NewClient() *Client {
 	c := &Client{
-		Nets:     make(map[string]data.NetworkState),
-		Chans:    make(map[ChannelIdent]data.ChannelState),
-		Contents: make(map[ChannelIdent][]data.Event),
+		Nets:     make(map[data.Scope]data.NetworkState),
+		Chans:    make(map[data.Scope]data.ChannelState),
+		Contents: make(map[data.Scope][]data.Event),
 		await:    make(chan func()),
 	}
 	go func() {
@@ -32,9 +27,9 @@ func NewClient() *Client {
 // Client is a mocked-up client.View.
 // Its Update* methods run functions in a separate thread.
 type Client struct {
-	Nets     map[string]data.NetworkState
-	Chans    map[ChannelIdent]data.ChannelState
-	Contents map[ChannelIdent][]data.Event
+	Nets     map[data.Scope]data.NetworkState
+	Chans    map[data.Scope]data.ChannelState
+	Contents map[data.Scope][]data.Event
 
 	await chan func()
 
@@ -43,10 +38,14 @@ type Client struct {
 	Archive backend.EventsArchive
 }
 
+func (c *Client) Filter() data.Filter {
+	return data.Filter{}
+}
+
 // UpdateNetwork receives the new state of the network.
 func (c *Client) UpdateNetwork(d data.NetworkState) {
 	c.Join(func() {
-		c.Nets[d.Network] = d
+		c.Nets[d.Scope] = d
 	})
 }
 
@@ -63,16 +62,11 @@ func (c *Client) Join(f func()) {
 // UpdateChannel receives the new state of the channel.
 func (c *Client) UpdateChannel(d data.ChannelState) {
 	c.Join(func() {
-		cid := ChannelIdent{
-			Network: d.Network,
-			Channel: d.Channel,
-		}
-		c.Chans[cid] = d
+		c.Chans[d.Scope] = d
 
 		if c.Archive != nil {
-			c.Contents[cid] = c.Archive.EventsBefore(
-				d.Network, d.Channel,
-				100, d.LastMessage.EventID)
+			c.Contents[d.Scope] = c.Archive.EventsBefore(
+				d.Scope, 100, d.LastMessage)
 		}
 	})
 }

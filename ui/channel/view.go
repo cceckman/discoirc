@@ -11,7 +11,7 @@ import (
 
 // DefaultRenderer is the default way to render Widgets.
 func DefaultRenderer(e data.Event) tui.Widget {
-	r := tui.NewLabel(e.Contents)
+	r := tui.NewLabel(e.String())
 	r.SetWordWrap(true)
 	r.SetSizePolicy(tui.Expanding, tui.Minimum)
 	return r
@@ -28,9 +28,9 @@ type UIController interface {
 
 // View implements the channel view.
 type View struct {
-	ui              UIController
-	sender          backend.Sender
-	network, target string
+	ui     UIController
+	sender backend.Sender
+	scope  data.Scope
 
 	// root element
 	*tui.Box
@@ -39,9 +39,7 @@ type View struct {
 	topic  *tui.Label
 	events *EventsWidget
 	// status bar
-	// network     *tui.Label
-	connState *widgets.ConnState
-	// target     *tui.Label
+	connState   *widgets.ConnState
 	channelMode *tui.Label
 	// input bar
 	nick  *tui.Label
@@ -71,7 +69,7 @@ func (v *View) handleInput(entry *tui.Entry) {
 		return
 	}
 	if v.sender != nil {
-		v.sender.Send(v.network, v.target, m)
+		v.sender.Send(v.scope, m)
 	}
 }
 
@@ -82,10 +80,6 @@ func (v *View) SetRenderer(e EventRenderer) {
 
 // UpdateNetwork receives the new state of the network.
 func (v *View) UpdateNetwork(n data.NetworkState) {
-	if n.Network != v.network {
-		return
-	}
-
 	update := func() {
 		v.nick.SetText(n.Nick)
 		v.connState.Set(n.State)
@@ -100,14 +94,10 @@ func (v *View) UpdateNetwork(n data.NetworkState) {
 
 // UpdateChannel receives the new state of the channel.
 func (v *View) UpdateChannel(d data.ChannelState) {
-	if d.Network != v.network || d.Channel != v.target {
-		return
-	}
-
 	update := func() {
 		v.topic.SetText(d.Topic)
 		v.channelMode.SetText(d.ChannelMode)
-		v.events.SetLast(d.LastMessage.EventID)
+		v.events.SetLast(d.LastMessage)
 	}
 	if v.ui != nil {
 		v.ui.Update(update)
@@ -117,23 +107,25 @@ func (v *View) UpdateChannel(d data.ChannelState) {
 
 }
 
-// Filter indicates the network and target this widget should receive updates for.
-func (v *View) Filter() (string, string) {
-	return v.network, v.target
+// Filter returns the match rule for this view.
+func (v *View) Filter() data.Filter {
+	return data.Filter{
+		Scope:     v.scope,
+		MatchNet:  true,
+		MatchName: true,
+	}
 }
 
 // New returns a new View. It must be run from the main (UI) thread.
-func New(network, target string, ui UIController, backend backend.Backend) *View {
+func New(s data.Scope, ui UIController, backend backend.Backend) *View {
 	// construct V
 	v := &View{
 		ui:     ui,
 		sender: backend,
-
-		network: network,
-		target:  target,
+		scope:  s,
 
 		topic:       tui.NewLabel(""),
-		events:      NewEventsWidget(network, target, backend),
+		events:      NewEventsWidget(s, backend),
 		connState:   widgets.NewConnState(),
 		channelMode: tui.NewLabel(""),
 		nick:        tui.NewLabel(""),
@@ -162,11 +154,11 @@ func New(network, target string, ui UIController, backend backend.Backend) *View
 		v.events,
 		&reversedBox{
 			Box: tui.NewHBox(
-				tui.NewLabel(network),
+				tui.NewLabel(s.Net),
 				tui.NewLabel(": "),
 				v.connState,
 				tui.NewLabel(" "),
-				tui.NewLabel(target),
+				tui.NewLabel(s.Name),
 				tui.NewLabel(": "),
 				v.channelMode,
 				rspacer,
@@ -180,7 +172,7 @@ func New(network, target string, ui UIController, backend backend.Backend) *View
 	}
 
 	if backend != nil {
-		go backend.SubscribeFiltered(v)
+		go backend.Subscribe(v)
 	}
 
 	return v

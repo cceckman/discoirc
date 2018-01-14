@@ -4,6 +4,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/client"
 )
@@ -36,7 +37,10 @@ type Controller struct {
 // ActivateChannel closes the current view, and replaces it with a view of the
 // given channel in the given network.
 func (c *Controller) ActivateChannel(network, target string) {
-	channel.New(network, target, c, c.backend)
+	channel.New(
+		data.Scope{Net: network, Name: target},
+		c, c.backend,
+	)
 }
 
 // ActivateClient closes the current view, and replaces it with a view of all

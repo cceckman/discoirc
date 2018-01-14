@@ -14,8 +14,24 @@ const (
 
 // NetworkState represents the state of a user's relation to a network.
 type NetworkState struct {
-	Network, Nick string
-	State         ConnectionState
-	// TODO: make UserMode and ChannelMode their own types
+	Scope
+
+	Nick     string
+	State    ConnectionState
 	UserMode string
 }
+
+// NetworkStateEvent is an Event indicating a change in the network's state.
+type NetworkStateEvent struct {
+	NetworkState
+
+	// Line is the IRC line indicating this change.
+	Line string
+	seq Seq
+}
+
+var _ Event = &NetworkStateEvent{}
+func (l *NetworkStateEvent) Scope() Scope { return l.NetworkState.Scope }
+func (l *NetworkStateEvent) String() string { return l.Line }
+func (l *NetworkStateEvent) Seq() Seq { return l.seq }
+

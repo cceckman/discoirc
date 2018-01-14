@@ -8,20 +8,10 @@ import (
 
 // Subscribe attaches the receiver.
 func (d *Demo) Subscribe(recv backend.StateReceiver) {
-	d.subscribe(recv, nil)
-}
-
-// SubscribeFiltered attaches the receiver.
-func (d *Demo) SubscribeFiltered(recv backend.FilteredStateReceiver) {
-	d.subscribe(recv, recv.Filter)
-}
-
-func (d *Demo) subscribe(recv backend.StateReceiver, filter func() (string, string)) {
 	d.Lock()
 	defer d.Unlock()
 
 	d.subscriber = recv
-	d.filter = filter
 
 	// Release the lock before running an update.
 	go d.updateAll()
@@ -43,46 +33,24 @@ func (d *Demo) updateAll() {
 	d.RLock()
 	defer d.RUnlock()
 
+	if d.subscriber == nil {
+		return
+	}
+
 	recv := d.subscriber
+	filter := recv.Filter()
 
-	if recv == nil {
-		// Nothing to receive our updates.
-		return
-	}
-
-	if d.filter != nil {
-		net, ch := d.filter()
-		netState, ok := d.nets[net]
-		netV := *netState // pass by value
-		if ok {
-			wg.Add(1)
-			go func() {
-				recv.UpdateNetwork(netV)
-				wg.Done()
-			}()
-		}
-
-		chID := chanIdent{
-			Network: net,
-			Channel: ch,
-		}
-
-		tgtState, ok := d.chans[chID]
-		tgtV := *tgtState
-		if ok {
-			wg.Add(1)
-			go func() {
-				recv.UpdateChannel(tgtV)
-				wg.Done()
-			}()
-		}
-
-		return
-	}
-
-	// No filter; update everything.
+	// Walk through everything; skip if it doesn't match the scope.
 	for _, v := range d.nets {
 		v := *v
+		// Filter doesn't entirely express what's of interest to the
+		// channel view; a real backend has to do some amount of
+		// duplication to the channel.
+		/// Do a more specific match here.
+		if filter.MatchNet && v.Scope.Net != filter.Net {
+			continue
+		}
+
 		wg.Add(1)
 		go func() {
 			recv.UpdateNetwork(v)
@@ -92,6 +60,10 @@ func (d *Demo) updateAll() {
 
 	for _, v := range d.chans {
 		v := *v
+		if !filter.Match(v.Scope) {
+			continue
+		}
+
 		wg.Add(1)
 		go func() {
 			recv.UpdateChannel(v)

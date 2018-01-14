@@ -44,16 +44,18 @@ func TestEndToEnd(t *testing.T) {
 	ctl.ActivateClient()
 
 	ch := data.ChannelState{
-		Network:     "HamNet",
-		Channel:     "#hamlet",
+		Scope: data.Scope{
+			Net:  "HamNet",
+			Name: "#hamlet",
+		},
 		ChannelMode: "i",
 		Topic:       "The Battlements",
-		LastMessage: mocks.Events[2],
+		LastMessage: mocks.Events[2].Seq(),
 	}
 	net := data.NetworkState{
-		Network: "HamNet",
-		Nick:    "yorick",
-		State:   data.Connecting,
+		Scope: data.Scope{Net: "HamNet"},
+		Nick:  "yorick",
+		State: data.Connecting,
 	}
 
 	be.Receiver.UpdateChannel(ch)

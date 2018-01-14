@@ -27,12 +27,12 @@ const wantDecor40x10 = `
 const wantContents40x10 = `
 Act I, Scene 1                          
 vnfold your selfe                       
-1,6 <barnardo> Long liue the King       
-2,1 <claudius> Welcome, dear Rosencrantz
+6 <barnardo> Long liue the King         
+7 <claudius> Welcome, dear Rosencrantz  
 and Guildenstern!                       
-2,2 <gertrude> Good gentlemen, he hath  
+8 <gertrude> Good gentlemen, he hath    
 much talk'd of you;                     
-2,3 <rosencrantz> Both your majesties   
+9 <rosencrantz> Both your majesties     
 HamNet: ✓ #hamlet: +v                   
 <yorick>                                
 `
@@ -53,19 +53,21 @@ var renderTests = []struct {
 		test: "base render",
 		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "HamNet",
-				State:   data.Connected,
-				Nick:    "yorick",
+				Scope: data.Scope{Net: "HamNet"},
+				State: data.Connected,
+				Nick:  "yorick",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "HamNet",
-				Channel:     "#hamlet",
+				Scope: data.Scope{
+					Net:  "HamNet",
+					Name: "#hamlet",
+				},
 				Presence:    data.Joined,
 				ChannelMode: "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[len(mocks.Events)-1],
+				LastMessage: mocks.Events[len(mocks.Events)-1].Seq(),
 			})
 		},
 		wantContents:    wantContents40x10,
@@ -75,19 +77,21 @@ var renderTests = []struct {
 		test: "resize render",
 		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "HamNet",
-				State:   data.Connected,
-				Nick:    "yorick",
+				Scope: data.Scope{Net: "HamNet"},
+				State: data.Connected,
+				Nick:  "yorick",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "HamNet",
-				Channel:     "#hamlet",
+				Scope: data.Scope{
+					Net:  "HamNet",
+					Name: "#hamlet",
+				},
 				Presence:    data.Joined,
 				ChannelMode: "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[len(mocks.Events)-1],
+				LastMessage: mocks.Events[len(mocks.Events)-1].Seq(),
 			})
 
 			c.Resize(image.Pt(80, 80))
@@ -99,19 +103,21 @@ var renderTests = []struct {
 		test: "underflow render",
 		setup: func(c *channel.View) {
 			c.UpdateNetwork(data.NetworkState{
-				Network: "HamNet",
-				State:   data.Connected,
-				Nick:    "yorick",
+				Scope: data.Scope{Net: "HamNet"},
+				State: data.Connected,
+				Nick:  "yorick",
 			})
 			c.UpdateChannel(data.ChannelState{
-				Network:     "HamNet",
-				Channel:     "#hamlet",
+				Scope: data.Scope{
+					Net:  "HamNet",
+					Name: "#hamlet",
+				},
 				Presence:    data.Joined,
 				ChannelMode: "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[3],
+				LastMessage: mocks.Events[3].Seq(),
 			})
 		},
 		wantContents: `
@@ -119,10 +125,10 @@ Act I, Scene 1
                                         
                                         
                                         
-1,1 TOPIC Act I, Scene 1                
-1,2 JOIN barnardo                       
-1,3 JOIN francisco                      
-1,4 <barnardo> Who's there?             
+1 TOPIC Act I, Scene 1                  
+2 JOIN barnardo                         
+3 JOIN francisco                        
+4 <barnardo> Who's there?               
 HamNet: ✓ #hamlet: +v                   
 <yorick>                                
 `,
@@ -140,7 +146,7 @@ func TestRender(t *testing.T) {
 			d := mocks.NewBackend()
 
 			// Root creation must happen in the main thread
-			w := channel.New("HamNet", "#hamlet", ui, d)
+			w := channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 			w.SetRenderer(testRenderer)
 			tt.setup(w)
 			p.Repaint(w)
@@ -159,7 +165,7 @@ func TestRender(t *testing.T) {
 }
 
 func testRenderer(e data.Event) tui.Widget {
-	r := tui.NewLabel(fmt.Sprintf("%d,%d %s", e.Epoch, e.Seq, e.Contents))
+	r := tui.NewLabel(fmt.Sprintf("%d %s", e.Seq(), e.String()))
 	r.SetWordWrap(true)
 	return r
 }
@@ -167,7 +173,7 @@ func testRenderer(e data.Event) tui.Widget {
 func TestInput_Message(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New("HamNet", "#hamlet", ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("hello everyone")
 
@@ -184,7 +190,7 @@ func TestInput_Message(t *testing.T) {
 func TestInput_QuitMessage(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New("HamNet", "#hamlet", ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/quit nothing to see here\n")
 	if len(d.Sent) != 0 {
@@ -199,7 +205,7 @@ func TestInput_QuitMessage(t *testing.T) {
 func TestInput_QuitKeybind(t *testing.T) {
 	ui := mocks.NewController()
 	d := mocks.NewBackend()
-	_ = channel.New("HamNet", "#hamlet", ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Root.OnKeyEvent(tui.KeyEvent{
 		Key: tui.KeyCtrlC,
@@ -221,7 +227,7 @@ func TestInput_ActivateClient(t *testing.T) {
 	ui.V = mocks.ChannelView
 
 	// Root creation must happen in the main thread
-	_ = channel.New("HamNet", "#hamlet", ui, d)
+	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/client\n")
 

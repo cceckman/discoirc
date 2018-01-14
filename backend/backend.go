@@ -16,30 +16,24 @@ import (
 // DataPublisher.
 type DataPublisher interface {
 	Subscribe(StateReceiver)
-	SubscribeFiltered(FilteredStateReceiver)
 }
 
 // StateReceiver receives updates about one or more networks and channels.
 type StateReceiver interface {
 	UpdateNetwork(data.NetworkState)
 	UpdateChannel(data.ChannelState)
-}
 
-// FilteredStateReceiver only receives updates for a particular channel and its network.
-type FilteredStateReceiver interface {
-	StateReceiver
-
-	Filter() (network, channel string)
+	Filter() data.Filter
 }
 
 // EventsArchive allows lookup of previous event entries.
 type EventsArchive interface {
-	EventsBefore(network, channel string, n int, last data.EventID) []data.Event
+	EventsBefore(s data.Scope, n int, last data.Seq) data.EventList
 }
 
 // Sender sends a message on the given network to the given target (channel or user).
 type Sender interface {
-	Send(network, target string, message string)
+	Send(s data.Scope, message string)
 }
 
 // Backend supports the full set of backend functionality.

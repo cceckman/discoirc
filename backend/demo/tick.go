@@ -15,7 +15,9 @@ func (d *Demo) ensureNetwork(network string) {
 	net := d.nets[network]
 	if net == nil {
 		d.nets[network] = &data.NetworkState{
-			Network: network,
+			Scope: data.Scope{
+				Net: network,
+			},
 		}
 	}
 }
@@ -26,13 +28,12 @@ func (d *Demo) ensureChannel(network, channel string) {
 	d.Lock()
 	defer d.Unlock()
 
-	chID := chanIdent{Network: network, Channel: channel}
+	chID := data.Scope{Net: network, Name: channel}
 	ch := d.chans[chID]
 	if ch == nil {
 		d.chans[chID] = &data.ChannelState{
-			Network: network,
-			Channel: channel,
-			Unread:  0,
+			Scope:  chID,
+			Unread: 0,
 		}
 	}
 }
@@ -54,12 +55,11 @@ func (d *Demo) TickNetwork(network string) {
 // TickChannel increments the values of the given channel.
 func (d *Demo) TickChannel(network, channel string) {
 	d.ensureChannel(network, channel)
-	ch := d.chans[chanIdent{
-		Network: network,
-		Channel: channel,
+	ch := d.chans[data.Scope{
+		Net:  network,
+		Name: channel,
 	}]
 	ch.ChannelMode = nextMode(ch.ChannelMode)
-	ch.UserMode = nextMode(ch.UserMode)
 	ch.Presence = nextPresence(ch.Presence)
 	ch.Topic = nextTopic(ch.Topic)
 	ch.Members++
@@ -70,9 +70,9 @@ func (d *Demo) TickChannel(network, channel string) {
 // TickMessages adds a message to the channel.
 func (d *Demo) TickMessages(network, channel string) {
 	d.ensureChannel(network, channel)
-	id := chanIdent{
-		Network: network,
-		Channel: channel,
+	id := data.Scope{
+		Net:  network,
+		Name: channel,
 	}
 
 	d.Lock()
@@ -91,7 +91,7 @@ func (d *Demo) TickMessages(network, channel string) {
 	// Update unread before appending;
 	// only these messages may count as unread.
 	d.chans[id].Unread++
-	d.appendMessage(network, channel, speaker, msg)
+	d.appendMessage(data.Scope{Net: network, Name: channel}, speaker, msg)
 }
 
 func nextNick(nick string) string {

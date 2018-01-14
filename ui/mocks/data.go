@@ -5,31 +5,45 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
+type event struct {
+	seq      data.Seq
+	Contents string
+}
+
+func (e *event) String() string    { return e.Contents }
+func (e *event) Scope() data.Scope { return data.Scope{Net: "Shaxnet", Name: "#hamlet"} }
+func (e *event) Seq() data.Seq     { return e.seq }
+
 // Events is a set of data.Events used by tests as filler data - a Lorem.
 // Specifically, it's a few lines and stage directions from the first two scenes
 // of Shakespeare's Hamlet.
-var Events = data.NewEvents([]data.Event{
-	{EventID: data.EventID{Epoch: 1, Seq: 1}, Contents: "TOPIC Act I, Scene 1"},
-	{EventID: data.EventID{Epoch: 1, Seq: 2}, Contents: "JOIN barnardo"},
-	{EventID: data.EventID{Epoch: 1, Seq: 3}, Contents: "JOIN francisco"},
-	{EventID: data.EventID{Epoch: 1, Seq: 4}, Contents: "<barnardo> Who's there?"},
-	{EventID: data.EventID{Epoch: 1, Seq: 5}, Contents: "<francisco> Nay answer me: Stand & vnfold your selfe"},
-	{EventID: data.EventID{Epoch: 1, Seq: 6}, Contents: "<barnardo> Long liue the King"},
-	{EventID: data.EventID{Epoch: 2, Seq: 1}, Contents: "<claudius> Welcome, dear Rosencrantz and Guildenstern!"},
-	{EventID: data.EventID{Epoch: 2, Seq: 2}, Contents: "<gertrude> Good gentlemen, he hath much talk'd of you;"},
-	{EventID: data.EventID{Epoch: 2, Seq: 3}, Contents: "<rosencrantz> Both your majesties"},
-})
+var Events data.EventList
 
-type target struct {
-	Net string
-	Tgt string
+func init() {
+	d := []event{
+		{data.Seq(1), "TOPIC Act I, Scene 1"},
+		{data.Seq(2), "JOIN barnardo"},
+		{data.Seq(3), "JOIN francisco"},
+		{data.Seq(4), "<barnardo> Who's there?"},
+		{data.Seq(5), "<francisco> Nay answer me: Stand & vnfold your selfe"},
+		{data.Seq(6), "<barnardo> Long liue the King"},
+		{data.Seq(7), "<claudius> Welcome, dear Rosencrantz and Guildenstern!"},
+		{data.Seq(8), "<gertrude> Good gentlemen, he hath much talk'd of you;"},
+		{data.Seq(9), "<rosencrantz> Both your majesties"},
+	}
+	es := make([]data.Event, len(d))
+	for i, v := range d {
+		v := v
+		es[i] = data.Event(&v)
+	}
+	Events = data.SortEvents(es)
 }
 
 // Backend is a mock implementor of the backend.Backend interface.
 type Backend struct {
 	Receiver backend.StateReceiver
 
-	events map[target]data.EventList
+	events data.EventList
 
 	Sent []string
 }
@@ -39,38 +53,19 @@ func (b *Backend) Subscribe(r backend.StateReceiver) {
 	b.Receiver = r
 }
 
-// SubscribeFiltered implements backend.Backend
-func (b *Backend) SubscribeFiltered(r backend.FilteredStateReceiver) {
-	b.Receiver = r
-}
-
 // EventsBefore implements backend.Backend
-func (b *Backend) EventsBefore(network, tgt string, n int, last data.EventID) []data.Event {
-	if v, ok := b.events[target{
-		Net: network,
-		Tgt: tgt,
-	}]; ok {
-		return v.SelectSizeMax(uint(n), last)
-	}
-
-	return nil
+func (b *Backend) EventsBefore(s data.Scope, n int, last data.Seq) data.EventList {
+	return b.events.SelectSizeMax(n, last)
 }
 
 // Send implements backend.Backend
-func (b *Backend) Send(_, _ string, message string) {
+func (b *Backend) Send(_ data.Scope, message string) {
 	b.Sent = append(b.Sent, message)
 }
 
 // NewBackend returns a new, mock, Backend
 func NewBackend() *Backend {
-	contents := map[target]data.EventList{
-		{
-			Net: "HamNet",
-			Tgt: "#hamlet",
-		}: Events,
-	}
 	return &Backend{
-		events: contents,
+		events: Events,
 	}
-
 }
