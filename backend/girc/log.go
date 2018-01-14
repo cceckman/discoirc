@@ -20,7 +20,11 @@ func (l *Log) Append(e data.Event) {
 	l.Lock()
 	defer l.Unlock()
 
-	n.Seq = l.EventList[l.EventList.Len()].Seq + 1
+
+	if len(l.EventList) != 0 {
+		n.Seq = l.EventList[l.EventList.Len()].Seq + 1
+	}
+
 	l.EventList = append(l.EventList, n)
 }
 
