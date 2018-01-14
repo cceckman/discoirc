@@ -12,16 +12,9 @@ import (
 
 var _ backend.Backend = &Demo{}
 
-type event struct {
-	scope data.Scope
-	seq   data.Seq
+type message string
 
-	message string
-}
-
-func (e *event) String() string    { return e.message }
-func (e *event) Scope() data.Scope { return e.scope }
-func (e *event) Seq() data.Seq     { return e.seq }
+func (m message) String() string    { return string(m) }
 
 // Demo provides data and updates to discoirc UI components.
 type Demo struct {
@@ -55,20 +48,20 @@ func (d *Demo) Send(scope data.Scope, message string) {
 }
 
 // appendMessage must be called under the write lock.
-func (d *Demo) appendMessage(id data.Scope, speaker, message string) {
+func (d *Demo) appendMessage(id data.Scope, speaker, msg string) {
 	last := d.chans[id].LastMessage
-	next := &event{
-		scope: id,
-		seq:   last + 1,
-		message: fmt.Sprintf(
+	next := data.Event{
+		Scope: id,
+		Seq:   last + 1,
+		EventContents: message(fmt.Sprintf(
 			"<%s> %s",
-			speaker, message,
-		),
+			speaker, msg,
+		)),
 	}
 
 	// Doesn't update unread; 'send' doesn't count as unread.
 	d.contents[id] = append(d.contents[id], next)
-	d.chans[id].LastMessage = next.Seq()
+	d.chans[id].LastMessage = next.Seq
 
 	go d.updateAll()
 }
@@ -84,7 +77,7 @@ func (d *Demo) EventsBefore(id data.Scope, n int, last data.Seq) data.EventList 
 
 	// Update unread; How many messages have been read, as of this one?
 	readToIdx := sort.Search(len(evs), func(i int) bool {
-		return evs[i].Seq() >= last
+		return evs[i].Seq >= last
 	})
 	// Use a separate thread to update the number unread-
 	// it requires the write-lock, and we don't want to block on that.

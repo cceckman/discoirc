@@ -24,6 +24,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/lrstanley/girc"
+  packages = ["."]
+  revision = "667539cee3f98dd37c886abd962e43a5d9e4fc17"
+
+[[projects]]
+  branch = "master"
   name = "github.com/lucasb-eyer/go-colorful"
   packages = ["."]
   revision = "231272389856c976b7500c4fffcc52ddf06ff4eb"
@@ -63,6 +69,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "828bf312aef9b9d9bfd9d0e7043b7ebbaba174abce9a093e0fc4d85ce41724a9"
+  inputs-digest = "726ca71d5c7569b00c73aab6b7b7c021e466f0e4095e3459e40187a7ef44cf84"
   solver-name = "gps-cdcl"
   solver-version = 1

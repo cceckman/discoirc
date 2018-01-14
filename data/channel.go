@@ -31,11 +31,6 @@ type ChannelStateEvent struct {
 
 	// Line is the IRC line indicating this change.
 	Line string
-
-	seq Seq
 }
 
-var _ Event = &ChannelStateEvent{}
-func (c *ChannelStateEvent) Scope() Scope { return c.ChannelState.Scope }
 func (c *ChannelStateEvent) String() string { return c.Line }
-func (c *ChannelStateEvent) Seq() Seq { return c.seq }

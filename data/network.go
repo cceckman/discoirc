@@ -21,17 +21,14 @@ type NetworkState struct {
 	UserMode string
 }
 
-// NetworkStateEvent is an Event indicating a change in the network's state.
+// NetworkStateEvent can be part of an Event, indicating a change in the network's state.
 type NetworkStateEvent struct {
 	NetworkState
 
 	// Line is the IRC line indicating this change.
 	Line string
-	seq Seq
 }
 
-var _ Event = &NetworkStateEvent{}
-func (l *NetworkStateEvent) Scope() Scope { return l.NetworkState.Scope }
+var _ EventContents = &NetworkStateEvent{}
 func (l *NetworkStateEvent) String() string { return l.Line }
-func (l *NetworkStateEvent) Seq() Seq { return l.seq }
 

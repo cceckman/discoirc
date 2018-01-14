@@ -31,11 +31,16 @@ func (f *Filter) Match(s Scope) bool {
 type Seq int64
 
 // Event is something that occurred in the IRC client.
-type Event interface {
-	fmt.Stringer
+type Event struct {
+	EventContents
 
-	Scope() Scope
-	Seq() Seq
+	Scope
+	Seq
+}
+
+// EventContents show what happened in the given event.
+type EventContents interface {
+	fmt.Stringer
 }
 
 // SortEvents produces an EventList from the Events.
@@ -53,7 +58,7 @@ type EventList []Event
 func (e EventList) SelectSizeMax(n int, max Seq) EventList {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
-		return e[i].Seq() > max
+		return e[i].Seq > max
 	})
 
 	start := end - int(n)
@@ -68,7 +73,7 @@ func (e EventList) Len() int { return len(e) }
 
 // Less implements sort.Interface for EventList
 func (e EventList) Less(i, j int) bool {
-	return e[i].Seq() < e[j].Seq()
+	return e[i].Seq < e[j].Seq
 }
 
 // Swap implements sort.Interface for EventList
