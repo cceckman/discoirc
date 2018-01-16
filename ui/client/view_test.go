@@ -697,7 +697,7 @@ func Test_Issue18(t *testing.T) {
 	// https://github.com/cceckman/discoirc/issues/18
 	// Try to reproduce in a test.
 
-	surface := tui.NewTestSurface(132, 3)
+	surface := tui.NewTestSurface(132, 2)
 	p := tui.NewPainter(surface, tui.NewTheme())
 
 	w := client.NewChannel(nil, "#discoirc")
@@ -711,20 +711,18 @@ func Test_Issue18(t *testing.T) {
 	want := `
  #discoirc                                                                                                                         l
  ✉ 8                                                                                                                             8 ☺
-                                                                                                                                    
 `
 	got := surface.String()
 	if want != got {
 		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
 	}
 
-	surface = tui.NewTestSurface(140, 3)
+	surface = tui.NewTestSurface(140, 2)
 	p = tui.NewPainter(surface, tui.NewTheme())
 	p.Repaint(w)
 	want = `
  #discoirc                                                                                                                                 l
  ✉ 8                                                                                                                                     8 ☺
-                                                                                                                                            
 `
 	got = surface.String()
 	if want != got {
