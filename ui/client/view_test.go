@@ -692,3 +692,29 @@ func TestNetwork_Quit(t *testing.T) {
 		t.Errorf("client hasn't quit")
 	}
 }
+
+func Test_Issue18(t *testing.T) {
+	// https://github.com/cceckman/discoirc/issues/18
+	// Try to reproduce in a test.
+
+	surface := tui.NewTestSurface(132, 3)
+	p := tui.NewPainter(surface, tui.NewTheme())
+
+	w := client.NewChannel(nil, "#discoirc")
+	w.UpdateChannel(data.ChannelState{
+		ChannelMode: "l",
+		Unread:      8,
+		Members:     8,
+	})
+	p.Repaint(w)
+
+	want := `
+ #discoirc                                                                                                                         l
+ ✉ 8                                                                                                                             8 ☺
+                                                                                                                                    
+`
+	got := surface.String()
+	if want != got {
+		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
+	}
+}
