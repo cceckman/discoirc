@@ -717,4 +717,18 @@ func Test_Issue18(t *testing.T) {
 	if want != got {
 		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
 	}
+
+	surface = tui.NewTestSurface(140, 3)
+	p = tui.NewPainter(surface, tui.NewTheme())
+	p.Repaint(w)
+	want = `
+ #discoirc                                                                                                                                 l
+ ✉ 8                                                                                                                                     8 ☺
+                                                                                                                                            
+`
+	got = surface.String()
+	if want != got {
+		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
+	}
+
 }
