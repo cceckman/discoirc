@@ -23,6 +23,17 @@
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/function",
+    "cmp/internal/value"
+  ]
+  revision = "8099a9787ce5dc5984ed879a3bda47dc730a8e97"
+  version = "v0.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/lucasb-eyer/go-colorful"
   packages = ["."]
@@ -63,6 +74,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "828bf312aef9b9d9bfd9d0e7043b7ebbaba174abce9a093e0fc4d85ce41724a9"
+  inputs-digest = "622ade82a2814052d4fcb4a648d6267f8d604afb2f626f3dd2e488f4278c45fc"
   solver-name = "gps-cdcl"
   solver-version = 1

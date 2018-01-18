@@ -3,6 +3,7 @@ package client_test
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/marcusolsson/tui-go"
 
 	"github.com/cceckman/discoirc/data"
@@ -712,9 +713,8 @@ func Test_Issue18(t *testing.T) {
  #discoirc                                                                                                                         l
  ✉ 8                                                                                                                             8 ☺
 `
-	got := surface.String()
-	if want != got {
-		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
+	if diff := cmp.Diff(surface.String(), want); diff != "" {
+		t.Errorf("unexpected contents: (-got +want)\n%s", diff)
 	}
 
 	surface = tui.NewTestSurface(140, 2)
@@ -724,9 +724,8 @@ func Test_Issue18(t *testing.T) {
  #discoirc                                                                                                                                 l
  ✉ 8                                                                                                                                     8 ☺
 `
-	got = surface.String()
-	if want != got {
-		t.Errorf("unexpected contents:\ngot = \n%s\n--\nwant = \n%s\n--", got, want)
+	if diff := cmp.Diff(surface.String(), want); diff != "" {
+		t.Errorf("unexpected contents: (-got +want)\n%s", diff)
 	}
 
 }
