@@ -22,7 +22,7 @@ func TestFilter_Any(t *testing.T) {
 
 	for i, tt := range anyCases {
 		got := filter.Match(tt)
-		if got != true {
+		if !got {
 			t.Errorf("error in case %d: got: %v want: %v", i, got, true)
 		}
 	}
