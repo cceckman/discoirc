@@ -15,8 +15,8 @@ install:
     - go get github.com/golang/lint/golint
     - go get honnef.co/go/tools/cmd/megacheck
 script:
-    - go test -v -race github.com/cceckman/discoirc/...
-    - go vet github.com/cceckman/discoirc/...
-    - golint -set_exit_status
-    - megacheck github.com/cceckman/...
+    - go test -v -race $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+    - golint -set_exit_status $(go list ./... | grep -v /vendor/)
+    - megacheck $(go list ./... | grep -v /vendor/)
 
