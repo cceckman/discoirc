@@ -22,7 +22,7 @@
 
 [[constraint]]
   name = "github.com/marcusolsson/tui-go"
-  revision = "e45209b6d84031d5afebb52c4cd963b1338f05da"
+  # revision = "e45209b6d84031d5afebb52c4cd963b1338f05da"
   # Use downstream branch, awaiting upstream patches.
-  # source = "http://github.com/cceckman/tui-go.git"
-  # branch = "master"
+  source = "http://github.com/cceckman/tui-go.git"
+  branch = "issue18"
