@@ -1,6 +1,8 @@
 package client_test
 
 import (
+	"bufio"
+	"bytes"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -713,8 +715,20 @@ func Test_Issue18(t *testing.T) {
  #discoirc                                                                                                                         l
  ✉ 8                                                                                                                             8 ☺
 `
-	if diff := cmp.Diff(surface.String(), want); diff != "" {
-		t.Errorf("unexpected contents: (-got +want)\n%s", diff)
+	if got := surface.String(); !cmp.Equal(got, want) {
+		t.Error("unexpected contents:")
+		t.Error("got:")
+
+		g := bufio.NewScanner(bytes.NewBufferString(got))
+		for g.Scan() {
+			t.Errorf("%q", g.Text())
+		}
+
+		t.Error("want:")
+		w := bufio.NewScanner(bytes.NewBufferString(want))
+		for w.Scan() {
+			t.Errorf("%q", w.Text())
+		}
 	}
 
 	surface = tui.NewTestSurface(140, 2)
@@ -724,8 +738,21 @@ func Test_Issue18(t *testing.T) {
  #discoirc                                                                                                                                 l
  ✉ 8                                                                                                                                     8 ☺
 `
-	if diff := cmp.Diff(surface.String(), want); diff != "" {
-		t.Errorf("unexpected contents: (-got +want)\n%s", diff)
+
+	if got := surface.String(); !cmp.Equal(got, want) {
+		t.Error("unexpected contents:")
+		t.Error("got:")
+
+		g := bufio.NewScanner(bytes.NewBufferString(got))
+		for g.Scan() {
+			t.Errorf("%q", g.Text())
+		}
+
+		t.Error("want:")
+		w := bufio.NewScanner(bytes.NewBufferString(want))
+		for w.Scan() {
+			t.Errorf("%q", w.Text())
+		}
 	}
 
 }
