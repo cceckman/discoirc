@@ -36,6 +36,10 @@ type ChannelStateEvent struct {
 }
 
 var _ Event = &ChannelStateEvent{}
+
+// Scope returns the channel's Scope.
 func (c *ChannelStateEvent) Scope() Scope { return c.ChannelState.Scope }
+// String implements fmt.Stringer
 func (c *ChannelStateEvent) String() string { return c.Line }
+// Seq returns the event's sequence ID within the scope
 func (c *ChannelStateEvent) Seq() Seq { return c.seq }

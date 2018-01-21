@@ -38,6 +38,7 @@ type Client struct {
 	Archive backend.EventsArchive
 }
 
+// Filter implements the Filter interface by accepting everything
 func (c *Client) Filter() data.Filter {
 	return data.Filter{}
 }

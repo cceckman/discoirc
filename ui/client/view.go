@@ -73,6 +73,7 @@ func (c *Client) OnKeyEvent(ev tui.KeyEvent) {
 	}
 }
 
+// Filter returns a data.Filter that matches all Scopes.
 func (c *Client) Filter() data.Filter {
 	// Empty filter matches everything.
 	return data.Filter{}
