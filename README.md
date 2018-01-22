@@ -3,6 +3,7 @@
 Status](https://travis-ci.org/cceckman/discoirc.svg?branch=master)](https://travis-ci.org/cceckman/discoirc)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/cceckman/discoirc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cceckman/discoirc)](https://goreportcard.com/report/github.com/cceckman/discoirc)
+[![codecov](https://codecov.io/gh/cceckman/discoirc/branch/master/graph/badge.svg)](https://codecov.io/gh/cceckman/discoirc)
 
 ```
         ||
