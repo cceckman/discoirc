@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/cceckman/discoirc/backend/demo"
-	"github.com/cceckman/discoirc/backend/mocks"
+	"github.com/cceckman/discoirc/backend/testhelper"
 	"github.com/cceckman/discoirc/data"
 )
 
@@ -33,7 +33,7 @@ func TestSubscribeFiltered(t *testing.T) {
 	b.TickChannel(sonnet.Net, "#one90one")
 	b.TickMessages(sonnet.Net, "#one90one")
 
-	ch := mocks.NewChannel(eighteen.Net, eighteen.Name)
+	ch := testhelper.NewChannel(eighteen.Net, eighteen.Name)
 
 	b.Subscribe(ch)
 
@@ -121,7 +121,7 @@ func TestSubscribe_FromUI(t *testing.T) {
 	b.TickMessages(eighteen.Net, eighteen.Name)
 	b.TickNetwork("botnet")
 
-	c := mocks.NewClient()
+	c := testhelper.NewClient()
 
 	// Run subscribe in the UI thread, make sure we don't get a race.
 	c.Join(func() {
@@ -145,7 +145,7 @@ func TestSubscribe_FromUI(t *testing.T) {
 func TestChannelCallback(t *testing.T) {
 	attempts := 4
 	b := demo.New()
-	c := mocks.NewChannel(eighteen.Net, eighteen.Name)
+	c := testhelper.NewChannel(eighteen.Net, eighteen.Name)
 
 	c.Archive = b
 	b.Subscribe(c)
@@ -180,7 +180,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 	// Initialize data: one network
 	b.TickMessages(eighteen.Net, eighteen.Name)
 
-	c1 := mocks.NewClient()
+	c1 := testhelper.NewClient()
 	go b.Subscribe(c1)
 
 	for i, done := 0, false; !(done || i > attempts); i = delay(i) {
@@ -194,7 +194,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 		})
 	}
 
-	c2 := mocks.NewClient()
+	c2 := testhelper.NewClient()
 	go b.Subscribe(c2)
 
 	b.TickMessages("botnet", "#eighteen")
@@ -220,7 +220,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 func TestSend(t *testing.T) {
 	attempts := 4
 	b := demo.New()
-	c := mocks.NewChannel(eighteen.Net, eighteen.Name)
+	c := testhelper.NewChannel(eighteen.Net, eighteen.Name)
 
 	c.Archive = b
 	b.Subscribe(c)
@@ -246,4 +246,3 @@ func TestSend(t *testing.T) {
 		})
 	}
 }
-

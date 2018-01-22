@@ -1,4 +1,4 @@
-package mocks
+package testhelper
 
 import (
 	"github.com/marcusolsson/tui-go"

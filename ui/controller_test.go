@@ -9,13 +9,13 @@ import (
 	"github.com/cceckman/discoirc/ui"
 	"github.com/cceckman/discoirc/ui/channel"
 	"github.com/cceckman/discoirc/ui/client"
-	"github.com/cceckman/discoirc/ui/mocks"
+	"github.com/cceckman/discoirc/ui/testhelper"
 )
 
 func TestActivateChannel(t *testing.T) {
-	u := mocks.NewUI()
+	u := testhelper.NewUI()
 
-	ctl := ui.New(u, mocks.NewBackend())
+	ctl := ui.New(u, testhelper.NewBackend())
 
 	ctl.ActivateChannel("foonet", "#barchan")
 	if _, ok := u.Root.(*channel.View); !ok {
@@ -24,9 +24,9 @@ func TestActivateChannel(t *testing.T) {
 }
 
 func TestActivateClient(t *testing.T) {
-	u := mocks.NewUI()
+	u := testhelper.NewUI()
 
-	ctl := ui.New(u, mocks.NewBackend())
+	ctl := ui.New(u, testhelper.NewBackend())
 
 	ctl.ActivateClient()
 	if _, ok := u.Root.(client.View); !ok {
@@ -35,10 +35,10 @@ func TestActivateClient(t *testing.T) {
 }
 
 func TestEndToEnd(t *testing.T) {
-	u := mocks.NewUI()
+	u := testhelper.NewUI()
 	surface := tui.NewTestSurface(30, 10)
 	u.Painter = tui.NewPainter(surface, tui.NewTheme())
-	be := mocks.NewBackend()
+	be := testhelper.NewBackend()
 
 	ctl := ui.New(u, be)
 	ctl.ActivateClient()
@@ -50,7 +50,7 @@ func TestEndToEnd(t *testing.T) {
 		},
 		ChannelMode: "i",
 		Topic:       "The Battlements",
-		LastMessage: mocks.Events[2].Seq(),
+		LastMessage: testhelper.Events[2].Seq(),
 	}
 	net := data.NetworkState{
 		Scope: data.Scope{Net: "HamNet"},

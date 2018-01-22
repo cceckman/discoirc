@@ -1,5 +1,5 @@
 // Package mocks provides mocks to use for testing backends.
-package mocks
+package testhelper
 
 import (
 	"github.com/cceckman/discoirc/backend"

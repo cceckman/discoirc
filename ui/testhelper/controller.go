@@ -1,4 +1,4 @@
-package mocks
+package testhelper
 
 // NewController returns a mock Controller.
 func NewController() *Controller {

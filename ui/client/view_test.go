@@ -10,7 +10,7 @@ import (
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/client"
-	discomocks "github.com/cceckman/discoirc/ui/mocks"
+	discomocks "github.com/cceckman/discoirc/ui/testhelper"
 )
 
 func TestNetwork_NoContents(t *testing.T) {
