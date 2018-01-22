@@ -1,22 +1,36 @@
+# Note: validate by running
+# gem install travis --no-rdoc --no-ri
+# travis lint .travis.yml
+
 language: go
 sudo: false
 go:
-    - 1.8.x
-    - 1.9.x
-    - tip
+  - 1.8.x
+  - 1.9.x
+  - tip
 
 before_install:
-    # Setup dependency management tool
-    - curl -L -s https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 -o $GOPATH/bin/dep
-    - chmod +x $GOPATH/bin/dep
+  # Setup dependency management tool
+  - curl -L -s https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 -o $GOPATH/bin/dep
+  - chmod +x $GOPATH/bin/dep
 
 install:
-    - dep ensure
-    - go get github.com/golang/lint/golint
-    - go get honnef.co/go/tools/cmd/megacheck
+  - dep ensure
+  - go get github.com/golang/lint/golint
+  - go get honnef.co/go/tools/cmd/megacheck
 script:
-    - go test -v -race $(go list ./... | grep -v /vendor/)
-    - go vet $(go list ./... | grep -v /vendor/)
-    - golint -set_exit_status $(go list ./... | grep -v /vendor/)
-    - megacheck $(go list ./... | grep -v /vendor/)
-
+  # TODO: After go 1.10 is released, below shell script is unnecessary:
+  # "Also, the go test -coverprofile option is now supported when running multiple tests."
+  # https://tip.golang.org/doc/go1.10#test
+  - |
+    echo "mode: count" > coverage.txt
+    for pkg in $(go list ./... | grep -v /vendor/)
+    do
+      go test -v -race -coverprofile=tmpcoverage.txt -covermode=atomic $pkg
+      tail -n +2 tmpcoverage.txt >> coverage.txt
+    done
+  - go vet $(go list ./... | grep -v /vendor/)
+  - golint -set_exit_status $(go list ./... | grep -v /vendor/)
+  - megacheck $(go list ./... | grep -v /vendor/)
+after_success:
+  - bash <(curl -s https://codecov.io/bash>
