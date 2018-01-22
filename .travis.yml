@@ -15,8 +15,9 @@ install:
     - go get github.com/golang/lint/golint
     - go get honnef.co/go/tools/cmd/megacheck
 script:
-    - go test -v -race $(go list ./... | grep -v /vendor/)
+    - go test -v -race -coverprofile=coverage.txt -covermode=atomic $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
     - golint -set_exit_status $(go list ./... | grep -v /vendor/)
     - megacheck $(go list ./... | grep -v /vendor/)
-
+after_success:
+  - bash <(curl -s https://codecov.io/bash>
