@@ -36,5 +36,6 @@ script:
       go test -v -race -coverprofile=tmpcoverage.txt -covermode=atomic $pkg
       tail -n +2 tmpcoverage.txt >> coverage.txt
     done
+    rm tmpcoverage.txt
 after_success:
   - bash <(curl -s https://codecov.io/bash)
