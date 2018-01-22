@@ -7,7 +7,7 @@ import (
 
 	"github.com/cceckman/discoirc/data"
 	"github.com/cceckman/discoirc/ui/channel"
-	"github.com/cceckman/discoirc/ui/mocks"
+	"github.com/cceckman/discoirc/ui/testhelper"
 
 	"github.com/marcusolsson/tui-go"
 )
@@ -67,7 +67,7 @@ var renderTests = []struct {
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[len(mocks.Events)-1].Seq(),
+				LastMessage: testhelper.Events[len(testhelper.Events)-1].Seq(),
 			})
 		},
 		wantContents:    wantContents40x10,
@@ -91,7 +91,7 @@ var renderTests = []struct {
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[len(mocks.Events)-1].Seq(),
+				LastMessage: testhelper.Events[len(testhelper.Events)-1].Seq(),
 			})
 
 			c.Resize(image.Pt(80, 80))
@@ -117,7 +117,7 @@ var renderTests = []struct {
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
-				LastMessage: mocks.Events[3].Seq(),
+				LastMessage: testhelper.Events[3].Seq(),
 			})
 		},
 		wantContents: `
@@ -142,8 +142,8 @@ func TestRender(t *testing.T) {
 			surface := tui.NewTestSurface(40, 10)
 			p := tui.NewPainter(surface, theme)
 
-			ui := mocks.NewController()
-			d := mocks.NewBackend()
+			ui := testhelper.NewController()
+			d := testhelper.NewBackend()
 
 			// Root creation must happen in the main thread
 			w := channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
@@ -171,8 +171,8 @@ func testRenderer(e data.Event) tui.Widget {
 }
 
 func TestInput_Message(t *testing.T) {
-	ui := mocks.NewController()
-	d := mocks.NewBackend()
+	ui := testhelper.NewController()
+	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("hello everyone")
@@ -188,8 +188,8 @@ func TestInput_Message(t *testing.T) {
 }
 
 func TestInput_QuitMessage(t *testing.T) {
-	ui := mocks.NewController()
-	d := mocks.NewBackend()
+	ui := testhelper.NewController()
+	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/quit nothing to see here\n")
@@ -203,8 +203,8 @@ func TestInput_QuitMessage(t *testing.T) {
 }
 
 func TestInput_QuitKeybind(t *testing.T) {
-	ui := mocks.NewController()
-	d := mocks.NewBackend()
+	ui := testhelper.NewController()
+	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Root.OnKeyEvent(tui.KeyEvent{
@@ -221,17 +221,17 @@ func TestInput_QuitKeybind(t *testing.T) {
 }
 
 func TestInput_ActivateClient(t *testing.T) {
-	ui := mocks.NewController()
-	d := mocks.NewBackend()
+	ui := testhelper.NewController()
+	d := testhelper.NewBackend()
 
-	ui.V = mocks.ChannelView
+	ui.V = testhelper.ChannelView
 
 	// Root creation must happen in the main thread
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
 
 	ui.Type("/client\n")
 
-	if ui.V != mocks.ClientView {
-		t.Errorf("unexpected root state: got: %v want: %v", ui.V, mocks.ClientView)
+	if ui.V != testhelper.ClientView {
+		t.Errorf("unexpected root state: got: %v want: %v", ui.V, testhelper.ClientView)
 	}
 }
