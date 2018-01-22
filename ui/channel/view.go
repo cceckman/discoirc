@@ -96,11 +96,7 @@ func (v *View) updateNetwork(n data.NetworkState) {
 		v.connState.Set(n.State)
 	}
 
-	if v.ui != nil {
-		v.ui.Update(update)
-	} else {
-		update()
-	}
+	v.ui.Update(update)
 }
 
 func (v *View) updateChannel(d data.ChannelState) {
@@ -109,11 +105,7 @@ func (v *View) updateChannel(d data.ChannelState) {
 		v.channelMode.SetText(d.Mode)
 		v.events.SetLast(d.LastMessage)
 	}
-	if v.ui != nil {
-		v.ui.Update(update)
-	} else {
-		update()
-	}
+	v.ui.Update(update)
 
 }
 
