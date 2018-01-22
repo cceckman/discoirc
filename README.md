@@ -52,6 +52,8 @@ working, for instance.
 * IRC
   * The [IRCv3](https://ircv3.net) site and community have good resources on the
     IRC protocol.
+    * There are some [associated next-RFCs](https://modern.ircdocs.horse)
+      describing the protocol.
   * The [gIRC](https://github.com/lrstanley/girc) library implements many of the
     IRCv3 extensions to the base protocol.
 * Config & scripting Interfaces
