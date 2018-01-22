@@ -10,15 +10,22 @@ go:
   - tip
 
 before_install:
-  # Setup dependency management tool
+  # Get tools
+  - go get github.com/golang/lint/golint
+  - go get honnef.co/go/tools/cmd/megacheck
   - curl -L -s https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 -o $GOPATH/bin/dep
   - chmod +x $GOPATH/bin/dep
 
 install:
   - dep ensure
-  - go get github.com/golang/lint/golint
-  - go get honnef.co/go/tools/cmd/megacheck
+
 script:
+  - |
+    PATHS="$(gofmt -l -s $(find . -path ./vendor -prune -o -name '*.go' -print))"
+    echo "$PATHS" && test "$PATHS" == ""
+  - go vet $(go list ./... | grep -v /vendor/)
+  - golint -set_exit_status $(go list ./... | grep -v /vendor/)
+  - megacheck $(go list ./... | grep -v /vendor/)
   # TODO: After go 1.10 is released, below shell script is unnecessary:
   # "Also, the go test -coverprofile option is now supported when running multiple tests."
   # https://tip.golang.org/doc/go1.10#test
@@ -29,8 +36,5 @@ script:
       go test -v -race -coverprofile=tmpcoverage.txt -covermode=atomic $pkg
       tail -n +2 tmpcoverage.txt >> coverage.txt
     done
-  - go vet $(go list ./... | grep -v /vendor/)
-  - golint -set_exit_status $(go list ./... | grep -v /vendor/)
-  - megacheck $(go list ./... | grep -v /vendor/)
 after_success:
-  - bash <(curl -s https://codecov.io/bash>
+  - bash <(curl -s https://codecov.io/bash)
