@@ -40,14 +40,13 @@
   revision = "231272389856c976b7500c4fffcc52ddf06ff4eb"
 
 [[projects]]
-  branch = "issue18"
+  branch = "master"
   name = "github.com/marcusolsson/tui-go"
   packages = [
     ".",
     "wordwrap"
   ]
-  revision = "97c53d8cf01872ba01f21d76256495f020aea047"
-  source = "http://github.com/cceckman/tui-go.git"
+  revision = "af6d28d4588f09f38996debf77231c1d087e2f9d"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"
@@ -76,6 +75,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f2cda136589c1a4fd7cea264a1630e9c565897f0f1748c2590946e365acad6b2"
+  inputs-digest = "4cdf31b3886fb756a737237758b92fe6c74497db0c7c6e5b54a4ba5610fed205"
   solver-name = "gps-cdcl"
   solver-version = 1
