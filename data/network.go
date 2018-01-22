@@ -27,14 +27,16 @@ type NetworkStateEvent struct {
 
 	// Line is the IRC line indicating this change.
 	Line string
-	seq Seq
+	seq  Seq
 }
 
 var _ Event = &NetworkStateEvent{}
+
 // Scope returns a Scope for this event.
 func (l *NetworkStateEvent) Scope() Scope { return l.NetworkState.Scope }
+
 // String implments fmt.Stringer.
 func (l *NetworkStateEvent) String() string { return l.Line }
+
 // Seq returns the sequence ID of this event within its scope
 func (l *NetworkStateEvent) Seq() Seq { return l.seq }
-
