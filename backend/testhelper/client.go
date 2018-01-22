@@ -1,4 +1,4 @@
-// Package mocks provides mocks to use for testing backends.
+// Package testhelper provides mocks to use for testing backends.
 package testhelper
 
 import (
