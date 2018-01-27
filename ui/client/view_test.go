@@ -207,18 +207,18 @@ var clientTests = []struct {
 					Net:  "AlphaNet",
 					Name: "#discoirc",
 				},
-				ChannelMode: "+foobar",
-				Unread:      99,
-				Members:     48,
+				Mode:    "+foobar",
+				Unread:  99,
+				Members: 48,
 			})
 			c.UpdateChannel(data.ChannelState{
 				Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#tui-go",
 				},
-				ChannelMode: "+v",
-				Unread:      0,
-				Members:     3,
+				Mode:    "+v",
+				Unread:  0,
+				Members: 3,
 			})
 			c.UpdateNetwork(data.NetworkState{
 				Scope: data.Scope{Net: "Charlienet"},
@@ -231,7 +231,7 @@ var clientTests = []struct {
 					Net:  "Charlienet",
 					Name: "#badpuns",
 				},
-				ChannelMode: "+v",
+				Mode: "+v",
 			})
 		},
 		want: `
@@ -260,18 +260,18 @@ var clientTests = []struct {
 					Net:  "AlphaNet",
 					Name: "#discoirc",
 				},
-				ChannelMode: "+foobar",
-				Unread:      99,
-				Members:     48,
+				Mode:    "+foobar",
+				Unread:  99,
+				Members: 48,
 			})
 			c.UpdateChannel(data.ChannelState{
 				Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#tui-go",
 				},
-				ChannelMode: "+v",
-				Unread:      0,
-				Members:     3,
+				Mode:    "+v",
+				Unread:  0,
+				Members: 3,
 			})
 
 			c.GetNetwork("AlphaNet").RemoveChannel("#tui-go")
@@ -301,9 +301,9 @@ var clientTests = []struct {
 					Net:  "AlphaNet",
 					Name: "#discoirc",
 				},
-				ChannelMode: "+foobar",
-				Unread:      99,
-				Members:     48,
+				Mode:    "+foobar",
+				Unread:  99,
+				Members: 48,
 			})
 
 			c.UpdateNetwork(data.NetworkState{
@@ -316,7 +316,7 @@ var clientTests = []struct {
 					Net:  "Charlienet",
 					Name: "#badpuns",
 				},
-				ChannelMode: "+v",
+				Mode: "+v",
 			})
 
 			c.GetNetwork("Charlienet").GetChannel("#badpuns").SetFocused(true)
@@ -349,9 +349,9 @@ var clientTests = []struct {
 					Net:  "AlphaNet",
 					Name: "#discoirc",
 				},
-				ChannelMode: "+foobar",
-				Unread:      99,
-				Members:     48,
+				Mode:    "+foobar",
+				Unread:  99,
+				Members: 48,
 			})
 			c.UpdateNetwork(data.NetworkState{
 				Scope: data.Scope{Net: "Charlienet"},
@@ -363,7 +363,7 @@ var clientTests = []struct {
 					Net:  "Charlienet",
 					Name: "#badpuns",
 				},
-				ChannelMode: "+v",
+				Mode: "+v",
 			})
 
 			c.GetNetwork("AlphaNet").SetFocused(true)
@@ -439,9 +439,9 @@ var renderTests = []struct {
 		setup: func() tui.Widget {
 			c := client.NewChannel(nil, "#discoirc")
 			c.UpdateChannel(data.ChannelState{
-				ChannelMode: "+foobar",
-				Unread:      99,
-				Members:     48,
+				Mode:    "+foobar",
+				Unread:  99,
+				Members: 48,
 			})
 			return tui.NewVBox(c, tui.NewSpacer())
 		},
@@ -705,9 +705,9 @@ func Test_Issue18(t *testing.T) {
 
 	w := client.NewChannel(nil, "#discoirc")
 	w.UpdateChannel(data.ChannelState{
-		ChannelMode: "l",
-		Unread:      8,
-		Members:     8,
+		Mode:    "l",
+		Unread:  8,
+		Members: 8,
 	})
 	p.Repaint(w)
 

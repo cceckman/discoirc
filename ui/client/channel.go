@@ -50,7 +50,7 @@ type Channel struct {
 
 // UpdateChannel updates the view with the provided channel state.
 func (c *Channel) UpdateChannel(ch data.ChannelState) {
-	c.modeWidget.SetText(ch.ChannelMode)
+	c.modeWidget.SetText(ch.Mode)
 	c.unreadWidget.SetText(fmt.Sprintf("✉ %d", ch.Unread))
 	c.membersWidget.SetText(fmt.Sprintf("%d ☺", ch.Members))
 }

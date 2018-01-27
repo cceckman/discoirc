@@ -48,7 +48,7 @@ func TestEndToEnd(t *testing.T) {
 			Net:  "HamNet",
 			Name: "#hamlet",
 		},
-		ChannelMode: "i",
+		Mode:        "i",
 		Topic:       "The Battlements",
 		LastMessage: testhelper.Events[2].Seq(),
 	}

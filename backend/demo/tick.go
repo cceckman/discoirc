@@ -59,7 +59,7 @@ func (d *Demo) TickChannel(network, channel string) {
 		Net:  network,
 		Name: channel,
 	}]
-	ch.ChannelMode = nextMode(ch.ChannelMode)
+	ch.Mode = nextMode(ch.Mode)
 	ch.Presence = nextPresence(ch.Presence)
 	ch.Topic = nextTopic(ch.Topic)
 	ch.Members++

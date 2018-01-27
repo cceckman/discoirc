@@ -63,7 +63,7 @@ var renderTests = []struct {
 					Name: "#hamlet",
 				},
 				Presence:    data.Joined,
-				ChannelMode: "+v",
+				Mode:        "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
@@ -87,7 +87,7 @@ var renderTests = []struct {
 					Name: "#hamlet",
 				},
 				Presence:    data.Joined,
-				ChannelMode: "+v",
+				Mode:        "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.
@@ -113,7 +113,7 @@ var renderTests = []struct {
 					Name: "#hamlet",
 				},
 				Presence:    data.Joined,
-				ChannelMode: "+v",
+				Mode:        "+v",
 				Topic:       "Act I, Scene 1",
 				Unread:      3834, // depending on your editor, of course.
 				Members:     12,   // in the company, more characters.

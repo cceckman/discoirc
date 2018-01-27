@@ -96,7 +96,7 @@ func (v *View) UpdateNetwork(n data.NetworkState) {
 func (v *View) UpdateChannel(d data.ChannelState) {
 	update := func() {
 		v.topic.SetText(d.Topic)
-		v.channelMode.SetText(d.ChannelMode)
+		v.channelMode.SetText(d.Mode)
 		v.events.SetLast(d.LastMessage)
 	}
 	if v.ui != nil {

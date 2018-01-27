@@ -14,8 +14,8 @@ const (
 type ChannelState struct {
 	Scope
 
-	Presence    Presence
-	ChannelMode string
+	Presence Presence
+	Mode     string
 
 	Topic   string
 	Members int
