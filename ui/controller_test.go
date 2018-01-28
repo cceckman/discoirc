@@ -43,23 +43,30 @@ func TestEndToEnd(t *testing.T) {
 	ctl := ui.New(u, be)
 	ctl.ActivateClient()
 
-	ch := data.ChannelState{
-		Scope: data.Scope{
-			Net:  "HamNet",
-			Name: "#hamlet",
+	ch := &data.ChannelStateEvent{
+		EventID: data.EventID{
+			Scope: data.Scope{
+				Net:  "HamNet",
+				Name: "#hamlet",
+			},
 		},
-		Mode:        "i",
-		Topic:       "The Battlements",
-		LastMessage: testhelper.Events[2].Seq(),
+		ChannelState: data.ChannelState{
+			Mode:        "i",
+			Topic:       "The Battlements",
+			LastMessage: testhelper.Events[2].ID().Seq,
+		},
 	}
-	net := data.NetworkState{
-		Scope: data.Scope{Net: "HamNet"},
-		Nick:  "yorick",
-		State: data.Connecting,
+	net := &data.NetworkStateEvent{
+		EventID: data.EventID{
+			Scope: data.Scope{Net: "HamNet"},
+		},
+		NetworkState: data.NetworkState{
+			Nick:  "yorick",
+			State: data.Connecting,
+		},
 	}
-
-	be.Receiver.UpdateChannel(ch)
-	be.Receiver.UpdateNetwork(net)
+	be.Receiver.Receive(ch)
+	be.Receiver.Receive(net)
 	u.Repaint()
 
 	wantContents := `
