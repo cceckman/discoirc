@@ -2,10 +2,9 @@ package testhelper
 
 import (
 	"bytes"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
 )
-
 
 var configFile string
 
@@ -20,7 +19,6 @@ func init() {
 		panic(fmt.Sprintf("could not write oragno.yaml: %s", err))
 	}
 }
-
 
 var config = bytes.NewBufferString(`
 # oragono IRCd config
@@ -341,5 +339,3 @@ limits:
         # rest of the message
         rest: 2048
 `)
-
-
