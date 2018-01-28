@@ -4,23 +4,32 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+
+	oragono "github.com/oragono/oragono/irc"
 )
 
-var configFile string
+var configPath string
+var config *oragono.Config
 
 func init() {
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		panic(fmt.Sprintf("could not init oragno.yaml: %s", err))
 	}
-	configFile = f.Name()
-	_, err = config.WriteTo(f)
+	configPath = f.Name()
+	_, err = configString.WriteTo(f)
 	if err != nil {
 		panic(fmt.Sprintf("could not write oragno.yaml: %s", err))
 	}
+	f.Close()
+
+	config, err = oragono.LoadConfig(configPath)
+	if err != nil {
+		panic(fmt.Sprintf("could not load oragono.yaml: %s", err))
+	}
 }
 
-var config = bytes.NewBufferString(`
+var configString = bytes.NewBufferString(`
 # oragono IRCd config
 
 # network configuration
@@ -35,8 +44,7 @@ server:
 
     # addresses to listen on; local, SSL only
     listen:
-        - "[::1]:6697"
-        - "127.0.0.1:6697"
+        - "localhost:6697"
 
     # tls listeners
     tls-listeners:
