@@ -27,17 +27,21 @@ func (f *Filter) Match(s Scope) bool {
 	return net && name
 }
 
-// Seq is the sequence identifier of an Event.
+// Seq identifies the order of an Event within a Scope.
 type Seq int64
+
+// EventID is an identifier for an event.
+type EventID struct {
+	Scope
+	Seq
+}
 
 // Event is something that occurred in the IRC client.
 type Event interface {
 	fmt.Stringer
 
-	Scope() Scope
-	Seq() Seq
+	ID() *EventID
 }
-
 // SortEvents produces an EventList from the Events.
 func SortEvents(es []Event) EventList {
 	r := make([]Event, len(es))
@@ -53,7 +57,7 @@ type EventList []Event
 func (e EventList) SelectSizeMax(n int, max Seq) EventList {
 	// Find the first element > Max
 	end := sort.Search(len(e), func(i int) bool {
-		return e[i].Seq() > max
+		return e[i].ID().Seq > max
 	})
 
 	start := end - int(n)
@@ -68,7 +72,7 @@ func (e EventList) Len() int { return len(e) }
 
 // Less implements sort.Interface for EventList
 func (e EventList) Less(i, j int) bool {
-	return e[i].Seq() < e[j].Seq()
+	return e[i].ID().Seq < e[j].ID().Seq
 }
 
 // Swap implements sort.Interface for EventList

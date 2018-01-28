@@ -14,29 +14,27 @@ const (
 
 // NetworkState represents the state of a user's relation to a network.
 type NetworkState struct {
-	Scope
+	State    ConnectionState
 
 	Nick     string
-	State    ConnectionState
 	UserMode string
 }
 
 // NetworkStateEvent is an Event indicating a change in the network's state.
 type NetworkStateEvent struct {
 	NetworkState
+	EventID
 
 	// Line is the IRC line indicating this change.
 	Line string
-	seq  Seq
 }
 
 var _ Event = &NetworkStateEvent{}
 
-// Scope returns a Scope for this event.
-func (l *NetworkStateEvent) Scope() Scope { return l.NetworkState.Scope }
+// ID returns the scope & sequence of this Event.
+func (e *NetworkStateEvent) ID() *EventID {
+	return &e.EventID
+}
 
 // String implments fmt.Stringer.
-func (l *NetworkStateEvent) String() string { return l.Line }
-
-// Seq returns the sequence ID of this event within its scope
-func (l *NetworkStateEvent) Seq() Seq { return l.seq }
+func (e *NetworkStateEvent) String() string { return e.Line }
