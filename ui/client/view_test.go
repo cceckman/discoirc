@@ -410,7 +410,7 @@ var clientTests = []struct {
 func TestRender_Client(t *testing.T) {
 	for _, tt := range clientTests {
 		t.Run(tt.test, func(t *testing.T) {
-	t.Parallel()
+			t.Parallel()
 			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
@@ -486,7 +486,7 @@ var renderTests = []struct {
 func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
 		t.Run(tt.test, func(t *testing.T) {
-	t.Parallel()
+			t.Parallel()
 			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
@@ -563,7 +563,7 @@ func TestNetwork_Focus(t *testing.T) {
 	for _, tt := range FocusTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
-	t.Parallel()
+			t.Parallel()
 			ui := discomocks.NewController()
 			c := client.New(ui, nil)
 
@@ -677,7 +677,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 	for _, tt := range ActivationTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
-	t.Parallel()
+			t.Parallel()
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 

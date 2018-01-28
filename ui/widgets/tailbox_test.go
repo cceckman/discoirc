@@ -63,6 +63,7 @@ func TestTailBox(t *testing.T) {
 	for _, tt := range TailBoxTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
+			t.Parallel()
 			surface := tui.NewTestSurface(10, 5)
 			p := tui.NewPainter(surface, tui.NewTheme())
 			p.Repaint(tt.Setup())
