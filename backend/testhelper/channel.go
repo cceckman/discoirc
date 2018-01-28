@@ -5,7 +5,7 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-var _ backend.StateReceiver = &Channel{}
+var _ backend.Receiver = &Channel{}
 
 // NewChannel returns a new mock Channel.
 func NewChannel(network, name string) *Channel {

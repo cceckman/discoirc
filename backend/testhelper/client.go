@@ -6,7 +6,7 @@ import (
 	"github.com/cceckman/discoirc/data"
 )
 
-var _ backend.StateReceiver = &Client{}
+var _ backend.Receiver = &Client{}
 
 // NewClient returns a new Client.
 func NewClient() *Client {
@@ -43,10 +43,30 @@ func (c *Client) Filter() data.Filter {
 	return data.Filter{}
 }
 
-// UpdateNetwork receives the new state of the network.
-func (c *Client) UpdateNetwork(d data.NetworkState) {
+// Receive receives the new state of a network or channel.
+func (c *Client) Receive(e data.Event) {
+	switch e := e.(type) {
+	case *data.NetworkStateEvent:
+		c.updateNetwork(e.ID().Scope, e.NetworkState)
+	case *data.ChannelStateEvent:
+		c.updateChannel(e.ID().Scope, e.ChannelState)
+	}
+}
+
+func (c *Client) updateNetwork(scope data.Scope, state data.NetworkState) {
 	c.Join(func() {
-		c.Nets[d.Scope] = d
+		c.Nets[scope] = state
+	})
+}
+
+func (c *Client) updateChannel(scope data.Scope, state data.ChannelState) {
+	c.Join(func() {
+		c.Chans[scope] = state
+
+		if c.Archive != nil {
+			c.Contents[scope] = c.Archive.EventsBefore(
+				scope, 100, state.LastMessage)
+		}
 	})
 }
 
@@ -60,14 +80,4 @@ func (c *Client) Join(f func()) {
 	<-blk
 }
 
-// UpdateChannel receives the new state of the channel.
-func (c *Client) UpdateChannel(d data.ChannelState) {
-	c.Join(func() {
-		c.Chans[d.Scope] = d
 
-		if c.Archive != nil {
-			c.Contents[d.Scope] = c.Archive.EventsBefore(
-				d.Scope, 100, d.LastMessage)
-		}
-	})
-}
