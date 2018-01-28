@@ -7,6 +7,12 @@ import (
 
 var _ backend.Receiver = &Channel{}
 
+// Channel is a mock Channel view. It supports the FilteredSubscriber interface.
+type Channel struct {
+	*Client
+	Scope data.Scope
+}
+
 // NewChannel returns a new mock Channel.
 func NewChannel(network, name string) *Channel {
 	return &Channel{
@@ -16,12 +22,6 @@ func NewChannel(network, name string) *Channel {
 			Name: name,
 		},
 	}
-}
-
-// Channel is a mock Channel view. It supports the FilteredSubscriber interface.
-type Channel struct {
-	*Client
-	Scope data.Scope
 }
 
 // Filter specifies the network and target this Channel is watching for.

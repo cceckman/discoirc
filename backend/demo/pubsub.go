@@ -2,12 +2,14 @@ package demo
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/cceckman/discoirc/backend"
+	"github.com/cceckman/discoirc/data"
 )
 
 // Subscribe attaches the receiver.
-func (d *Demo) Subscribe(recv backend.StateReceiver) {
+func (d *Demo) Subscribe(recv backend.Receiver) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -18,6 +20,10 @@ func (d *Demo) Subscribe(recv backend.StateReceiver) {
 }
 
 func (d *Demo) updateAll() {
+	// Assign a unique sequence to each push, since this isn't actually
+	// tracking logs.
+	seq := data.Seq(atomic.AddInt64(&d.seq, 1))
+
 	// UpdateNetwork and UpdateChannels are presumed synchronous, and may
 	// need the RLock back (if they call to EventsBefore). We don't want to
 	// hold any locks while we have them.
@@ -41,32 +47,46 @@ func (d *Demo) updateAll() {
 	filter := recv.Filter()
 
 	// Walk through everything; skip if it doesn't match the scope.
-	for _, v := range d.nets {
-		v := *v
+	for scope, v := range d.nets {
 		// Filter doesn't entirely express what's of interest to the
 		// channel view; a real backend has to do some amount of
 		// duplication to the channel.
 		/// Do a more specific match here.
-		if filter.MatchNet && v.Scope.Net != filter.Net {
+		if filter.MatchNet && scope.Net != filter.Net {
 			continue
+		}
+
+		event := &data.NetworkStateEvent{
+			EventID: data.EventID{
+				Scope: scope,
+				Seq:   seq,
+			},
+			NetworkState: *v,
 		}
 
 		wg.Add(1)
 		go func() {
-			recv.UpdateNetwork(v)
+			recv.Receive(event)
 			wg.Done()
 		}()
 	}
 
-	for _, v := range d.chans {
-		v := *v
-		if !filter.Match(v.Scope) {
+	for scope, v := range d.chans {
+		if !filter.Match(scope) {
 			continue
+		}
+
+		event := &data.ChannelStateEvent{
+			EventID: data.EventID{
+				Scope: scope,
+				Seq:   seq,
+			},
+			ChannelState: *v,
 		}
 
 		wg.Add(1)
 		go func() {
-			recv.UpdateChannel(v)
+			recv.Receive(event)
 			wg.Done()
 		}()
 	}

@@ -58,7 +58,7 @@ func TestSubscribeFiltered(t *testing.T) {
 			}
 
 			if !expected_channel && i == attempts {
-				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, eighteen)
 			}
 		})
 	}
@@ -77,7 +77,7 @@ func TestSubscribeFiltered(t *testing.T) {
 			done = expected_channel && expected_message && expected_unread
 
 			if !expected_channel && i == attempts {
-				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, "sonnet #discoirc")
+				t.Errorf("unexpected channels: got: %v wanted: %q", ch.Chans, eighteen)
 			}
 			if !expected_message && i == attempts {
 				t.Errorf("didn't receive new messages: got %v, then %v", fst.LastMessage, snd.LastMessage)

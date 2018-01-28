@@ -12,27 +12,22 @@ func (d *Demo) ensureNetwork(network string) {
 	d.Lock()
 	defer d.Unlock()
 
-	net := d.nets[network]
-	if net == nil {
-		d.nets[network] = &data.NetworkState{
-			Scope: data.Scope{
-				Net: network,
-			},
-		}
+	scope := data.Scope{ Net: network }
+
+	if _, ok := d.nets[scope]; !ok {
+		d.nets[scope] = &data.NetworkState{}
 	}
 }
 
-func (d *Demo) ensureChannel(network, channel string) {
-	d.ensureNetwork(network)
+func (d *Demo) ensureChannel(scope data.Scope) {
+	d.ensureNetwork(scope.Net)
 
 	d.Lock()
 	defer d.Unlock()
 
-	chID := data.Scope{Net: network, Name: channel}
-	ch := d.chans[chID]
+	ch := d.chans[scope]
 	if ch == nil {
-		d.chans[chID] = &data.ChannelState{
-			Scope:  chID,
+		d.chans[scope] = &data.ChannelState{
 			Unread: 0,
 		}
 	}
@@ -45,7 +40,8 @@ func (d *Demo) TickNetwork(network string) {
 	d.Lock()
 	defer d.Unlock()
 
-	net := d.nets[network]
+	scope := data.Scope{ Net: network }
+	net := d.nets[scope]
 	net.State = nextConnState(net.State)
 	net.Nick = nextNick(net.Nick)
 
@@ -54,11 +50,13 @@ func (d *Demo) TickNetwork(network string) {
 
 // TickChannel increments the values of the given channel.
 func (d *Demo) TickChannel(network, channel string) {
-	d.ensureChannel(network, channel)
-	ch := d.chans[data.Scope{
+	scope := data.Scope{
 		Net:  network,
 		Name: channel,
-	}]
+	}
+	d.ensureChannel(scope)
+
+	ch := d.chans[scope]
 	ch.Mode = nextMode(ch.Mode)
 	ch.Presence = nextPresence(ch.Presence)
 	ch.Topic = nextTopic(ch.Topic)
@@ -69,18 +67,18 @@ func (d *Demo) TickChannel(network, channel string) {
 
 // TickMessages adds a message to the channel.
 func (d *Demo) TickMessages(network, channel string) {
-	d.ensureChannel(network, channel)
-	id := data.Scope{
+	scope := data.Scope{
 		Net:  network,
 		Name: channel,
 	}
+	d.ensureChannel(scope)
 
 	d.Lock()
 	defer d.Unlock()
 
 	// Construct a message using the absolute sequence number; as if
 	// each character were reciting the sonnet in turn.
-	seq := len(d.contents[id])
+	seq := len(d.contents[scope])
 	msg := messages[seq%len(messages)]
 
 	// what iteration of the sonnet are we on?
@@ -90,8 +88,8 @@ func (d *Demo) TickMessages(network, channel string) {
 
 	// Update unread before appending;
 	// only these messages may count as unread.
-	d.chans[id].Unread++
-	d.appendMessage(data.Scope{Net: network, Name: channel}, speaker, msg)
+	d.chans[scope].Unread++
+	d.appendMessage(scope, speaker, msg)
 }
 
 func nextNick(nick string) string {

@@ -12,32 +12,33 @@ import (
 
 var _ backend.Backend = &Demo{}
 
-type event struct {
-	scope data.Scope
-	seq   data.Seq
-
+type message struct {
+	data.EventID
 	message string
 }
 
-func (e *event) String() string    { return e.message }
-func (e *event) Scope() data.Scope { return e.scope }
-func (e *event) Seq() data.Seq     { return e.seq }
+var _ data.Event = &message{}
+
+func (m *message) String() string    { return m.message }
+func (m *message) ID() *data.EventID { return &m.EventID }
 
 // Demo provides data and updates to discoirc UI components.
 type Demo struct {
 	sync.RWMutex
 
-	subscriber backend.StateReceiver
+	subscriber backend.Receiver
 
-	nets     map[string]*data.NetworkState
+	nets     map[data.Scope]*data.NetworkState
 	chans    map[data.Scope]*data.ChannelState
 	contents map[data.Scope]data.EventList
+
+	seq int64
 }
 
 // New returns a new demonstration backend
 func New() *Demo {
 	d := &Demo{
-		nets:     make(map[string]*data.NetworkState),
+		nets:     make(map[data.Scope]*data.NetworkState),
 		chans:    make(map[data.Scope]*data.ChannelState),
 		contents: make(map[data.Scope]data.EventList),
 	}
@@ -46,29 +47,33 @@ func New() *Demo {
 
 // Send sends the given message to the target.
 func (d *Demo) Send(scope data.Scope, message string) {
-	d.ensureChannel(scope.Net, scope.Name)
+	d.ensureChannel(scope)
 
 	d.Lock()
 	defer d.Unlock()
-	nick := d.nets[scope.Net].Nick
+	netScope := data.Scope{ Net: scope.Net }
+
+	nick := d.nets[netScope].Nick
 	d.appendMessage(scope, nick, message)
 }
 
 // appendMessage must be called under the write lock.
-func (d *Demo) appendMessage(id data.Scope, speaker, message string) {
-	last := d.chans[id].LastMessage
-	next := &event{
-		scope: id,
-		seq:   last + 1,
+func (d *Demo) appendMessage(scope data.Scope, speaker, contents string) {
+	last := d.chans[scope].LastMessage
+	next := &message{
+		EventID: data.EventID{
+			Scope: scope,
+			Seq:   last + 1,
+		},
 		message: fmt.Sprintf(
 			"<%s> %s",
-			speaker, message,
+			speaker, contents,
 		),
 	}
 
 	// Doesn't update unread; 'send' doesn't count as unread.
-	d.contents[id] = append(d.contents[id], next)
-	d.chans[id].LastMessage = next.Seq()
+	d.contents[scope] = append(d.contents[scope], next)
+	d.chans[scope].LastMessage = next.ID().Seq
 
 	go d.updateAll()
 }
@@ -84,7 +89,7 @@ func (d *Demo) EventsBefore(id data.Scope, n int, last data.Seq) data.EventList 
 
 	// Update unread; How many messages have been read, as of this one?
 	readToIdx := sort.Search(len(evs), func(i int) bool {
-		return evs[i].Seq() >= last
+		return evs[i].ID().Seq >= last
 	})
 	// Use a separate thread to update the number unread-
 	// it requires the write-lock, and we don't want to block on that.
