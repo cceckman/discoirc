@@ -52,22 +52,25 @@ var renderTests = []struct {
 	{
 		test: "base render",
 		setup: func(c *channel.View) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "HamNet"},
-				State: data.Connected,
-				Nick:  "yorick",
-			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "HamNet"}},
+				NetworkState: data.NetworkState{
+					State: data.Connected,
+					Nick:  "yorick",
+				}})
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "HamNet",
 					Name: "#hamlet",
+				}},
+				ChannelState: data.ChannelState{
+					Presence:    data.Joined,
+					Mode:        "+v",
+					Topic:       "Act I, Scene 1",
+					Unread:      3834, // depending on your editor, of course.
+					Members:     12,   // in the company, more characters.
+					LastMessage: testhelper.Events[len(testhelper.Events)-1].ID().Seq,
 				},
-				Presence:    data.Joined,
-				Mode:        "+v",
-				Topic:       "Act I, Scene 1",
-				Unread:      3834, // depending on your editor, of course.
-				Members:     12,   // in the company, more characters.
-				LastMessage: testhelper.Events[len(testhelper.Events)-1].Seq(),
 			})
 		},
 		wantContents:    wantContents40x10,
@@ -76,22 +79,27 @@ var renderTests = []struct {
 	{
 		test: "resize render",
 		setup: func(c *channel.View) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "HamNet"},
-				State: data.Connected,
-				Nick:  "yorick",
-			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
-					Net:  "HamNet",
-					Name: "#hamlet",
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "HamNet"}},
+				NetworkState: data.NetworkState{
+					State: data.Connected,
+					Nick:  "yorick",
+				}})
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{
+					Scope: data.Scope{
+						Net:  "HamNet",
+						Name: "#hamlet",
+					},
 				},
-				Presence:    data.Joined,
-				Mode:        "+v",
-				Topic:       "Act I, Scene 1",
-				Unread:      3834, // depending on your editor, of course.
-				Members:     12,   // in the company, more characters.
-				LastMessage: testhelper.Events[len(testhelper.Events)-1].Seq(),
+				ChannelState: data.ChannelState{
+					Presence:    data.Joined,
+					Mode:        "+v",
+					Topic:       "Act I, Scene 1",
+					Unread:      3834, // depending on your editor, of course.
+					Members:     12,   // in the company, more characters.
+					LastMessage: testhelper.Events[len(testhelper.Events)-1].ID().Seq,
+				},
 			})
 
 			c.Resize(image.Pt(80, 80))
@@ -102,22 +110,27 @@ var renderTests = []struct {
 	{
 		test: "underflow render",
 		setup: func(c *channel.View) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "HamNet"},
-				State: data.Connected,
-				Nick:  "yorick",
-			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
-					Net:  "HamNet",
-					Name: "#hamlet",
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "HamNet"}},
+				NetworkState: data.NetworkState{
+					State: data.Connected,
+					Nick:  "yorick",
+				}})
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{
+					Scope: data.Scope{
+						Net:  "HamNet",
+						Name: "#hamlet",
+					},
 				},
-				Presence:    data.Joined,
-				Mode:        "+v",
-				Topic:       "Act I, Scene 1",
-				Unread:      3834, // depending on your editor, of course.
-				Members:     12,   // in the company, more characters.
-				LastMessage: testhelper.Events[3].Seq(),
+				ChannelState: data.ChannelState{
+					Presence:    data.Joined,
+					Mode:        "+v",
+					Topic:       "Act I, Scene 1",
+					Unread:      3834, // depending on your editor, of course.
+					Members:     12,   // in the company, more characters.
+					LastMessage: testhelper.Events[3].ID().Seq,
+				},
 			})
 		},
 		wantContents: `
@@ -165,7 +178,7 @@ func TestRender(t *testing.T) {
 }
 
 func testRenderer(e data.Event) tui.Widget {
-	r := tui.NewLabel(fmt.Sprintf("%d %s", e.Seq(), e.String()))
+	r := tui.NewLabel(fmt.Sprintf("%d %s", e.ID().Seq, e.String()))
 	r.SetWordWrap(true)
 	return r
 }

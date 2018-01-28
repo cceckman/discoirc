@@ -78,8 +78,19 @@ func (v *View) SetRenderer(e EventRenderer) {
 	v.events.Renderer = e
 }
 
-// UpdateNetwork receives the new state of the network.
-func (v *View) UpdateNetwork(n data.NetworkState) {
+// Receive receives and handles an event from the backend, and updates the UI
+// with it.
+// It blocks until the event has been rendered.
+func (v *View) Receive(e data.Event) {
+	switch e := e.(type) {
+	case *data.NetworkStateEvent:
+		v.updateNetwork(e.NetworkState)
+	case *data.ChannelStateEvent:
+		v.updateChannel(e.ChannelState)
+	}
+}
+
+func (v *View) updateNetwork(n data.NetworkState) {
 	update := func() {
 		v.nick.SetText(n.Nick)
 		v.connState.Set(n.State)
@@ -92,8 +103,7 @@ func (v *View) UpdateNetwork(n data.NetworkState) {
 	}
 }
 
-// UpdateChannel receives the new state of the channel.
-func (v *View) UpdateChannel(d data.ChannelState) {
+func (v *View) updateChannel(d data.ChannelState) {
 	update := func() {
 		v.topic.SetText(d.Topic)
 		v.channelMode.SetText(d.Mode)

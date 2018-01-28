@@ -79,7 +79,7 @@ func (c *Client) Filter() data.Filter {
 	return data.Filter{}
 }
 
-// Receive recieves and handles an event from the backend, and updates the UI
+// Receive receives and handles an event from the backend, and updates the UI
 // with it.
 // It blocks until the event has been rendered.
 func (c *Client) Receive(e data.Event) {
