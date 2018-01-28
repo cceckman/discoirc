@@ -83,13 +83,13 @@ var clientTests = []struct {
 	{
 		test: "ordered networks",
 		setup: func(w *client.Client) {
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Barnet"},
-				Nick:  "barnacle",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Barnet"}},
+				NetworkState: data.NetworkState{Nick: "barnacle"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
 		},
 		want: `
@@ -108,17 +108,17 @@ var clientTests = []struct {
 	{
 		test: "Removed last network",
 		setup: func(w *client.Client) {
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{Nick: "charles"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Barnet"},
-				Nick:  "barnacle",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Barnet"}},
+				NetworkState: data.NetworkState{Nick: "barnacle"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
 			w.RemoveNetwork("Charlienet")
 		},
@@ -138,17 +138,17 @@ var clientTests = []struct {
 	{
 		test: "Removed first network",
 		setup: func(w *client.Client) {
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{Nick: "charles"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Barnet"},
-				Nick:  "barnacle",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Barnet"}},
+				NetworkState: data.NetworkState{Nick: "barnacle"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
 			w.RemoveNetwork("AlphaNet")
 		},
@@ -168,17 +168,17 @@ var clientTests = []struct {
 	{
 		test: "Removed middle network",
 		setup: func(w *client.Client) {
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{Nick: "charles"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Barnet"},
-				Nick:  "barnacle",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "Barnet"}},
+				NetworkState: data.NetworkState{Nick: "barnacle"},
 			})
-			w.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			w.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
 			w.RemoveNetwork("Barnet")
 		},
@@ -198,40 +198,47 @@ var clientTests = []struct {
 	{
 		test: "networks with channels",
 		setup: func(c *client.Client) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			c.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#discoirc",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+foobar",
+					Unread:  99,
+					Members: 48,
 				},
-				Mode:    "+foobar",
-				Unread:  99,
-				Members: 48,
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#tui-go",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+v",
+					Unread:  0,
+					Members: 3,
 				},
-				Mode:    "+v",
-				Unread:  0,
-				Members: 3,
 			})
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
-				State: data.Connected,
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{
+					Nick:  "charles",
+					State: data.Connected,
+				},
 			})
-			c.UpdateChannel(data.ChannelState{
-
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "Charlienet",
 					Name: "#badpuns",
+				}},
+				ChannelState: data.ChannelState{
+					Mode: "+v",
 				},
-				Mode: "+v",
 			})
 		},
 		want: `
@@ -250,28 +257,31 @@ var clientTests = []struct {
 	{
 		test: "channel removal",
 		setup: func(c *client.Client) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			c.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
-			c.UpdateChannel(data.ChannelState{
-
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#discoirc",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+foobar",
+					Unread:  99,
+					Members: 48,
 				},
-				Mode:    "+foobar",
-				Unread:  99,
-				Members: 48,
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#tui-go",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+v",
+					Unread:  0,
+					Members: 3,
 				},
-				Mode:    "+v",
-				Unread:  0,
-				Members: 3,
 			})
 
 			c.GetNetwork("AlphaNet").RemoveChannel("#tui-go")
@@ -292,31 +302,36 @@ var clientTests = []struct {
 	{
 		test: "selected channel, deselected channel",
 		setup: func(c *client.Client) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			c.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#discoirc",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+foobar",
+					Unread:  99,
+					Members: 48,
 				},
-				Mode:    "+foobar",
-				Unread:  99,
-				Members: 48,
 			})
 
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
-				State: data.Connected,
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{Nick: "charles",
+					State: data.Connected,
+				},
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "Charlienet",
 					Name: "#badpuns",
+				}},
+				ChannelState: data.ChannelState{
+					Mode: "+v",
 				},
-				Mode: "+v",
 			})
 
 			c.GetNetwork("Charlienet").GetChannel("#badpuns").SetFocused(true)
@@ -340,30 +355,35 @@ var clientTests = []struct {
 	{
 		test: "selected network, deselected network",
 		setup: func(c *client.Client) {
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "AlphaNet"},
-				Nick:  "edward",
+			c.Receive(&data.NetworkStateEvent{
+				EventID:      data.EventID{Scope: data.Scope{Net: "AlphaNet"}},
+				NetworkState: data.NetworkState{Nick: "edward"},
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "AlphaNet",
 					Name: "#discoirc",
+				}},
+				ChannelState: data.ChannelState{
+					Mode:    "+foobar",
+					Unread:  99,
+					Members: 48,
 				},
-				Mode:    "+foobar",
-				Unread:  99,
-				Members: 48,
 			})
-			c.UpdateNetwork(data.NetworkState{
-				Scope: data.Scope{Net: "Charlienet"},
-				Nick:  "charles",
-				State: data.Connected,
+			c.Receive(&data.NetworkStateEvent{
+				EventID: data.EventID{Scope: data.Scope{Net: "Charlienet"}},
+				NetworkState: data.NetworkState{Nick: "charles",
+					State: data.Connected,
+				},
 			})
-			c.UpdateChannel(data.ChannelState{
-				Scope: data.Scope{
+			c.Receive(&data.ChannelStateEvent{
+				EventID: data.EventID{Scope: data.Scope{
 					Net:  "Charlienet",
 					Name: "#badpuns",
+				}},
+				ChannelState: data.ChannelState{
+					Mode: "+v",
 				},
-				Mode: "+v",
 			})
 
 			c.GetNetwork("AlphaNet").SetFocused(true)

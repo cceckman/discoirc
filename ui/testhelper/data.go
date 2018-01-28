@@ -10,9 +10,13 @@ type event struct {
 	Contents string
 }
 
-func (e *event) String() string    { return e.Contents }
-func (e *event) Scope() data.Scope { return data.Scope{Net: "Shaxnet", Name: "#hamlet"} }
-func (e *event) Seq() data.Seq     { return e.seq }
+func (e *event) String() string { return e.Contents }
+func (e *event) ID() *data.EventID {
+	return &data.EventID{
+		Scope: data.Scope{Net: "Shaxnet", Name: "#hamlet"},
+		Seq:   e.seq,
+	}
+}
 
 // Events is a set of data.Events used by tests as filler data - a Lorem.
 // Specifically, it's a few lines and stage directions from the first two scenes
@@ -41,7 +45,7 @@ func init() {
 
 // Backend is a mock implementor of the backend.Backend interface.
 type Backend struct {
-	Receiver backend.StateReceiver
+	Receiver backend.Receiver
 
 	events data.EventList
 
@@ -49,7 +53,7 @@ type Backend struct {
 }
 
 // Subscribe implements backend.Backend
-func (b *Backend) Subscribe(r backend.StateReceiver) {
+func (b *Backend) Subscribe(r backend.Receiver) {
 	b.Receiver = r
 }
 

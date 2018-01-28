@@ -15,18 +15,19 @@ import (
 // Only one subscriber of any sort may be active at a time, from a single
 // DataPublisher.
 type DataPublisher interface {
-	Subscribe(StateReceiver)
+	Subscribe(Receiver)
 }
 
-// StateReceiver receives updates about one or more networks and channels.
-type StateReceiver interface {
-	UpdateNetwork(data.NetworkState)
-	UpdateChannel(data.ChannelState)
+// Receiver receives updates about one or more networks and channels.
+type Receiver interface {
+	Receive(data.Event)
 
 	Filter() data.Filter
 }
 
 // EventsArchive allows lookup of previous event entries.
+// Use EventID as selector instead.
+// TODO:
 type EventsArchive interface {
 	EventsBefore(s data.Scope, n int, last data.Seq) data.EventList
 }

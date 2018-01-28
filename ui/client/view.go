@@ -79,21 +79,29 @@ func (c *Client) Filter() data.Filter {
 	return data.Filter{}
 }
 
-// UpdateNetwork accepts updates to network state from the backend, and uses
-// them to update the UI.
-// It schedules the work in the UI thread and blocks until it completes.
-func (c *Client) UpdateNetwork(n data.NetworkState) {
+// Receive recieves and handles an event from the backend, and updates the UI
+// with it.
+// It blocks until the event has been rendered.
+func (c *Client) Receive(e data.Event) {
+	switch e := e.(type) {
+	case *data.NetworkStateEvent:
+		c.updateNetwork(e)
+	case *data.ChannelStateEvent:
+		c.updateChannel(e)
+	}
+
+}
+
+func (c *Client) updateNetwork(n *data.NetworkStateEvent) {
 	c.controller.Update(func() {
-		c.GetNetwork(n.Net).UpdateNetwork(n)
+		c.GetNetwork(n.ID().Net).UpdateNetwork(n.NetworkState)
 	})
 }
 
-// UpdateChannel accepts updates to channel state from the backend, and uses
-// them to update the UI.
-// It schedules the work in the UI thread and blocks until it completes.
-func (c *Client) UpdateChannel(ch data.ChannelState) {
+func (c *Client) updateChannel(ch *data.ChannelStateEvent) {
+	id := ch.ID()
 	c.controller.Update(func() {
-		c.GetNetwork(ch.Net).GetChannel(ch.Name).UpdateChannel(ch)
+		c.GetNetwork(id.Net).GetChannel(id.Name).UpdateChannel(ch.ChannelState)
 	})
 }
 
