@@ -14,6 +14,7 @@ import (
 )
 
 func TestNetwork_NoContents(t *testing.T) {
+	t.Parallel()
 	w := client.NewNetwork(nil, "Barnetic")
 
 	surface := tui.NewTestSurface(20, 5)
@@ -35,6 +36,7 @@ func TestNetwork_NoContents(t *testing.T) {
 }
 
 func TestNetwork_NoChannels(t *testing.T) {
+	t.Parallel()
 	w := client.NewNetwork(nil, "Barnetic")
 	w.UpdateNetwork(data.NetworkState{
 		Nick:  "discobot",
@@ -408,6 +410,7 @@ var clientTests = []struct {
 func TestRender_Client(t *testing.T) {
 	for _, tt := range clientTests {
 		t.Run(tt.test, func(t *testing.T) {
+	t.Parallel()
 			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
@@ -483,6 +486,7 @@ var renderTests = []struct {
 func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
 		t.Run(tt.test, func(t *testing.T) {
+	t.Parallel()
 			surface := tui.NewTestSurface(25, 10)
 			theme := tui.NewTheme()
 			p := tui.NewPainter(surface, theme)
@@ -559,6 +563,7 @@ func TestNetwork_Focus(t *testing.T) {
 	for _, tt := range FocusTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
+	t.Parallel()
 			ui := discomocks.NewController()
 			c := client.New(ui, nil)
 
@@ -672,6 +677,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 	for _, tt := range ActivationTests {
 		tt := tt
 		t.Run(tt.Test, func(t *testing.T) {
+	t.Parallel()
 			ui := discomocks.NewController()
 			ui.V = discomocks.ClientView
 
@@ -702,6 +708,7 @@ func TestNetwork_ActivateChannel(t *testing.T) {
 }
 
 func TestNetwork_Quit(t *testing.T) {
+	t.Parallel()
 	ui := discomocks.NewController()
 	root := client.New(ui, nil)
 
@@ -717,6 +724,7 @@ func TestNetwork_Quit(t *testing.T) {
 }
 
 func Test_Issue18(t *testing.T) {
+	t.Parallel()
 	// https://github.com/cceckman/discoirc/issues/18
 	// Try to reproduce in a test.
 
