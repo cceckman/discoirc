@@ -14,7 +14,7 @@ const (
 
 // NetworkState represents the state of a user's relation to a network.
 type NetworkState struct {
-	State    ConnectionState
+	State ConnectionState
 
 	Nick     string
 	UserMode string

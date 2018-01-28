@@ -42,6 +42,7 @@ type Event interface {
 
 	ID() *EventID
 }
+
 // SortEvents produces an EventList from the Events.
 func SortEvents(es []Event) EventList {
 	r := make([]Event, len(es))

@@ -12,7 +12,7 @@ func (d *Demo) ensureNetwork(network string) {
 	d.Lock()
 	defer d.Unlock()
 
-	scope := data.Scope{ Net: network }
+	scope := data.Scope{Net: network}
 
 	if _, ok := d.nets[scope]; !ok {
 		d.nets[scope] = &data.NetworkState{}
@@ -40,7 +40,7 @@ func (d *Demo) TickNetwork(network string) {
 	d.Lock()
 	defer d.Unlock()
 
-	scope := data.Scope{ Net: network }
+	scope := data.Scope{Net: network}
 	net := d.nets[scope]
 	net.State = nextConnState(net.State)
 	net.Nick = nextNick(net.Nick)

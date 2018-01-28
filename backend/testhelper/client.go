@@ -79,5 +79,3 @@ func (c *Client) Join(f func()) {
 	}
 	<-blk
 }
-
-

@@ -51,7 +51,7 @@ func (d *Demo) Send(scope data.Scope, message string) {
 
 	d.Lock()
 	defer d.Unlock()
-	netScope := data.Scope{ Net: scope.Net }
+	netScope := data.Scope{Net: scope.Net}
 
 	nick := d.nets[netScope].Nick
 	d.appendMessage(scope, nick, message)
