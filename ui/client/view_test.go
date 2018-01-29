@@ -409,6 +409,7 @@ var clientTests = []struct {
 
 func TestRender_Client(t *testing.T) {
 	for _, tt := range clientTests {
+		tt := tt
 		t.Run(tt.test, func(t *testing.T) {
 			t.Parallel()
 			surface := tui.NewTestSurface(25, 10)
@@ -485,6 +486,7 @@ var renderTests = []struct {
 
 func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
+		tt := tt
 		t.Run(tt.test, func(t *testing.T) {
 			t.Parallel()
 			surface := tui.NewTestSurface(25, 10)

@@ -151,6 +151,7 @@ HamNet: ✓ #hamlet: +v
 
 func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
+		tt := tt
 		t.Run(tt.test, func(t *testing.T) {
 			t.Parallel()
 			surface := tui.NewTestSurface(40, 10)
