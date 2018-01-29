@@ -40,7 +40,7 @@ func init() {
 		v := v
 		es[i] = data.Event(&v)
 	}
-	Events = data.SortEvents(es)
+	Events = data.EventList(es)
 }
 
 // Backend is a mock implementor of the backend.Backend interface.

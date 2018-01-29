@@ -19,6 +19,16 @@ before_install:
 install:
   - dep ensure
 
+# Thanks to https://gist.github.com/y0ssar1an/df2dab474520c4086926f672c52db139
+# for this snippet.
+matrix:
+  # It's ok if our code fails on unstable development versions of Go.
+  allow_failures:
+    - go: tip
+  # Don't wait for tip tests to finish. Mark the test run green if the
+  # tests pass on the stable versions of Go.
+  fast_finish: true
+
 script:
   - |
     PATHS="$(gofmt -l -s $(find . -path ./vendor -prune -o -name '*.go' -print))"
