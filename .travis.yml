@@ -30,7 +30,7 @@ script:
   # "Also, the go test -coverprofile option is now supported when running multiple tests."
   # https://tip.golang.org/doc/go1.10#test
   - |
-    echo "mode: count" > coverage.txt
+    echo "mode: atomic" > coverage.txt
     for pkg in $(go list ./... | grep -v /vendor/)
     do
       go test -v -race -coverprofile=tmpcoverage.txt -covermode=atomic $pkg
