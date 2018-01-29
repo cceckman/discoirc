@@ -151,7 +151,9 @@ HamNet: ✓ #hamlet: +v
 
 func TestRender(t *testing.T) {
 	for _, tt := range renderTests {
+		tt := tt
 		t.Run(tt.test, func(t *testing.T) {
+			t.Parallel()
 			surface := tui.NewTestSurface(40, 10)
 			p := tui.NewPainter(surface, theme)
 
@@ -184,6 +186,7 @@ func testRenderer(e data.Event) tui.Widget {
 }
 
 func TestInput_Message(t *testing.T) {
+	t.Parallel()
 	ui := testhelper.NewController()
 	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
@@ -201,6 +204,7 @@ func TestInput_Message(t *testing.T) {
 }
 
 func TestInput_QuitMessage(t *testing.T) {
+	t.Parallel()
 	ui := testhelper.NewController()
 	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
@@ -216,6 +220,7 @@ func TestInput_QuitMessage(t *testing.T) {
 }
 
 func TestInput_QuitKeybind(t *testing.T) {
+	t.Parallel()
 	ui := testhelper.NewController()
 	d := testhelper.NewBackend()
 	_ = channel.New(data.Scope{Net: "HamNet", Name: "#hamlet"}, ui, d)
@@ -234,6 +239,7 @@ func TestInput_QuitKeybind(t *testing.T) {
 }
 
 func TestInput_ActivateClient(t *testing.T) {
+	t.Parallel()
 	ui := testhelper.NewController()
 	d := testhelper.NewBackend()
 

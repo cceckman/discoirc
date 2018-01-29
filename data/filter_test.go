@@ -18,6 +18,7 @@ var anyCases = []data.Scope{
 }
 
 func TestFilter_Any(t *testing.T) {
+	t.Parallel()
 	filter := data.Filter{}
 
 	for i, tt := range anyCases {
@@ -60,6 +61,7 @@ var netCases = []struct {
 }
 
 func TestFilter_Net(t *testing.T) {
+	t.Parallel()
 	filter := data.Filter{
 		Scope: data.Scope{
 			Net:  "foonet",
@@ -115,6 +117,7 @@ var chanCases = []struct {
 }
 
 func TestFilter_Chan(t *testing.T) {
+	t.Parallel()
 	filter := data.Filter{
 		Scope: data.Scope{
 			Net:  "foonet",

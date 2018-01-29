@@ -13,6 +13,7 @@ import (
 )
 
 func TestActivateChannel(t *testing.T) {
+	t.Parallel()
 	u := testhelper.NewUI()
 
 	ctl := ui.New(u, testhelper.NewBackend())
@@ -24,6 +25,7 @@ func TestActivateChannel(t *testing.T) {
 }
 
 func TestActivateClient(t *testing.T) {
+	t.Parallel()
 	u := testhelper.NewUI()
 
 	ctl := ui.New(u, testhelper.NewBackend())
@@ -35,6 +37,7 @@ func TestActivateClient(t *testing.T) {
 }
 
 func TestEndToEnd(t *testing.T) {
+	t.Parallel()
 	u := testhelper.NewUI()
 	surface := tui.NewTestSurface(30, 10)
 	u.Painter = tui.NewPainter(surface, tui.NewTheme())

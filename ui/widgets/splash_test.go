@@ -16,6 +16,7 @@ func (q *Quitter) Quit() {
 }
 
 func TestQuit(t *testing.T) {
+	t.Parallel()
 	q := &Quitter{}
 	s := widgets.NewSplash(q)
 	s.OnKeyEvent(tui.KeyEvent{

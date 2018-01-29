@@ -20,6 +20,7 @@ func delay(n int) int {
 }
 
 func TestSubscribeFiltered(t *testing.T) {
+	t.Parallel()
 	b := demo.New()
 
 	// Initialize data: two lines in to sonnet 18
@@ -115,6 +116,7 @@ func TestSubscribeFiltered(t *testing.T) {
 }
 
 func TestSubscribe_FromUI(t *testing.T) {
+	t.Parallel()
 	b := demo.New()
 
 	// Initialize data: two networks
@@ -143,6 +145,7 @@ func TestSubscribe_FromUI(t *testing.T) {
 }
 
 func TestChannelCallback(t *testing.T) {
+	t.Parallel()
 	attempts := 4
 	b := demo.New()
 	c := testhelper.NewChannel(eighteen.Net, eighteen.Name)
@@ -174,6 +177,7 @@ func TestChannelCallback(t *testing.T) {
 }
 
 func TestSubscribe_Resubscribe(t *testing.T) {
+	t.Parallel()
 	attempts := 4
 	b := demo.New()
 
@@ -218,6 +222,7 @@ func TestSubscribe_Resubscribe(t *testing.T) {
 }
 
 func TestSend(t *testing.T) {
+	t.Parallel()
 	attempts := 4
 	b := demo.New()
 	c := testhelper.NewChannel(eighteen.Net, eighteen.Name)
