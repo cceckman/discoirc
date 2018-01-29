@@ -24,8 +24,8 @@ type ChannelState struct {
 
 // ChannelStateEvent is an Event indicating a change in a channel's state.
 type ChannelStateEvent struct {
-	ChannelState
 	EventID
+	ChannelState
 
 	// Line is the IRC line indicating this change.
 	Line string

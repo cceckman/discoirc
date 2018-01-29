@@ -22,8 +22,8 @@ type NetworkState struct {
 
 // NetworkStateEvent is an Event indicating a change in the network's state.
 type NetworkStateEvent struct {
-	NetworkState
 	EventID
+	NetworkState
 
 	// Line is the IRC line indicating this change.
 	Line string
