@@ -93,3 +93,31 @@ func TestFiller(t *testing.T) {
 		})
 	}
 }
+
+type Quitter struct {
+	HasQuit bool
+}
+
+func (q *Quitter) Quit() {
+	q.HasQuit = true
+}
+
+func TestSplash_Quit(t *testing.T) {
+	t.Parallel()
+	q := &Quitter{}
+	s := widgets.NewSplash(q)
+	// No-op event, just for coverage
+	s.OnKeyEvent(tui.KeyEvent{
+		Key: tui.KeyCtrlA,
+	})
+	if q.HasQuit {
+		t.Errorf("unexpected state: has quit")
+	}
+
+	s.OnKeyEvent(tui.KeyEvent{
+		Key: tui.KeyCtrlC,
+	})
+	if !q.HasQuit {
+		t.Errorf("unexpected state: has not quit")
+	}
+}
