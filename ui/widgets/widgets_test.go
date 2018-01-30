@@ -1,9 +1,12 @@
 package widgets_test
 
 import (
-	"github.com/cceckman/discoirc/ui/widgets"
+	"github.com/google/go-cmp/cmp"
 	"github.com/marcusolsson/tui-go"
 	"testing"
+
+	"github.com/cceckman/discoirc/data"
+	"github.com/cceckman/discoirc/ui/widgets"
 )
 
 var FillerTests = []struct {
@@ -119,5 +122,22 @@ func TestSplash_Quit(t *testing.T) {
 	})
 	if !q.HasQuit {
 		t.Errorf("unexpected state: has not quit")
+	}
+}
+
+func TestConnState(t *testing.T) {
+	s := tui.NewTestSurface(1, 1)
+	p := tui.NewPainter(s, tui.NewTheme())
+
+	n := widgets.NewConnState()
+	p.Repaint(n)
+	if diff := cmp.Diff(s.String(), "\n?\n"); diff != "" {
+		t.Errorf("contents differ: (-got +want)\n%s", diff)
+	}
+
+	n.Set(data.Connecting)
+	p.Repaint(n)
+	if diff := cmp.Diff(s.String(), "\n…\n"); diff != "" {
+		t.Errorf("contents differ: (-got +want)\n%s", diff)
 	}
 }
