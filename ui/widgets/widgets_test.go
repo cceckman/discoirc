@@ -140,4 +140,9 @@ func TestConnState(t *testing.T) {
 	if diff := cmp.Diff(s.String(), "\n…\n"); diff != "" {
 		t.Errorf("contents differ: (-got +want)\n%s", diff)
 	}
+	n.Set(data.ConnectionState(7))
+	p.Repaint(n)
+	if diff := cmp.Diff(s.String(), "\n?\n"); diff != "" {
+		t.Errorf("contents differ: (-got +want)\n%s", diff)
+	}
 }
