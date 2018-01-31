@@ -57,6 +57,24 @@ hello
 faddah    
 `,
 	},
+	{
+		Test: "draw with post-hoc added contents",
+		Setup: func() tui.Widget {
+			r := widgets.NewTailBox()
+			r.SetContents(
+				tui.NewLabel("hello mom"),
+				tui.NewLabel("hello dad"),
+			)
+			return r
+		},
+		Want: `
+          
+          
+          
+hello mom 
+hello dad 
+`,
+	},
 }
 
 func TestTailBox(t *testing.T) {

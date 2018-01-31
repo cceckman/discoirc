@@ -26,8 +26,7 @@ type Receiver interface {
 }
 
 // EventsArchive allows lookup of previous event entries.
-// Use EventID as selector instead.
-// TODO:
+// TODO: Use EventID as selector instead.
 type EventsArchive interface {
 	EventsBefore(s data.Scope, n int, last data.Seq) data.EventList
 }

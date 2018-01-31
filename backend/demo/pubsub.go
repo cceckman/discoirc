@@ -65,6 +65,12 @@ func (d *Demo) updateAll() {
 		}
 
 		wg.Add(1)
+		// TODO and WARNING: Running this in a goroutine, without blocking
+		// future updates (e.g. ticks) on it, means that events can be
+		///sent out-of-order with respect to their seq IDs.
+		// I'm not fixing this at the moment,
+		// but a real backend should be stricter about sending updates
+		// forward in order.
 		go func() {
 			recv.Receive(event)
 			wg.Done()
@@ -85,6 +91,12 @@ func (d *Demo) updateAll() {
 		}
 
 		wg.Add(1)
+		// TODO and WARNING: Running this in a goroutine, without blocking
+		// future updates (e.g. ticks) on it, means that events can be
+		///sent out-of-order with respect to their seq IDs.
+		// I'm not fixing this at the moment,
+		// but a real backend should be stricter about sending updates
+		// forward in order.
 		go func() {
 			recv.Receive(event)
 			wg.Done()
