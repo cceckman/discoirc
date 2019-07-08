@@ -5,13 +5,13 @@
 language: go
 sudo: false
 go:
-  - 1.10.x
+  - 1.12.x
   - tip
 
 before_install:
   # Get tools
   - go get golang.org/x/lint/golint
-  - go get honnef.co/go/tools/cmd/megacheck
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.17.1
   - curl -L -s https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64 -o $GOPATH/bin/dep
   - chmod +x $GOPATH/bin/dep
 
@@ -34,7 +34,7 @@ script:
     echo "$PATHS" && test "$PATHS" == ""
   - go vet $(go list ./... | grep -v /vendor/)
   - golint -set_exit_status $(go list ./... | grep -v /vendor/)
-  - megacheck $(go list ./... | grep -v /vendor/)
+  - ./bin/golangci-lint $(go list ./... | grep -v /vendor/)
   # TODO: After go 1.10 is released, below shell script is unnecessary:
   # "Also, the go test -coverprofile option is now supported when running multiple tests."
   # https://tip.golang.org/doc/go1.10#test
